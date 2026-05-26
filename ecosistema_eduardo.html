@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>⚡ Ecosistema Eduardo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000;--s1:#0a0a0a;--s2:#111;--s3:#1a1a1a;--s4:#222;
+  --b0:rgba(255,255,255,0.06);--b1:rgba(255,255,255,0.13);--b2:rgba(255,255,255,0.22);
+  --txt:#fff;--muted:#555;--muted2:#2a2a2a;
+  --g:#00ff88;--r:#ff3333;--a:#ffaa00;--b:#00aaff;--p:#cc66ff;--pk:#ff4488;
+  --gg:rgba(0,255,136,0.12);--rg:rgba(255,51,51,0.12);--ag:rgba(255,170,0,0.12);--bg2:rgba(0,170,255,0.12);--pg:rgba(204,102,255,0.12);--pkg:rgba(255,68,136,0.12);
+  --gw:0 0 16px rgba(0,255,136,0.5);--rw:0 0 16px rgba(255,51,51,0.5);--aw:0 0 16px rgba(255,170,0,0.5);--bw:0 0 16px rgba(0,170,255,0.5);--pw:0 0 16px rgba(204,102,255,0.5);--pkw:0 0 16px rgba(255,68,136,0.5);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'Unbounded',sans-serif;color:var(--txt);}
+
+/* ─── SHELL ─── */
+.shell{height:100vh;display:grid;grid-template-rows:58px 1fr 60px;overflow:hidden;}
+
+/* ─── TOPBAR ─── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--s1);border-bottom:1px solid var(--b0);flex-shrink:0;position:relative;z-index:10;}
+.brand{font-size:7px;letter-spacing:.28em;color:var(--muted);text-transform:uppercase;font-weight:700;}
+.clock{font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--g);text-shadow:var(--gw);letter-spacing:.04em;}
+.topright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.date-lbl{font-size:8px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.sync-btn{background:transparent;border:2px solid var(--g);color:var(--g);font-family:'Unbounded',sans-serif;font-size:7px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:5px 12px;border-radius:20px;cursor:pointer;box-shadow:var(--gw);transition:all .2s;}
+.sync-btn:active{transform:scale(.93);}
+.sync-btn.syn{animation:gpulse .7s infinite;}
+.sync-status{font-size:7px;color:var(--muted);text-align:right;letter-spacing:.05em;}
+@keyframes gpulse{0%,100%{box-shadow:0 0 8px rgba(0,255,136,.4)}50%{box-shadow:0 0 28px rgba(0,255,136,1),0 0 60px rgba(0,255,136,.3)}}
+
+/* ─── PAGES ─── */
+.pw{overflow:hidden;position:relative;}
+.pages{display:flex;width:400%;height:100%;transition:transform .4s cubic-bezier(.4,0,.2,1);will-change:transform;}
+.page{width:25%;height:100%;overflow-y:scroll;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:14px 16px 28px;display:flex;flex-direction:column;gap:13px;}
+.page::-webkit-scrollbar{width:2px;}
+.page::-webkit-scrollbar-thumb{background:var(--g);border-radius:2px;}
+
+/* ─── BOTTOM NAV ─── */
+.botnav{display:flex;background:var(--s1);border-top:1px solid var(--b0);flex-shrink:0;}
+.bn{flex:1;background:transparent;border:none;color:var(--muted);font-family:'Unbounded',sans-serif;font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .2s;-webkit-user-select:none;user-select:none;}
+.bn .bico{font-size:18px;}
+.bn.active{color:var(--g);text-shadow:var(--gw);}
+.bn .bline{height:2px;border-radius:1px;width:0;transition:width .3s;background:var(--g);box-shadow:var(--gw);}
+.bn.active .bline{width:26px;}
+
+/* ─── SECTION ─── */
+.sec{font-size:7px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--g);text-shadow:0 0 10px rgba(0,255,136,.5);padding:2px 0;}
+
+/* ─── HERO ─── */
+.hero{background:var(--s1);border:2px solid var(--g);border-radius:18px;padding:16px 18px;box-shadow:var(--gw),inset 0 0 40px rgba(0,255,136,.03);}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.hero-greet{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--g);margin-bottom:5px;text-shadow:var(--gw);}
+.hero-name{font-size:34px;font-weight:900;letter-spacing:-.02em;line-height:1;color:#fff;}
+.hero-sub{font-size:9px;color:var(--muted);margin-top:5px;}
+.hero-r{text-align:right;}
+.hero-temp{font-family:'Space Mono',monospace;font-size:32px;color:var(--g);font-weight:700;text-shadow:var(--gw);}
+.hero-desc{font-size:10px;color:var(--txt);margin-top:4px;}
+.hero-rec{font-size:9px;color:var(--a);font-weight:700;text-shadow:var(--aw);margin-top:3px;}
+.hero-div{height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.5),transparent);margin:14px 0;}
+.kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.kpi{text-align:center;background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);border-radius:12px;padding:10px 4px;}
+.kpi-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--g);text-shadow:var(--gw);}
+.kpi-lbl{font-size:7px;color:var(--muted);margin-top:4px;letter-spacing:.06em;}
+
+/* ─── RESUMEN ─── */
+.res-card{background:var(--s1);border:2px solid var(--b);border-radius:16px;overflow:hidden;box-shadow:var(--bw);}
+.res-row{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--b0);}
+.res-row:last-child{border-bottom:none;}
+.rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.rlbl{font-size:11px;color:var(--muted);flex:1;}
+.rval{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;}
+
+/* ─── EVENTS ─── */
+.ev-card{background:var(--s1);border:2px solid var(--b);border-radius:16px;overflow:hidden;box-shadow:0 0 20px rgba(0,170,255,.2);}
+.ev-row{display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid var(--b0);}
+.ev-row:last-child{border-bottom:none;}
+.ev-tc{flex-shrink:0;text-align:right;min-width:52px;}
+.ev-time{font-family:'Space Mono',monospace;font-size:12px;color:var(--g);font-weight:700;text-shadow:0 0 8px rgba(0,255,136,.5);}
+.ev-day{font-size:7px;color:var(--muted);margin-top:2px;letter-spacing:.05em;}
+.ev-bar{width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;}
+.ev-body{flex:1;}
+.ev-title{font-size:12px;font-weight:700;line-height:1.3;}
+.ev-sub{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.4;font-family:'Unbounded',sans-serif;font-weight:400;}
+.ev-badge{display:inline-block;font-size:7px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:20px;border:1.5px solid currentColor;text-transform:uppercase;margin-top:5px;}
+
+/* ─── TASKS ─── */
+.task-card{background:var(--s1);border:2px solid var(--a);border-radius:16px;overflow:hidden;box-shadow:0 0 20px rgba(255,170,0,.15);}
+.task-row{display:flex;gap:9px;padding:11px 13px;border-bottom:1px solid var(--b0);cursor:pointer;transition:opacity .25s,background .15s;-webkit-user-select:none;user-select:none;}
+.task-row:last-child{border-bottom:none;}
+.task-row:active{background:var(--s2);}
+.task-row.done{opacity:.3;}
+.tcheck{width:19px;height:19px;min-width:19px;border-radius:5px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;margin-top:1px;transition:all .2s;}
+.task-row.done .tcheck{background:var(--g);border-color:var(--g);color:#000;box-shadow:var(--gw);}
+.tpri{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0;}
+.p1{background:var(--r);box-shadow:var(--rw);}
+.p2{background:var(--a);box-shadow:var(--aw);}
+.p3{background:var(--b);}
+.task-body{flex:1;min-width:0;}
+.task-txt{font-size:11px;font-weight:700;line-height:1.35;color:var(--txt);}
+.task-row.done .task-txt{text-decoration:line-through;color:var(--muted);}
+.task-meta{font-size:8px;color:var(--muted);margin-top:3px;letter-spacing:.04em;}
+.task-loading{text-align:center;padding:20px;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;}
+
+/* ─── FLAGS ─── */
+.flag-btn{width:100%;background:var(--s1);border:2px solid;border-radius:14px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;-webkit-user-select:none;user-select:none;font-family:'Unbounded',sans-serif;}
+.flag-expand{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+.flag-expand.open{max-height:600px;}
+.flag-content{padding:10px 15px 14px;border:2px solid;border-top:none;border-radius:0 0 14px 14px;background:var(--s1);}
+.flag-item{font-size:10px;padding:5px 0;border-bottom:1px solid var(--b0);display:flex;gap:7px;line-height:1.4;font-family:'Unbounded',sans-serif;font-weight:400;color:var(--txt);}
+.flag-item:last-child{border-bottom:none;}
+
+/* ─── STATS FINANZAS ─── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat{background:var(--s1);border:2px solid;border-radius:14px;padding:14px;}
+.stat-lbl{font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;font-weight:700;}
+.stat-val{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;line-height:1;}
+.stat-sub{font-size:8px;color:var(--muted);margin-top:5px;}
+.big-card{background:var(--s1);border:2px solid;border-radius:16px;padding:15px 17px;}
+.big-lbl{font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.big-val{font-family:'Space Mono',monospace;font-size:30px;font-weight:700;line-height:1;}
+.big-rec{font-size:10px;font-weight:700;margin-top:9px;}
+.alert-bar{background:var(--ag);border:2px solid var(--a);border-radius:12px;padding:11px 15px;font-size:9px;color:var(--a);font-weight:700;box-shadow:var(--aw);}
+
+/* ─── PROYECTOS ─── */
+.ttoggle{display:flex;background:var(--s1);border:2px solid var(--b1);border-radius:12px;overflow:hidden;width:fit-content;}
+.ttog{padding:8px 18px;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .2s;-webkit-user-select:none;user-select:none;}
+.ttog.hot{background:var(--g);color:#000;}
+.ttog.cold{background:var(--b);color:#000;}
+.ptabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.ptabs-wrap::-webkit-scrollbar{display:none;}
+.ptabs{display:flex;gap:7px;width:max-content;padding:2px 0;}
+.ptab{background:var(--s1);border:2px solid var(--b1);border-radius:11px;padding:8px 14px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;-webkit-user-select:none;user-select:none;}
+.ptab.ah{border-color:var(--g);color:var(--g);box-shadow:var(--gw);}
+.ptab.ac{border-color:var(--b);color:var(--b);box-shadow:var(--bw);}
+.ppanel{display:none;flex-direction:column;gap:10px;}
+.ppanel.active{display:flex;}
+.ph{background:var(--s1);border:2px solid;border-radius:16px;padding:16px;}
+.ph-name{font-size:18px;font-weight:900;letter-spacing:-.01em;}
+.ph-fee{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;margin-top:5px;}
+.ph-sub{font-size:9px;color:var(--muted);margin-top:6px;line-height:1.6;font-family:'Unbounded',sans-serif;font-weight:400;}
+.pbadges{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px;}
+.pbadge{font-size:7px;font-weight:700;letter-spacing:.1em;padding:3px 10px;border-radius:20px;border:1.5px solid currentColor;text-transform:uppercase;}
+.pi-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.pi{background:var(--s1);border:2px solid;border-radius:12px;padding:12px 13px;}
+.pi-lbl{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;font-weight:700;}
+.pi-val{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;}
+.pi-sub{font-size:8px;color:var(--muted);margin-top:3px;}
+.pbar-bg{height:3px;background:var(--muted2);border-radius:2px;margin-top:8px;}
+.pbar{height:3px;border-radius:2px;}
+.pblock{background:var(--rg);border:2px solid var(--r);border-radius:11px;padding:10px 13px;font-size:9px;color:var(--r);font-weight:700;display:flex;gap:7px;line-height:1.4;box-shadow:var(--rw);}
+.pgreen{background:var(--gg);border:2px solid var(--g);border-radius:11px;padding:10px 13px;font-size:9px;color:var(--g);font-weight:700;display:flex;gap:7px;line-height:1.4;box-shadow:var(--gw);}
+.pnote{background:var(--s2);border:1px solid var(--b1);border-radius:11px;padding:10px 13px;font-size:9px;color:var(--muted);line-height:1.5;font-family:'Unbounded',sans-serif;font-weight:400;}
+
+/* ─── OVERLAY ─── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.on{opacity:1;pointer-events:all;}
+.ov-box{background:var(--s1);border:2px solid var(--g);border-radius:24px;padding:30px 40px;text-align:center;box-shadow:var(--gw);}
+.ov-spin{font-size:36px;color:var(--g);animation:spin 1s linear infinite;display:inline-block;text-shadow:var(--gw);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ov-lbl{font-size:8px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--g);margin-top:12px;text-shadow:var(--gw);}
+.ov-step{font-family:'Space Mono',monospace;font-size:10px;color:var(--txt);margin-top:8px;}
+
+.cg{color:var(--g);text-shadow:var(--gw);}
+.cr{color:var(--r);text-shadow:var(--rw);}
+.ca{color:var(--a);text-shadow:var(--aw);}
+.cb{color:var(--b);text-shadow:var(--bw);}
+.cp{color:var(--pk);text-shadow:var(--pkw);}
+.cv{color:var(--p);text-shadow:var(--pw);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══════════════ TOPBAR ═══════════════ -->
+<div class="topbar">
+  <div>
+    <div class="brand">⚡ Ecosistema</div>
+    <div class="clock" id="clock">00:00:00</div>
+  </div>
+  <div class="topright">
+    <div class="date-lbl" id="dateLbl">—</div>
+    <button class="sync-btn" id="syncBtn" onclick="doSync()">⟳ SYNC</button>
+    <div class="sync-status" id="syncStatus">—</div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGES ═══════════════ -->
+<div class="pw" id="pw">
+<div class="pages" id="pages">
+
+<!-- ══ P0: INICIO ══ -->
+<div class="page" id="p0">
+
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-greet" id="greetLbl">Buenos días</div>
+        <div class="hero-name">Eduardo</div>
+        <div class="hero-sub" id="heroSub">—</div>
+      </div>
+      <div class="hero-r">
+        <div class="hero-temp" id="heroTemp">—°</div>
+        <div class="hero-desc" id="heroDesc">sync →</div>
+        <div class="hero-rec" id="heroRec"></div>
+      </div>
+    </div>
+    <div class="hero-div"></div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" id="trmHero">—</div><div class="kpi-lbl">TRM</div></div>
+      <div class="kpi"><div class="kpi-val">$1.08M</div><div class="kpi-lbl">Excedente</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--pk);text-shadow:var(--pkw);">29 mayo</div><div class="kpi-lbl">GIULIA</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Resumen operativo</div>
+  <div class="res-card">
+    <div class="res-row"><div class="rdot" style="background:var(--b);box-shadow:var(--bw);"></div><div class="rlbl">SETTE fee mensual</div><div class="rval cb">$5.65M</div></div>
+    <div class="res-row"><div class="rdot" style="background:var(--a);box-shadow:var(--aw);"></div><div class="rlbl">Streams Doble AA</div><div class="rval ca">24K / 60K</div></div>
+    <div class="res-row"><div class="rdot" style="background:var(--g);box-shadow:var(--gw);"></div><div class="rlbl">Oyentes mensuales</div><div class="rval cg">11.1K ✓</div></div>
+    <div class="res-row"><div class="rdot" style="background:var(--a);box-shadow:var(--aw);"></div><div class="rlbl">Pauta SETTE aprobada</div><div class="rval ca">$7.3M</div></div>
+    <div class="res-row"><div class="rdot" style="background:var(--g);box-shadow:var(--gw);"></div><div class="rlbl">Saldo BoA</div><div class="rval cg">$1,495 USD</div></div>
+  </div>
+
+  <div class="sec">Próximos eventos</div>
+  <div class="ev-card" id="miniEv">
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">2:30pm</div><div class="ev-day">HOY</div></div><div class="ev-bar" style="background:var(--b);box-shadow:var(--bw);"></div><div class="ev-body"><div class="ev-title cb">SETTE KPI — Miguel</div><div class="ev-sub">Cerrar pauta digital $7.3M</div><span class="ev-badge" style="color:var(--b);">SETTE</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">5:00pm</div><div class="ev-day">HOY</div></div><div class="ev-bar" style="background:var(--pk);box-shadow:var(--pkw);"></div><div class="ev-body"><div class="ev-title cp">María Antonia</div><div class="ev-sub">Recojo · duerme hasta 9pm</div><span class="ev-badge" style="color:var(--pk);">FAMILIA</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">5:00pm</div><div class="ev-day">MAR 26</div></div><div class="ev-bar" style="background:var(--g);box-shadow:var(--gw);"></div><div class="ev-body"><div class="ev-title cg">Reunión Doble AA</div><div class="ev-sub">Propuesta $500K + 12% streams</div><span class="ev-badge" style="color:var(--g);">DOBLE AA</span></div></div>
+  </div>
+
+  <div class="sec">Tareas de hoy · toca para completar</div>
+  <div class="task-card" id="taskWrap0">
+    <div class="task-loading">⟳ Cargando tareas de Todoist...</div>
+  </div>
+
+  <div class="sec">Green Flags</div>
+  <div>
+    <button class="flag-btn" style="border-color:var(--g);box-shadow:var(--gw);" onclick="tFlag('gf')">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:15px;" class="cg">✓</span><span style="font-size:12px;font-weight:700;" class="cg">Green Flags (5)</span></div>
+      <span style="font-size:11px;color:var(--muted);" id="gf-ch">▼</span>
+    </button>
+    <div class="flag-expand" id="gf">
+      <div class="flag-content" style="border-color:var(--g);">
+        <div class="flag-item"><span class="cg" style="flex-shrink:0;">↑</span>Pauta SETTE $7.3M aprobada — dinero en movimiento</div>
+        <div class="flag-item"><span class="cg" style="flex-shrink:0;">↑</span>Excedente real $1.08M antes de variables mayo</div>
+        <div class="flag-item"><span class="cg" style="flex-shrink:0;">↑</span>11.1K oyentes Doble AA — meta 8K superada 139%</div>
+        <div class="flag-item"><span class="cg" style="flex-shrink:0;">↑</span>GIULIA lanzamiento 29 mayo — preparación activa</div>
+        <div class="flag-item"><span class="cg" style="flex-shrink:0;">↑</span>Sistema 100% operativo — Notion + Calendar + Todoist</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">Red Flags</div>
+  <div>
+    <button class="flag-btn" style="border-color:var(--r);box-shadow:var(--rw);" onclick="tFlag('rf')">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:15px;" class="cr">✗</span><span style="font-size:12px;font-weight:700;" class="cr">Red Flags (5)</span></div>
+      <span style="font-size:11px;color:var(--muted);" id="rf-ch">▼</span>
+    </button>
+    <div class="flag-expand" id="rf">
+      <div class="flag-content" style="border-color:var(--r);">
+        <div class="flag-item"><span class="cr" style="flex-shrink:0;">↓</span>Streams 24K vs meta 60K — 40% del objetivo</div>
+        <div class="flag-item"><span class="cr" style="flex-shrink:0;">↓</span>Variables mayo desconocidas — confirmar 1 junio</div>
+        <div class="flag-item"><span class="cr" style="flex-shrink:0;">↓</span>Farolatino distribución limitada en momentos clave</div>
+        <div class="flag-item"><span class="cr" style="flex-shrink:0;">↓</span>Deudas sin documentar en Notion</div>
+        <div class="flag-item"><span class="cr" style="flex-shrink:0;">↓</span>4 proyectos en abandono sin decisión clara</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ P1: FINANZAS ══ -->
+<div class="page" id="p1">
+  <div class="sec">Finanzas mayo 2026</div>
+  <div class="stat-grid">
+    <div class="stat" style="border-color:var(--g);box-shadow:var(--gw);"><div class="stat-lbl">Ingresos</div><div class="stat-val cg">$4.93M</div><div class="stat-sub">SETTE $5.65M + familia</div></div>
+    <div class="stat" style="border-color:var(--r);box-shadow:var(--rw);"><div class="stat-lbl">Gastos</div><div class="stat-val cr">$3.85M</div><div class="stat-sub">Arriendo + servicios + M.A.</div></div>
+    <div class="stat" style="border-color:var(--a);box-shadow:var(--aw);"><div class="stat-lbl">Excedente bruto</div><div class="stat-val ca">$1.08M</div><div class="stat-sub">antes variables</div></div>
+    <div class="stat" style="border-color:var(--b);box-shadow:var(--bw);"><div class="stat-lbl">Saldo BoA</div><div class="stat-val cb">$1,495</div><div class="stat-sub">USD</div></div>
+  </div>
+
+  <div class="sec">TRM del día</div>
+  <div class="big-card" style="border-color:var(--a);box-shadow:var(--aw);">
+    <div class="big-lbl">Banco República · Colombia · hoy</div>
+    <div class="big-val ca" id="trmFin">—</div>
+    <div class="big-rec ca" id="trmRecFin">Toca SYNC para actualizar</div>
+  </div>
+
+  <div class="sec">Clima Armenia</div>
+  <div class="big-card" style="border-color:var(--b);box-shadow:var(--bw);">
+    <div class="big-lbl">Armenia · Quindío · ahora</div>
+    <div class="big-val cb" id="climaFin">—°</div>
+    <div class="big-rec" id="climaRecFin" style="color:var(--muted);font-size:10px;font-weight:400;">Toca SYNC para actualizar</div>
+  </div>
+
+  <div class="alert-bar">⚠ VARIABLES MAYO SIN CONFIRMAR — Moneyfy 1 junio</div>
+</div>
+
+<!-- ══ P2: PROYECTOS ══ -->
+<div class="page" id="p2">
+  <div class="sec">Proyectos</div>
+
+  <div class="ttoggle">
+    <div class="ttog hot" id="th" onclick="setTemp('hot')">🔥 Activos</div>
+    <div class="ttog" id="tc" onclick="setTemp('cold')">❄️ Fríos</div>
+  </div>
+
+  <div id="htabs" class="ptabs-wrap"><div class="ptabs">
+    <div class="ptab ah" id="ht0" onclick="showP('h',0)">GIULIA</div>
+    <div class="ptab" id="ht1" onclick="showP('h',1)">DOBLE AA</div>
+    <div class="ptab" id="ht2" onclick="showP('h',2)">SETTE</div>
+    <div class="ptab" id="ht3" onclick="showP('h',3)">ANDY G</div>
+    <div class="ptab" id="ht4" onclick="showP('h',4)">ZEIWA</div>
+  </div></div>
+
+  <div id="ctabs" class="ptabs-wrap" style="display:none;"><div class="ptabs">
+    <div class="ptab ac" id="ct0" onclick="showP('c',0)">RAYO Y TOBI</div>
+    <div class="ptab" id="ct1" onclick="showP('c',1)">TAGANGA</div>
+    <div class="ptab" id="ct2" onclick="showP('c',2)">L'OMY</div>
+    <div class="ptab" id="ct3" onclick="showP('c',3)">MUSIC LABS</div>
+    <div class="ptab" id="ct4" onclick="showP('c',4)">HAMURABI</div>
+    <div class="ptab" id="ct5" onclick="showP('c',5)">TORTTURA</div>
+  </div></div>
+
+  <!-- HOT -->
+  <div class="ppanel active" id="hp0">
+    <div class="ph" style="border-color:var(--pk);box-shadow:var(--pkw);">
+      <div class="ph-name cp">GIULIA</div><div class="ph-fee cp">Lanzamiento 29 mayo</div>
+      <div class="ph-sub">Hard release · YouTube · Virgin · Grammy inscripción pendiente HOY</div>
+      <div class="pbadges"><span class="pbadge cp">LANZAMIENTO</span><span class="pbadge" style="color:var(--muted);">VIRGIN</span><span class="pbadge ca">GRAMMY</span></div>
+    </div>
+    <div class="pgreen">✓ Video oculto en canal — listo 29 mayo</div>
+    <div class="pgreen">✓ Pauta YouTube lista — activar en lanzamiento</div>
+    <div class="pblock">⚡ Grammy inscripción — contactar Virgin HOY</div>
+    <div class="pblock">⚡ Checklist operativo go-live sin confirmar</div>
+  </div>
+
+  <div class="ppanel" id="hp1">
+    <div class="ph" style="border-color:var(--a);box-shadow:var(--aw);">
+      <div class="ph-name ca">DOBLE AA</div><div class="ph-fee ca">$500K + 12% streams</div>
+      <div class="ph-sub">Urbano Putumayo · VINCERE Electro · Farolatino · Launch "Estoy Bien" 16 jun</div>
+      <div class="pbadges"><span class="pbadge ca">VINCERE ELECTRO</span><span class="pbadge" style="color:var(--muted);">FAROLATINO</span><span class="pbadge cg">20% PROD</span></div>
+    </div>
+    <div class="pi-grid">
+      <div class="pi cb" style="border-color:var(--b);box-shadow:var(--bw);"><div class="pi-lbl">YouTube</div><div class="pi-val cb">36.6K</div><div class="pi-sub">vistas totales</div></div>
+      <div class="pi" style="border-color:var(--b1);"><div class="pi-lbl">Suscriptores</div><div class="pi-val" style="color:var(--txt);">1.9K</div></div>
+      <div class="pi ca" style="border-color:var(--a);box-shadow:var(--aw);"><div class="pi-lbl">Streams</div><div class="pi-val ca">24K</div><div class="pi-sub">Meta 60K · 40%</div><div class="pbar-bg"><div class="pbar" style="width:40%;background:var(--a);box-shadow:var(--aw);"></div></div></div>
+      <div class="pi cg" style="border-color:var(--g);box-shadow:var(--gw);"><div class="pi-lbl">Oyentes</div><div class="pi-val cg">11.1K</div><div class="pi-sub">Meta 8K ✓ 139%</div><div class="pbar-bg"><div class="pbar" style="width:100%;background:var(--g);box-shadow:var(--gw);"></div></div></div>
+    </div>
+    <div class="pgreen">✓ Reunión mañana 26 mayo 5pm — propuesta lista</div>
+    <div class="pgreen">✓ "Estoy Bien" launch 16 junio 8am</div>
+    <div class="pblock">⚡ Trazabilidad pauta $800K (Emmanuel) sin resolver</div>
+    <div class="pblock">⚡ Transcripción reunión 22 mayo pendiente documentar</div>
+  </div>
+
+  <div class="ppanel" id="hp2">
+    <div class="ph" style="border-color:var(--g);box-shadow:var(--gw);">
+      <div class="ph-name cg">SETTE</div><div class="ph-fee cg">$5.650.000/mes</div>
+      <div class="ph-sub">Fee mensual · Distribución INDEPENDIENTE · no es VINCERE · Pauta digital activa con Miguel</div>
+      <div class="pbadges"><span class="pbadge cg">INDEPENDIENTE</span><span class="pbadge ca">$7.3M PAUTA</span></div>
+    </div>
+    <div class="pi-grid">
+      <div class="pi cg" style="border-color:var(--g);box-shadow:var(--gw);"><div class="pi-lbl">Fee mensual</div><div class="pi-val cg">$5.65M</div><div class="pi-sub">ingreso fijo</div></div>
+      <div class="pi ca" style="border-color:var(--a);box-shadow:var(--aw);"><div class="pi-lbl">Pauta digital</div><div class="pi-val ca">$7.3M</div><div class="pi-sub">activando · 85%</div><div class="pbar-bg"><div class="pbar" style="width:85%;background:var(--a);box-shadow:var(--aw);"></div></div></div>
+    </div>
+    <div class="pgreen">✓ Pauta $7.3M aprobada — en ejecución</div>
+    <div class="pgreen">✓ KPI con Miguel HOY 2:30pm</div>
+    <div class="pnote">⚠ EMMANUEL ≠ SETTE. Ejecutó pauta histórica $800K de Doble AA. Aprendizaje pasado. No confundir.</div>
+  </div>
+
+  <div class="ppanel" id="hp3">
+    <div class="ph" style="border-color:var(--b);box-shadow:var(--bw);">
+      <div class="ph-name cb">ANDY G</div><div class="ph-fee cb">VINCERE Electro</div>
+      <div class="ph-sub">Farolatino · MGM · Estudio Barranquilla · Colaboración Totoy El Frío pendiente</div>
+      <div class="pbadges"><span class="pbadge cb">FAROLATINO</span><span class="pbadge" style="color:var(--muted);">BARRANQUILLA</span></div>
+    </div>
+    <div class="pblock">⚡ Formalizar licencia Totoy El Frío vía Farolatino HOY</div>
+    <div class="pnote">Relación largo plazo con Andy G / MGM / Estudio Barranquilla.</div>
+  </div>
+
+  <div class="ppanel" id="hp4">
+    <div class="ph" style="border-color:var(--p);box-shadow:var(--pw);">
+      <div class="ph-name cv">ZEIWA</div><div class="ph-fee cv">Rol: Manager</div>
+      <div class="ph-sub">Alejo Arizmendi · NDA anterior vencido · Enviar nuevo NDA HOY</div>
+      <div class="pbadges"><span class="pbadge cv">MANAGEMENT</span><span class="pbadge cr">NDA PENDIENTE</span></div>
+    </div>
+    <div class="pblock">⚡ Enviar nuevo NDA a Alejo Arizmendi HOY</div>
+    <div class="pnote">Sin NDA firmado no hay acuerdo formal. Primer paso crítico.</div>
+  </div>
+
+  <!-- COLD -->
+  <div class="ppanel" id="cp0">
+    <div class="ph" style="border-color:var(--muted);opacity:.75;"><div class="ph-name" style="color:var(--muted);">RAYO Y TOBI</div><div class="ph-fee" style="font-family:'Space Mono',monospace;font-size:16px;color:var(--muted);">Disco en producción</div><div class="ph-sub">Taganga · Guillermo Castro / Virgin interesado · Destrabar avance</div></div>
+    <div class="pblock">⚡ Destrabar relación Virgin / Guillermo Castro</div>
+  </div>
+  <div class="ppanel" id="cp1">
+    <div class="ph" style="border-color:var(--muted);opacity:.75;"><div class="ph-name" style="color:var(--muted);">TAGANGA</div><div class="ph-fee" style="font-family:'Space Mono',monospace;font-size:16px;color:var(--muted);">Proyecto paraguas</div><div class="ph-sub">Contiene Rayo y Tobi + otros artistas · Estructura por definir</div></div>
+    <div class="pnote">Pausa. Definir estructura y artistas antes de activar.</div>
+  </div>
+  <div class="ppanel" id="cp2">
+    <div class="ph" style="border-color:var(--muted);opacity:.75;"><div class="ph-name" style="color:var(--muted);">L'OMY</div><div class="ph-fee" style="font-family:'Space Mono',monospace;font-size:16px;color:var(--muted);">Decisión pendiente</div><div class="ph-sub">Canciones: Inténtalo / Cole · Ruta: Empire o Farolatino</div></div>
+    <div class="pblock">⚡ Decidir: ¿SIGUE o CIERRA?</div>
+  </div>
+  <div class="ppanel" id="cp3">
+    <div class="ph" style="border-color:var(--muted);opacity:.75;"><div class="ph-name" style="color:var(--muted);">MUSIC LABS</div><div class="ph-fee" style="font-family:'Space Mono',monospace;font-size:16px;color:var(--muted);">Educación · Territorio</div><div class="ph-sub">Quindío · Montería · Córdoba · Pereira</div></div>
+    <div class="pblock">⚡ Decidir: ¿SIGUE o CIERRA?</div>
+  </div>
+  <div class="ppanel" id="cp4">
+    <div class="ph" style="border-color:var(--muted);opacity:.75;"><div class="ph-name" style="color:var(--muted);">HAMURABI</div><div class="ph-fee" style="font-family:'Space Mono',monospace;font-size:16px;color:var(--muted);">Sin definir</div><div class="ph-sub">Contacto industria pendiente · Sin proyecto definido</div></div>
+    <div class="pblock">⚡ Decidir: ¿SIGUE o CIERRA?</div>
+  </div>
+  <div class="ppanel" id="cp5">
+    <div class="ph" style="border-color:var(--muted);opacity:.75;"><div class="ph-name" style="color:var(--muted);">TORTTURA</div><div class="ph-fee" style="font-family:'Space Mono',monospace;font-size:16px;color:var(--muted);">Demo entregado</div><div class="ph-sub">Respuesta Clipper's pendiente · Ruta Empire como alternativa</div></div>
+    <div class="pblock">⚡ Decidir: ¿SIGUE o CIERRA?</div>
+  </div>
+
+</div>
+
+<!-- ══ P3: AGENDA ══ -->
+<div class="page" id="p3">
+  <div class="sec">Próximas 48h</div>
+  <div class="ev-card" id="evFull">
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">2:30pm</div><div class="ev-day">HOY · LUN</div></div><div class="ev-bar" style="background:var(--b);box-shadow:var(--bw);"></div><div class="ev-body"><div class="ev-title cb">SETTE KPI — Miguel</div><div class="ev-sub">Cerrar pauta digital $7.3M · activación</div><span class="ev-badge" style="color:var(--b);">SETTE</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">5:00pm</div><div class="ev-day">HOY · LUN</div></div><div class="ev-bar" style="background:var(--pk);box-shadow:var(--pkw);"></div><div class="ev-body"><div class="ev-title cp">MARÍA ANTONIA</div><div class="ev-sub">Recojo · duerme hasta 9pm</div><span class="ev-badge" style="color:var(--pk);">FAMILIA</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">12:00pm</div><div class="ev-day">MAR 26</div></div><div class="ev-bar" style="background:var(--pk);box-shadow:var(--pkw);"></div><div class="ev-body"><div class="ev-title cp">M.A. ALMUERZO</div><div class="ev-sub">Bloqueado 12pm–2pm</div><span class="ev-badge" style="color:var(--pk);">FAMILIA</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">5:00pm</div><div class="ev-day">MAR 26</div></div><div class="ev-bar" style="background:var(--g);box-shadow:var(--gw);"></div><div class="ev-body"><div class="ev-title cg">REUNIÓN DOBLE AA</div><div class="ev-sub">Propuesta $500K + 12% streams</div><span class="ev-badge" style="color:var(--g);">DOBLE AA</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">Todo día</div><div class="ev-day">JUE 29</div></div><div class="ev-bar" style="background:var(--pk);box-shadow:var(--pkw);"></div><div class="ev-body"><div class="ev-title cp">LANZAMIENTO GIULIA</div><div class="ev-sub">Hard release · video + pauta YouTube</div><span class="ev-badge" style="color:var(--pk);">GIULIA</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">9:30am</div><div class="ev-day">VIE 29</div></div><div class="ev-bar" style="background:var(--a);box-shadow:var(--aw);"></div><div class="ev-body"><div class="ev-title ca">REVISIÓN FINANCIERA</div><div class="ev-sub">9:30–10:30am · cierre mayo</div><span class="ev-badge" style="color:var(--a);">FINANZAS</span></div></div>
+    <div class="ev-row"><div class="ev-tc"><div class="ev-time">8:00am</div><div class="ev-day">16 JUN</div></div><div class="ev-bar" style="background:var(--a);box-shadow:var(--aw);"></div><div class="ev-body"><div class="ev-title ca">LAUNCH "ESTOY BIEN"</div><div class="ev-sub">Doble AA · lanzamiento oficial</div><span class="ev-badge" style="color:var(--a);">DOBLE AA</span></div></div>
+  </div>
+
+  <div class="sec" style="margin-top:4px;">Tareas · toca para completar</div>
+  <div class="task-card" id="taskWrap3">
+    <div class="task-loading">⟳ Cargando tareas de Todoist...</div>
+  </div>
+</div>
+
+</div>
+</div><!-- /pw -->
+
+<!-- ═══════════════ BOTTOM NAV ═══════════════ -->
+<div class="botnav">
+  <button class="bn active" id="bn0" onclick="goTo(0,this)"><span class="bico">⌂</span><span>Inicio</span><div class="bline"></div></button>
+  <button class="bn" id="bn1" onclick="goTo(1,this)"><span class="bico">$</span><span>Finanzas</span><div class="bline"></div></button>
+  <button class="bn" id="bn2" onclick="goTo(2,this)"><span class="bico">◈</span><span>Proyectos</span><div class="bline"></div></button>
+  <button class="bn" id="bn3" onclick="goTo(3,this)"><span class="bico">◷</span><span>Agenda</span><div class="bline"></div></button>
+</div>
+
+</div><!-- /shell -->
+
+<!-- OVERLAY -->
+<div class="overlay" id="ov">
+  <div class="ov-box">
+    <div class="ov-spin">⟳</div>
+    <div class="ov-lbl">Sincronizando</div>
+    <div class="ov-step" id="ovStep">Conectando...</div>
+  </div>
+</div>
+
+<script>
+// ── WAKE LOCK ──
+async function wl(){try{if('wakeLock'in navigator)await navigator.wakeLock.request('screen');}catch(e){}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')wl();});
+wl();
+
+// ── CLOCK ──
+var DAYS=['dom','lun','mar','mié','jue','vie','sáb'];
+var MONTHS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function pad(n){return String(n).padStart(2,'0');}
+function greet(h){return h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';}
+function tick(){
+  var n=new Date();
+  document.getElementById('clock').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+  var ds=DAYS[n.getDay()]+' '+n.getDate()+' '+MONTHS[n.getMonth()];
+  document.getElementById('dateLbl').textContent=ds.toUpperCase();
+  document.getElementById('heroSub').textContent=ds+' · Armenia, Quindío';
+  document.getElementById('greetLbl').textContent=greet(n.getHours());
+}
+tick();setInterval(tick,1000);
+
+// ── SWIPE ──
+var cur=0,sx=0,sy=0,dec=false,isH=false;
+var pw=document.getElementById('pw');
+pw.addEventListener('touchstart',function(e){
+  var ap=document.getElementById('p'+cur);
+  sx=e.touches[0].clientX;sy=e.touches[0].clientY;
+  dec=false;isH=false;
+},{passive:true});
+pw.addEventListener('touchmove',function(e){
+  if(dec)return;
+  var dx=Math.abs(e.touches[0].clientX-sx),dy=Math.abs(e.touches[0].clientY-sy);
+  if(dx>12||dy>12){dec=true;isH=dx>dy*1.8;}
+},{passive:true});
+pw.addEventListener('touchend',function(e){
+  if(!isH)return;
+  var dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);
+  if(Math.abs(dx)>55&&dy<70){
+    if(dx<0&&cur<3)goTo(cur+1,document.getElementById('bn'+(cur+1)));
+    else if(dx>0&&cur>0)goTo(cur-1,document.getElementById('bn'+(cur-1)));
+  }
+},{passive:true});
+
+function goTo(n,btn){
+  cur=n;
+  document.getElementById('pages').style.transform='translateX(-'+((n/4)*100)+'%)';
+  document.querySelectorAll('.bn').forEach(function(b){
+    b.classList.remove('active');
+    b.querySelector('.bline').style.width='0';
+  });
+  if(btn){btn.classList.add('active');btn.querySelector('.bline').style.width='26px';}
+}
+
+// ── PROYECTOS ──
+var hc=0,cc=0,tm='hot';
+function setTemp(m){
+  tm=m;
+  document.getElementById('htabs').style.display=m==='hot'?'block':'none';
+  document.getElementById('ctabs').style.display=m==='cold'?'block':'none';
+  document.getElementById('th').className='ttog'+(m==='hot'?' hot':'');
+  document.getElementById('tc').className='ttog'+(m==='cold'?' cold':'');
+  // hide all
+  for(var i=0;i<5;i++){var p=document.getElementById('hp'+i);if(p){p.style.display='none';p.className='ppanel';}}
+  for(var j=0;j<6;j++){var p=document.getElementById('cp'+j);if(p){p.style.display='none';p.className='ppanel';}}
+  if(m==='hot')showP('h',hc);
+  else showP('c',cc);
+}
+function showP(t,n){
+  var pre=t==='h'?'h':'c',oth=t==='h'?'c':'h';
+  var cnt=t==='h'?5:6,ocnt=t==='h'?6:5;
+  for(var j=0;j<ocnt;j++){var op=document.getElementById(oth+'p'+j);if(op){op.style.display='none';op.className='ppanel';}}
+  for(var i=0;i<cnt;i++){
+    var tb=document.getElementById(pre+'t'+i),pn=document.getElementById(pre+'p'+i);
+    if(tb)tb.className='ptab'+(i===n?(t==='h'?' ah':' ac'):'');
+    if(pn){pn.style.display='none';pn.className='ppanel';}
+  }
+  var ap=document.getElementById(pre+'p'+n);
+  if(ap){ap.style.display='flex';ap.className='ppanel active';}
+  if(t==='h')hc=n;else cc=n;
+}
+
+// ── FLAGS ──
+function tFlag(id){
+  var el=document.getElementById(id),ch=document.getElementById(id+'-ch');
+  var o=el.classList.contains('open');
+  el.classList.toggle('open',!o);
+  if(ch)ch.textContent=!o?'▲':'▼';
+}
+
+// ── TASKS ──
+var taskIds={};
+function buildTasks(tasks){
+  var priMap={p1:'p1',p2:'p2',p3:'p3',p4:'p3'};
+  var html=tasks.map(function(t){
+    var pid=t.priority?'p'+t.priority:'p2';
+    var proj=(t.labels&&t.labels.length)?t.labels[0]:'PROYECTO';
+    taskIds[t.id]=t.checked;
+    return '<div class="task-row'+(t.checked?' done':'')+'" onclick="toggleTask(this,\''+t.id+'\')">'
+      +'<div class="tpri '+pid+'"></div>'
+      +'<div class="tcheck">'+(t.checked?'✓':'')+'</div>'
+      +'<div class="task-body">'
+      +'<div class="task-txt">'+t.content.replace(/^[🎵📊📋💰]\s*/,'')+'</div>'
+      +'<div class="task-meta">'+proj+' · '+(t.priority?'P'+t.priority:'—')+'</div>'
+      +'</div></div>';
+  }).join('');
+  document.getElementById('taskWrap0').innerHTML=html||'<div class="task-loading">Sin tareas pendientes hoy ✓</div>';
+  document.getElementById('taskWrap3').innerHTML=html||'<div class="task-loading">Sin tareas pendientes hoy ✓</div>';
+}
+
+var completing={};
+async function toggleTask(row,tid){
+  if(completing[tid])return;
+  var wasDone=row.classList.contains('done');
+  // toggle visual en AMBOS wrappers
+  document.querySelectorAll('.task-row').forEach(function(r){
+    if(r.getAttribute('onclick')&&r.getAttribute('onclick').indexOf(tid)>-1){
+      r.classList.toggle('done',!wasDone);
+      var ch=r.querySelector('.tcheck');
+      if(ch)ch.textContent=!wasDone?'✓':'';
+    }
+  });
+  if(!wasDone){
+    completing[tid]=true;
+    try{
+      var resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:100,
+          system:'Completa la tarea de Todoist. Responde solo: ok',
+          messages:[{role:'user',content:'Completa tarea Todoist ID: '+tid}],
+          mcp_servers:[{type:'url',url:'https://ai.todoist.net/mcp',name:'todoist'}]
+        })
+      });
+    }catch(e){console.log('Todoist err',e.message);}
+    completing[tid]=false;
+  }
+}
+
+// ── SYNC COMPLETO ──
+var syncing=false;
+var lastSync=null;
+async function doSync(){
+  if(syncing)return;
+  syncing=true;
+  var btn=document.getElementById('syncBtn'),ov=document.getElementById('ov'),st=document.getElementById('ovStep');
+  btn.classList.add('syn');
+  ov.classList.add('on');
+  var steps=['Buscando TRM...','Clima Armenia...','Jalando tareas Todoist...','Aplicando datos...'];
+  var si=0;st.textContent=steps[0];
+  var iv=setInterval(function(){si++;if(si<steps.length)st.textContent=steps[si];},900);
+
+  // 1. TRM + Clima
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:400,
+        system:'Responde SOLO JSON sin markdown.',
+        messages:[{role:'user',content:'TRM Colombia vigente hoy Banco República y temperatura actual Armenia Quindío. JSON: {"trm":"$4,250","trend":"↑","rec":"pagar en X porque Y","temp":"18","desc":"Parcialmente nublado","advice":"Lleva chaqueta"}'}],
+        tools:[{type:'web_search_20250305',name:'web_search'}]
+      })
+    });
+    var d=await r.json();
+    var raw=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var p=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if(p.trm){
+      document.getElementById('trmHero').textContent=p.trm;
+      document.getElementById('trmFin').textContent=p.trm+' '+p.trend;
+      document.getElementById('trmRecFin').textContent=p.rec;
+    }
+    if(p.temp){
+      document.getElementById('heroTemp').textContent=p.temp+'°';
+      document.getElementById('heroDesc').textContent=p.desc;
+      document.getElementById('heroRec').textContent=p.advice;
+      document.getElementById('climaFin').textContent=p.temp+'°';
+      document.getElementById('climaRecFin').textContent=p.desc+' · '+p.advice;
+    }
+  }catch(e){console.log('TRM/Clima err',e.message);}
+
+  // 2. Tareas Todoist
+  try{
+    var r2=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        system:'Jala las tareas de hoy y vencidas de Todoist. Responde SOLO JSON: {"tasks":[{"id":"xxx","content":"texto","priority":1,"labels":["GIULIA"],"checked":false}]}',
+        messages:[{role:'user',content:'Dame las tareas de hoy y overdue de Todoist en JSON.'}],
+        mcp_servers:[{type:'url',url:'https://ai.todoist.net/mcp',name:'todoist'}]
+      })
+    });
+    var d2=await r2.json();
+    var raw2=(d2.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var p2=JSON.parse(raw2.replace(/```json|```/g,'').trim());
+    if(p2.tasks&&p2.tasks.length)buildTasks(p2.tasks);
+  }catch(e){
+    // fallback con tareas conocidas
+    buildTasks([
+      {id:'6ghpM2WgWPmH6RRr',content:'🎵 GIULIA — Contactar Virgin: Inscripción Grammy',priority:1,labels:['GIULIA'],checked:false},
+      {id:'6ghpM2m7cP7p9xQr',content:'🎵 GIULIA — Detalles lanzamiento: operativos 29 mayo',priority:1,labels:['GIULIA'],checked:false},
+      {id:'6ghpM2mvXxXJWGFr',content:'🎵 GIULIA — Video hard release: verificar en canal',priority:1,labels:['GIULIA'],checked:false},
+      {id:'6ghpM2r5R45qcGgr',content:'💰 FINANZAS — Revisar pagos semana',priority:2,labels:['FINANZAS'],checked:false},
+      {id:'6ghpM2vPQw3pWp9r',content:'🎵 DOBLE AA — Traer transcripción reunión 22 mayo',priority:2,labels:['DOBLE-AA'],checked:false},
+      {id:'6ghpM33RHCXwrVMJ',content:'📊 DOBLE AA — Análisis semanal métricas YouTube/Spotify',priority:2,labels:['DOBLE-AA'],checked:false},
+      {id:'6ghpM35cW67Q2QXJ',content:'📋 ANDY G — Formalizar licencia Totoy El Frío',priority:2,labels:['ANDY-G'],checked:false},
+      {id:'6ghpM36XpfVpCRrr',content:'📋 ZEIWA — Enviar nuevo NDA a Alejo Arizmendi',priority:2,labels:['ZEIWA'],checked:false},
+      {id:'6ghpM38fgwXwwRfr',content:'📋 RAYO Y TOBI — Destrabar Virgin/Guillermo Castro',priority:2,labels:['RAYO-TOBI'],checked:false},
+      {id:'6ghpM398c8vWJhCJ',content:'📋 PROYECTOS — Revisar L\'OMY, Music Labs, Hamurabi, Torttura',priority:2,labels:['PROYECTOS'],checked:false}
+    ]);
+  }
+
+  clearInterval(iv);
+  var now=new Date();
+  lastSync=pad(now.getHours())+':'+pad(now.getMinutes());
+  document.getElementById('syncStatus').textContent='✓ sync '+lastSync;
+  ov.classList.remove('on');
+  btn.classList.remove('syn');
+  syncing=false;
+}
+
+// Auto sync: al cargar + cada 8 horas (3 veces al día aprox)
+doSync();
+setInterval(doSync,28800000);
+</script>
+</body>
+</html>
