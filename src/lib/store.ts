@@ -35,6 +35,7 @@ import {
   MovimientoEconomico,
   Persona,
   Proyecto,
+  StrategicCase,
 } from "./types";
 import { classifyText } from "./classifier";
 import { genId } from "./id";
@@ -56,6 +57,9 @@ interface AppState {
   bandeja: BandejaItem[];
   agenda: AgendaEvento[];
   historial: HistorialEntry[];
+  strategicCases: StrategicCase[];
+
+  addStrategicCase: (strategicCase: StrategicCase) => void;
 
   logHistorial: (entidadTipo: string, entidadId: string, cambio: string, autor?: "usuario" | "ia") => void;
 
@@ -103,6 +107,7 @@ function seedState() {
     bandeja: SEED_BANDEJA,
     agenda: SEED_AGENDA,
     historial: [] as HistorialEntry[],
+    strategicCases: [] as StrategicCase[],
   };
 }
 
@@ -115,6 +120,16 @@ export const useAppStore = create<AppState>()(
 
       askAssistant: (query) => set({ pendingAssistantQuery: query }),
       clearAssistantQuery: () => set({ pendingAssistantQuery: null }),
+
+      addStrategicCase: (strategicCase) => {
+        set((state) => ({
+          strategicCases: [
+            strategicCase,
+            ...state.strategicCases.filter((c) => c.decisionId !== strategicCase.decisionId),
+          ],
+        }));
+        get().logHistorial("decision", strategicCase.decisionId, "Caso estratégico generado por IA", "ia");
+      },
 
       logHistorial: (entidadTipo, entidadId, cambio, autor = "usuario") =>
         set((state) => ({

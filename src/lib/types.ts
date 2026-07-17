@@ -230,3 +230,113 @@ export interface Insight {
   evidenceLevel: EvidenceLevel;
   etiqueta: string;
 }
+
+// --- Motor de análisis estratégico: Caso Estratégico (StrategicCase) ---
+
+export interface HechoOHipotesis {
+  afirmacion: string;
+  fuente: string;
+  nivel: EvidenceLevel;
+}
+
+export interface Dofa {
+  fortalezas: string[];
+  debilidades: string[];
+  oportunidades: string[];
+  amenazas: string[];
+}
+
+export interface GananciaPerdida {
+  dimension: string;
+  ganancia: string;
+  perdida: string;
+}
+
+export type ConclusionRentabilidad =
+  | "rentable"
+  | "potencialmente_rentable"
+  | "rentable_condicionado"
+  | "estrategicamente_util_financieramente_debil"
+  | "financieramente_rentable_operativamente_inviable"
+  | "no_rentable"
+  | "informacion_insuficiente";
+
+export const CONCLUSION_RENTABILIDAD_LABEL: Record<ConclusionRentabilidad, string> = {
+  rentable: "Rentable",
+  potencialmente_rentable: "Potencialmente rentable",
+  rentable_condicionado: "Rentable solo bajo condiciones",
+  estrategicamente_util_financieramente_debil: "Estratégicamente útil pero financieramente débil",
+  financieramente_rentable_operativamente_inviable: "Financieramente rentable pero operativamente inviable",
+  no_rentable: "No rentable",
+  informacion_insuficiente: "Información insuficiente",
+};
+
+export interface Rentabilidad {
+  financiera: string;
+  tiempo: string;
+  estrategica: string;
+  personal: string;
+  conclusion: ConclusionRentabilidad;
+}
+
+export interface StakeholderAnalysis {
+  nombre: string;
+  interes: string;
+  poder: NivelRiesgo;
+  riesgo: string;
+}
+
+export interface Viabilidad {
+  operativa: string;
+  economica: string;
+  estrategica: string;
+}
+
+export interface EscenarioProfundo {
+  tipo: EscenarioTipo;
+  analisis: string;
+  beneficio: string;
+  costo: string;
+  riesgo: NivelRiesgo;
+  probabilidadExito: string;
+  impactoFinanciero: string;
+  impactoEstrategico: string;
+  impactoPersonal: string;
+  consecuenciaPrincipal: string;
+}
+
+export interface RecomendacionEjecutiva {
+  decision: string;
+  razonPrincipal: string;
+  condicionesMinimas: string[];
+  limites: string[];
+  fechaRevision: string;
+  senalSalida: string;
+  confianza: number;
+  confianzaExplicacion: string;
+}
+
+export type NivelAnalisis = "1" | "2" | "3";
+
+export interface StrategicCase {
+  id: string;
+  decisionId: string;
+  preguntaEstrategica: string;
+  resumenEjecutivo: string;
+  hechos: HechoOHipotesis[];
+  hipotesis: HechoOHipotesis[];
+  vacios: string[];
+  contradicciones: string[];
+  puntoDeVista: string;
+  dofa: Dofa;
+  gananciasPerdidas: GananciaPerdida[];
+  rentabilidad: Rentabilidad;
+  costoOportunidad: string[];
+  stakeholders: StakeholderAnalysis[];
+  viabilidad: Viabilidad;
+  escenarios: EscenarioProfundo[];
+  recomendacion: RecomendacionEjecutiva;
+  nivelAnalisis: NivelAnalisis;
+  modeloUsado: string;
+  creadoEn: string;
+}
