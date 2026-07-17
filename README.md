@@ -8,7 +8,8 @@ Aplicación privada de análisis estratégico y dirección ejecutiva, construida
 
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
 - Zustand con persistencia en `localStorage` del navegador (no hay base de datos en este v1 — ver "Alcance y limitaciones")
-- Sin dependencias de IA externas: la clasificación de la bandeja y las recomendaciones del panel derecho son heurísticas basadas en reglas (palabras clave, relaciones proyecto/persona/riesgo), no llamadas a un LLM
+- Clasificación de la bandeja y panel "Pregúntale al sistema": heurísticas basadas en reglas (palabras clave, relaciones proyecto/persona/riesgo), sin llamadas a un LLM
+- Motor de análisis estratégico (Decisiones → "Analizar con IA"): llamada real a Claude (Sonnet 5) vía `@anthropic-ai/sdk` con salida estructurada (`output_config.format` + Zod), generando el caso estratégico completo (hechos/hipótesis, DOFA, rentabilidad, costo de oportunidad, stakeholders, 8 escenarios, recomendación con confianza) — requiere `ANTHROPIC_API_KEY`
 
 ## Ejecutar en local
 
@@ -30,10 +31,14 @@ cp .env.example .env.local
 
 Si no defines `APP_PASSWORD`, se usa el valor por defecto `cco-ev-2026` — **cámbialo antes de compartir la app**.
 
+### Motor de análisis estratégico (IA real)
+
+El botón "Analizar con IA" en Decisiones llama a la API de Claude desde `src/app/api/analyze/route.ts`. Requiere `ANTHROPIC_API_KEY` (consíguela en [console.anthropic.com](https://console.anthropic.com) → Settings → API Keys, con créditos de uso comprados). Sin esta variable, el botón muestra un error claro en vez de fallar silenciosamente. Costo aproximado: 3-5 centavos de dólar por análisis con Sonnet 5.
+
 ## Desplegar en Vercel
 
 1. Conecta el repositorio de GitHub en Vercel.
-2. En "Environment Variables" define `APP_PASSWORD` con tu contraseña real.
+2. En "Environment Variables" define `APP_PASSWORD` con tu contraseña real, y `ANTHROPIC_API_KEY` con tu key de Anthropic.
 3. Deploy — no se necesita configuración adicional (no hay base de datos externa).
 
 ## Estructura
@@ -55,20 +60,23 @@ src/
   components/
     layout/                 Sidebar, TopBar, AIPanel
     ui/                     Badges de estado y nivel de evidencia
+    api/analyze/            Motor de análisis estratégico (llamada real a Claude)
   lib/
-    types.ts                Modelo de datos (sección 11 del PRD)
+    types.ts                Modelo de datos (sección 11 del PRD) + StrategicCase
     seed-data.ts             Datos de ejemplo (Casa Norte, Estudio Fénix, etc.)
     store.ts                 Estado global (Zustand) + acciones CRUD
     classifier.ts             Heurística de clasificación de la bandeja
     assistant.ts               Heurística de respuesta del panel "Pregúntale al sistema"
-    selectors.ts               Derivaciones: prioridad del día, insights, etc.
+    selectors.ts               Derivaciones: prioridad del día, insights, contexto de análisis
+    strategic-case-schema.ts   Esquema Zod de la salida estructurada del motor de análisis
+    analysis-prompt.ts          System prompt del motor de análisis (reglas + estructura del caso)
   proxy.ts                  Gate de autenticación (antes "middleware.ts" en Next < 16)
 ```
 
 ## Alcance y limitaciones de este v1
 
 - **Persistencia**: los datos viven en el `localStorage` del navegador de Eduardo, no en un servidor. Cambiar de navegador o dispositivo no comparte los datos. Hay exportación manual a JSON en Configuración.
-- **Motor de análisis**: es una versión base por reglas (tal como pide la sección 18 del PRD para evitar sobre-ingeniería en v1), no un LLM. Las recomendaciones y el panel "Pregúntale al sistema" derivan de los datos ya registrados (riesgos, días sin respuesta, evidencia disponible), nunca inventan información.
+- **Motor de análisis**: la bandeja y el panel "Pregúntale al sistema" son heurísticas por reglas (rápidas, sin costo). El "Caso Estratégico" en Decisiones sí llama a Claude en tiempo real para el análisis profundo (DOFA, rentabilidad, escenarios, recomendación) — nunca inventa hechos fuera del contexto que le entrega la app.
 - **Sin integraciones externas** (correo, calendario, WhatsApp, bancos) — está fuera de alcance de v1 según la sección 13 del PRD.
 - **Un solo usuario** — no hay roles ni permisos multiusuario.
 

@@ -1,4 +1,14 @@
-import { Accion, AgendaEvento, Decision, Insight, MovimientoEconomico, Persona, Proyecto } from "./types";
+import {
+  Accion,
+  AgendaEvento,
+  Decision,
+  Evidencia,
+  HistorialEntry,
+  Insight,
+  MovimientoEconomico,
+  Persona,
+  Proyecto,
+} from "./types";
 
 export function daysBetween(dateStr: string, ref: Date = new Date()): number {
   const d = new Date(dateStr);
@@ -100,4 +110,46 @@ export function selectInsights(
     });
 
   return insights.slice(0, 8);
+}
+
+export function buildAnalysisContext(
+  decision: Decision,
+  proyectos: Proyecto[],
+  personas: Persona[],
+  movimientos: MovimientoEconomico[],
+  evidencias: Evidencia[],
+  historial: HistorialEntry[],
+  decisiones: Decision[]
+) {
+  const proyecto = proyectos.find((p) => p.id === decision.proyectoId) ?? null;
+  const personasRelacionadas = proyecto
+    ? personas.filter((p) => p.proyectoIds.includes(proyecto.id))
+    : [];
+  const movimientosRelacionados = decision.proyectoId
+    ? movimientos.filter((m) => m.proyectoId === decision.proyectoId)
+    : [];
+  const evidenciasRelacionadas = decision.proyectoId
+    ? evidencias.filter((e) => e.proyectoId === decision.proyectoId)
+    : [];
+  const historialRelacionado = historial
+    .filter((h) => h.entidadId === decision.proyectoId || h.entidadId === decision.id)
+    .slice(0, 30);
+  const otrasDecisiones = decisiones.filter(
+    (d) => d.id !== decision.id && d.proyectoId === decision.proyectoId
+  );
+
+  return {
+    decision: {
+      pregunta: decision.pregunta,
+      contexto: decision.contexto,
+      fechaLimite: decision.fechaLimite,
+      nivelRiesgo: decision.nivelRiesgo,
+    },
+    proyecto,
+    personas: personasRelacionadas,
+    movimientos: movimientosRelacionados,
+    evidencias: evidenciasRelacionadas,
+    historial: historialRelacionado,
+    otrasDecisiones,
+  };
 }

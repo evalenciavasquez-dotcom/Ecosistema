@@ -1,0 +1,108 @@
+import { z } from "zod";
+
+const evidenceLevelEnum = z.enum(["verificado", "documentado", "reportado", "interpretacion"]);
+const nivelRiesgoEnum = z.enum(["Alto", "Medio", "Bajo"]);
+const escenarioTipoEnum = z.enum([
+  "avanzar",
+  "avanzar_condicionado",
+  "probar",
+  "renegociar",
+  "esperar",
+  "pausar",
+  "salir",
+  "no_hacer_nada",
+]);
+
+const hechoOHipotesisSchema = z.object({
+  afirmacion: z.string(),
+  fuente: z.string(),
+  nivel: evidenceLevelEnum,
+});
+
+const dofaSchema = z.object({
+  fortalezas: z.array(z.string()),
+  debilidades: z.array(z.string()),
+  oportunidades: z.array(z.string()),
+  amenazas: z.array(z.string()),
+});
+
+const gananciaPerdidaSchema = z.object({
+  dimension: z.string(),
+  ganancia: z.string(),
+  perdida: z.string(),
+});
+
+const conclusionRentabilidadEnum = z.enum([
+  "rentable",
+  "potencialmente_rentable",
+  "rentable_condicionado",
+  "estrategicamente_util_financieramente_debil",
+  "financieramente_rentable_operativamente_inviable",
+  "no_rentable",
+  "informacion_insuficiente",
+]);
+
+const rentabilidadSchema = z.object({
+  financiera: z.string(),
+  tiempo: z.string(),
+  estrategica: z.string(),
+  personal: z.string(),
+  conclusion: conclusionRentabilidadEnum,
+});
+
+const stakeholderSchema = z.object({
+  nombre: z.string(),
+  interes: z.string(),
+  poder: nivelRiesgoEnum,
+  riesgo: z.string(),
+});
+
+const viabilidadSchema = z.object({
+  operativa: z.string(),
+  economica: z.string(),
+  estrategica: z.string(),
+});
+
+const escenarioProfundoSchema = z.object({
+  tipo: escenarioTipoEnum,
+  analisis: z.string(),
+  beneficio: z.string(),
+  costo: z.string(),
+  riesgo: nivelRiesgoEnum,
+  probabilidadExito: z.string(),
+  impactoFinanciero: z.string(),
+  impactoEstrategico: z.string(),
+  impactoPersonal: z.string(),
+  consecuenciaPrincipal: z.string(),
+});
+
+const recomendacionSchema = z.object({
+  decision: z.string(),
+  razonPrincipal: z.string(),
+  condicionesMinimas: z.array(z.string()),
+  limites: z.array(z.string()),
+  fechaRevision: z.string(),
+  senalSalida: z.string(),
+  confianza: z.number(),
+  confianzaExplicacion: z.string(),
+});
+
+export const strategicCaseGeneratedSchema = z.object({
+  preguntaEstrategica: z.string(),
+  resumenEjecutivo: z.string(),
+  hechos: z.array(hechoOHipotesisSchema),
+  hipotesis: z.array(hechoOHipotesisSchema),
+  vacios: z.array(z.string()),
+  contradicciones: z.array(z.string()),
+  puntoDeVista: z.string(),
+  dofa: dofaSchema,
+  gananciasPerdidas: z.array(gananciaPerdidaSchema),
+  rentabilidad: rentabilidadSchema,
+  costoOportunidad: z.array(z.string()),
+  stakeholders: z.array(stakeholderSchema),
+  viabilidad: viabilidadSchema,
+  escenarios: z.array(escenarioProfundoSchema),
+  recomendacion: recomendacionSchema,
+});
+
+export type StrategicCaseGenerated = z.infer<typeof strategicCaseGeneratedSchema>;
