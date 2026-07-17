@@ -1,7 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { fetchServerState, initDbSchema, migrateAllToServer } from "@/lib/db/sync";
+
+type DbStatus = "checking" | "no_configurada" | "sin_esquema" | "vacia" | "activa";
 
 export default function ConfiguracionPage() {
   const router = useRouter();
@@ -9,6 +13,90 @@ export default function ConfiguracionPage() {
   const toggleModoEnfoque = useAppStore((s) => s.toggleModoEnfoque);
   const resetToSeed = useAppStore((s) => s.resetToSeed);
   const historial = useAppStore((s) => s.historial);
+
+  const [dbStatus, setDbStatus] = useState<DbStatus>("checking");
+  const [migrating, setMigrating] = useState(false);
+  const [migrationMsg, setMigrationMsg] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(false);
+  const [initMsg, setInitMsg] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const server = await fetchServerState();
+      if (cancelled) return;
+      if (!server || !server.configured) {
+        setDbStatus("no_configurada");
+        return;
+      }
+      if (server.error) {
+        setDbStatus("sin_esquema");
+        return;
+      }
+      const hasData =
+        (server.proyectos?.length ?? 0) > 0 ||
+        (server.acciones?.length ?? 0) > 0 ||
+        (server.decisiones?.length ?? 0) > 0 ||
+        (server.movimientos?.length ?? 0) > 0 ||
+        (server.evidencias?.length ?? 0) > 0 ||
+        (server.bandeja?.length ?? 0) > 0 ||
+        (server.personas?.length ?? 0) > 0;
+      setDbStatus(hasData ? "activa" : "vacia");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTick]);
+
+  async function handleInitSchema() {
+    setInitializing(true);
+    setInitMsg(null);
+    const result = await initDbSchema();
+    setInitializing(false);
+    if (result.ok) {
+      setInitMsg("Esquema creado. Verificando…");
+      setDbStatus("checking");
+      setRefreshTick((t) => t + 1);
+    } else {
+      setInitMsg(`No se pudo crear el esquema: ${result.error}`);
+    }
+  }
+
+  async function handleMigrate() {
+    if (
+      !confirm(
+        "Esto copiará todos tus datos locales actuales a la base de datos. Desde ese momento, la base de datos será la fuente de información en todos tus dispositivos. ¿Continuar?"
+      )
+    ) {
+      return;
+    }
+    setMigrating(true);
+    setMigrationMsg(null);
+    const state = useAppStore.getState();
+    const result = await migrateAllToServer({
+      proyectos: state.proyectos,
+      personas: state.personas,
+      acciones: state.acciones,
+      decisiones: state.decisiones,
+      movimientos: state.movimientos,
+      evidencias: state.evidencias,
+      bandeja: state.bandeja,
+      agenda: state.agenda,
+      historial: state.historial,
+      strategicCases: state.strategicCases,
+    });
+    setMigrating(false);
+    if (result.ok) {
+      setMigrationMsg(`Migración completa: ${result.inserted} registros copiados. Recargando…`);
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
+      setMigrationMsg(
+        `Migración parcial: ${result.inserted} registros copiados, ${result.errors.length} errores. Revisa la consola.`
+      );
+      console.error("Errores de migración", result.errors);
+    }
+  }
 
   function handleExport() {
     const state = useAppStore.getState();
@@ -100,6 +188,71 @@ export default function ConfiguracionPage() {
               Restaurar
             </button>
           </div>
+        </div>
+      </Section>
+
+      <Section title="Base de datos y sincronización">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
+          {dbStatus === "checking" && <p className="text-sm text-muted">Verificando conexión…</p>}
+
+          {dbStatus === "no_configurada" && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium">No configurada</div>
+              <p className="text-xs text-muted">
+                Los datos solo viven en este navegador. Para tener la misma información en el celular y el PC,
+                falta configurar <code className="text-foreground">DATABASE_URL</code> en el servidor.
+              </p>
+            </div>
+          )}
+
+          {dbStatus === "sin_esquema" && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm font-medium">Conectada — falta crear las tablas</div>
+                <p className="text-xs text-muted mt-0.5">
+                  La conexión a la base de datos funciona, pero todavía no tiene las tablas necesarias.
+                  Esto se hace una sola vez.
+                </p>
+              </div>
+              <button
+                onClick={handleInitSchema}
+                disabled={initializing}
+                className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-50"
+              >
+                {initializing ? "Creando…" : "Crear tablas en la base de datos"}
+              </button>
+              {initMsg && <p className="text-xs text-muted">{initMsg}</p>}
+            </div>
+          )}
+
+          {dbStatus === "vacia" && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm font-medium">Conectada — todavía sin datos</div>
+                <p className="text-xs text-muted mt-0.5">
+                  La base de datos está lista pero vacía. Migra tus datos actuales para empezar a usarla como
+                  fuente única en todos tus dispositivos.
+                </p>
+              </div>
+              <button
+                onClick={handleMigrate}
+                disabled={migrating}
+                className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-50"
+              >
+                {migrating ? "Migrando…" : "Migrar datos locales a la base de datos"}
+              </button>
+              {migrationMsg && <p className="text-xs text-muted">{migrationMsg}</p>}
+            </div>
+          )}
+
+          {dbStatus === "activa" && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Conectada — fuente activa de datos</div>
+              <p className="text-xs text-muted">
+                Los cambios se guardan en la base de datos y se ven igual en cualquier dispositivo donde entres.
+              </p>
+            </div>
+          )}
         </div>
       </Section>
     </div>

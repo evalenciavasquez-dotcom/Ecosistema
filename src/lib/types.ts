@@ -92,6 +92,8 @@ export interface HistorialEntry {
   entidadId: string;
   cambio: string;
   autor: "usuario" | "ia";
+  antes?: Record<string, unknown>;
+  despues?: Record<string, unknown>;
 }
 
 export interface Proyecto {
