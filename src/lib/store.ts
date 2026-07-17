@@ -209,6 +209,7 @@ export const useAppStore = create<AppState>()(
               descripcion: item.texto,
               estado: "sin_conciliar",
               fuente: "Bandeja de entrada",
+              cuenta: "Sin clasificar",
             });
             resultadoLabel = "Registrado como movimiento económico";
             break;
