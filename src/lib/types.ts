@@ -159,6 +159,7 @@ export interface MovimientoEconomico {
   descripcion: string;
   estado: MovimientoEstado;
   fuente: string;
+  cuenta: string;
 }
 
 export type EvidenciaTipo =

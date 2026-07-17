@@ -333,6 +333,7 @@ export const SEED_MOVIMIENTOS: MovimientoEconomico[] = [
     descripcion: "Pago de Estudio Fénix",
     estado: "confirmado",
     fuente: "Transferencia bancaria",
+    cuenta: "BoA USD",
   },
   {
     id: "mov-meridian-vencido",
@@ -344,6 +345,7 @@ export const SEED_MOVIMIENTOS: MovimientoEconomico[] = [
     descripcion: "Pago vencido — Contenido Meridian",
     estado: "sin_conciliar",
     fuente: "Reportado por Eduardo",
+    cuenta: "BoA USD",
   },
   {
     id: "mov-casa-norte-deposito",
@@ -355,6 +357,7 @@ export const SEED_MOVIMIENTOS: MovimientoEconomico[] = [
     descripcion: "Depósito de garantía Casa Norte",
     estado: "esperado",
     fuente: "Promesa de compraventa",
+    cuenta: "Cuenta ahorros Casa Norte",
   },
   {
     id: "mov-vega-cierre",
@@ -366,6 +369,7 @@ export const SEED_MOVIMIENTOS: MovimientoEconomico[] = [
     descripcion: "Facturación final Consultoría Vega",
     estado: "confirmado",
     fuente: "Transferencia bancaria",
+    cuenta: "BoA USD",
   },
 ];
 
