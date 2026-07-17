@@ -23,8 +23,29 @@ const TIPO_LABEL: Record<MovimientoTipo, string> = {
   gasto: "Gastos",
 };
 
-function sum(movs: MovimientoEconomico[]) {
-  return movs.reduce((acc, m) => acc + m.monto, 0);
+const MONEDAS = ["USD", "COP"] as const;
+const MONEDA_LABEL: Record<string, string> = {
+  USD: "Dólares (USD)",
+  COP: "Pesos (COP)",
+};
+
+function formatMonto(value: number, moneda: string) {
+  const signo = value < 0 ? "-" : "";
+  return `${signo}$${Math.abs(value).toLocaleString("es-ES")} ${moneda}`;
+}
+
+function sumByMoneda(movs: MovimientoEconomico[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  movs.forEach((m) => {
+    out[m.moneda] = (out[m.moneda] ?? 0) + m.monto;
+  });
+  return out;
+}
+
+function mergeMonedas(...records: Record<string, number>[]): string[] {
+  const set = new Set<string>();
+  records.forEach((r) => Object.keys(r).forEach((k) => set.add(k)));
+  return Array.from(set).sort((a, b) => (a === "USD" ? -1 : b === "USD" ? 1 : a.localeCompare(b)));
 }
 
 export default function EconomiaPage() {
@@ -34,24 +55,35 @@ export default function EconomiaPage() {
   const [filtroEstado, setFiltroEstado] = useState<"Todos" | MovimientoEstado>("Todos");
   const [filtroTipo, setFiltroTipo] = useState<"Todos" | MovimientoTipo>("Todos");
 
-  const ingresosConfirmados = sum(movimientos.filter((m) => m.tipo === "ingreso" && m.estado === "confirmado"));
-  const ingresosEsperados = sum(movimientos.filter((m) => m.tipo === "ingreso" && m.estado === "esperado"));
-  const gastosConfirmados = sum(movimientos.filter((m) => m.tipo === "gasto" && m.estado === "confirmado"));
-  const gastosEsperados = sum(movimientos.filter((m) => m.tipo === "gasto" && m.estado === "esperado"));
+  const ingresosConfirmados = sumByMoneda(movimientos.filter((m) => m.tipo === "ingreso" && m.estado === "confirmado"));
+  const ingresosEsperados = sumByMoneda(movimientos.filter((m) => m.tipo === "ingreso" && m.estado === "esperado"));
+  const gastosConfirmados = sumByMoneda(movimientos.filter((m) => m.tipo === "gasto" && m.estado === "confirmado"));
+  const gastosEsperados = sumByMoneda(movimientos.filter((m) => m.tipo === "gasto" && m.estado === "esperado"));
   const sinConciliar = movimientos.filter((m) => m.estado === "sin_conciliar");
 
-  const caja = ingresosConfirmados - gastosConfirmados;
-  const brecha = caja + ingresosEsperados - gastosEsperados;
+  const monedasCaja = mergeMonedas(ingresosConfirmados, gastosConfirmados);
+  const caja: Record<string, number> = {};
+  monedasCaja.forEach((m) => {
+    caja[m] = (ingresosConfirmados[m] ?? 0) - (gastosConfirmados[m] ?? 0);
+  });
+
+  const monedasBrecha = mergeMonedas(caja, ingresosEsperados, gastosEsperados);
+  const brecha: Record<string, number> = {};
+  monedasBrecha.forEach((m) => {
+    brecha[m] = (caja[m] ?? 0) + (ingresosEsperados[m] ?? 0) - (gastosEsperados[m] ?? 0);
+  });
 
   const cajaPorCuenta = useMemo(() => {
-    const porCuenta = new Map<string, number>();
+    const porCuenta = new Map<string, { cuenta: string; moneda: string; saldo: number }>();
     movimientos
       .filter((m) => m.estado === "confirmado")
       .forEach((m) => {
-        const actual = porCuenta.get(m.cuenta) ?? 0;
-        porCuenta.set(m.cuenta, actual + (m.tipo === "ingreso" ? m.monto : -m.monto));
+        const key = `${m.cuenta}__${m.moneda}`;
+        const actual = porCuenta.get(key) ?? { cuenta: m.cuenta, moneda: m.moneda, saldo: 0 };
+        actual.saldo += m.tipo === "ingreso" ? m.monto : -m.monto;
+        porCuenta.set(key, actual);
       });
-    return Array.from(porCuenta.entries()).sort((a, b) => b[1] - a[1]);
+    return Array.from(porCuenta.values()).sort((a, b) => b.saldo - a.saldo);
   }, [movimientos]);
 
   const visibles = movimientos.filter(
@@ -61,21 +93,21 @@ export default function EconomiaPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard label="Caja disponible" value={caja} tone={caja >= 0 ? "text-accent-green" : "text-accent-red"} />
-        <SummaryCard label="Ingresos confirmados" value={ingresosConfirmados} tone="text-accent-green" />
-        <SummaryCard label="Ingresos esperados" value={ingresosEsperados} tone="text-accent-amber" />
-        <SummaryCard label="Gastos confirmados" value={gastosConfirmados} tone="text-accent-red" />
+        <SummaryCard label="Caja disponible" values={caja} positiveTone />
+        <SummaryCard label="Ingresos confirmados" values={ingresosConfirmados} tone="text-accent-green" />
+        <SummaryCard label="Ingresos esperados" values={ingresosEsperados} tone="text-accent-amber" />
+        <SummaryCard label="Gastos confirmados" values={gastosConfirmados} tone="text-accent-red" />
       </div>
 
       <div className="rounded-2xl border border-border-subtle bg-surface p-5">
         <div className="text-[11px] uppercase tracking-wide text-muted mb-3">Caja por cuenta</div>
         {cajaPorCuenta.length === 0 && <p className="text-sm text-muted">Sin movimientos confirmados todavía.</p>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {cajaPorCuenta.map(([cuenta, saldo]) => (
-            <div key={cuenta} className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-2.5">
+          {cajaPorCuenta.map(({ cuenta, moneda, saldo }) => (
+            <div key={`${cuenta}-${moneda}`} className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-2.5">
               <span className="text-sm">{cuenta}</span>
               <span className={`text-sm font-semibold ${saldo >= 0 ? "text-accent-green" : "text-accent-red"}`}>
-                ${saldo.toLocaleString("es-ES")}
+                {formatMonto(saldo, moneda)}
               </span>
             </div>
           ))}
@@ -84,11 +116,17 @@ export default function EconomiaPage() {
 
       <div className="rounded-2xl border border-border-subtle bg-surface p-5">
         <div className="text-[11px] uppercase tracking-wide text-muted">Brecha de caja proyectada</div>
-        <div className={`text-xl font-semibold mt-1 ${brecha >= 0 ? "text-accent-green" : "text-accent-red"}`}>
-          ${brecha.toLocaleString("es-ES")}
+        <div className="mt-1 space-y-0.5">
+          {monedasBrecha.length === 0 && <div className="text-xl font-semibold text-accent-green">$0</div>}
+          {monedasBrecha.map((m) => (
+            <div key={m} className={`text-xl font-semibold ${brecha[m] >= 0 ? "text-accent-green" : "text-accent-red"}`}>
+              {formatMonto(brecha[m], m)}
+            </div>
+          ))}
         </div>
         <p className="text-xs text-muted mt-1">
-          Caja actual + ingresos esperados − gastos esperados. {brecha < 0 && "Riesgo financiero: revisa obligaciones pendientes."}
+          Caja actual + ingresos esperados − gastos esperados, por moneda (no se mezclan monedas distintas en un solo total).{" "}
+          {monedasBrecha.some((m) => brecha[m] < 0) && "Riesgo financiero: revisa obligaciones pendientes."}
         </p>
       </div>
 
@@ -150,7 +188,7 @@ export default function EconomiaPage() {
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <span className={`text-sm font-semibold ${m.tipo === "ingreso" ? "text-accent-green" : "text-accent-red"}`}>
-                {m.tipo === "ingreso" ? "+" : "-"}${m.monto.toLocaleString("es-ES")}
+                {m.tipo === "ingreso" ? "+" : "-"}${m.monto.toLocaleString("es-ES")} {m.moneda}
               </span>
               <Pill tone={ESTADO_TONE[m.estado]}>{ESTADO_LABEL[m.estado]}</Pill>
             </div>
@@ -158,16 +196,44 @@ export default function EconomiaPage() {
         ))}
       </div>
 
-      {showNew && <NuevoMovimientoModal onClose={() => setShowNew(false)} cuentasExistentes={cajaPorCuenta.map(([c]) => c)} />}
+      {showNew && (
+        <NuevoMovimientoModal
+          onClose={() => setShowNew(false)}
+          cuentasExistentes={Array.from(new Set(cajaPorCuenta.map((c) => c.cuenta)))}
+        />
+      )}
     </div>
   );
 }
 
-function SummaryCard({ label, value, tone }: { label: string; value: number; tone: string }) {
+function SummaryCard({
+  label,
+  values,
+  tone,
+  positiveTone,
+}: {
+  label: string;
+  values: Record<string, number>;
+  tone?: string;
+  positiveTone?: boolean;
+}) {
+  const monedas = Object.keys(values);
   return (
     <div className="rounded-2xl border border-border-subtle bg-surface p-4">
       <div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>
-      <div className={`text-lg font-semibold mt-1 ${tone}`}>${value.toLocaleString("es-ES")}</div>
+      <div className="mt-1 space-y-0.5">
+        {monedas.length === 0 && <div className="text-lg font-semibold text-muted">$0</div>}
+        {monedas.map((m) => (
+          <div
+            key={m}
+            className={`text-lg font-semibold ${
+              positiveTone ? (values[m] >= 0 ? "text-accent-green" : "text-accent-red") : tone
+            }`}
+          >
+            {formatMonto(values[m], m)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -183,6 +249,7 @@ function NuevoMovimientoModal({
   const proyectos = useAppStore((s) => s.proyectos);
   const [tipo, setTipo] = useState<MovimientoTipo>("ingreso");
   const [monto, setMonto] = useState("");
+  const [moneda, setMoneda] = useState<string>("USD");
   const [descripcion, setDescripcion] = useState("");
   const [proyectoId, setProyectoId] = useState<string>(proyectos[0]?.id ?? "");
   const [estado, setEstado] = useState<MovimientoEstado>("confirmado");
@@ -196,7 +263,7 @@ function NuevoMovimientoModal({
     addMovimiento({
       tipo,
       monto: Number(monto),
-      moneda: "USD",
+      moneda,
       fecha: new Date().toISOString().slice(0, 10),
       proyectoId: proyectoId || null,
       descripcion: descripcion.trim(),
@@ -211,7 +278,7 @@ function NuevoMovimientoModal({
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4"
+        className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4 max-h-[85vh] overflow-y-auto"
       >
         <h3 className="font-semibold">Nuevo movimiento económico</h3>
         <div>
@@ -241,14 +308,30 @@ function NuevoMovimientoModal({
             </button>
           </div>
         </div>
-        <div>
-          <label className="block text-xs text-muted mb-1">Monto (USD)</label>
-          <input
-            type="number"
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted mb-1">Monto</label>
+            <input
+              type="number"
+              value={monto}
+              onChange={(e) => setMonto(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-muted mb-1">Moneda</label>
+            <select
+              value={moneda}
+              onChange={(e) => setMoneda(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            >
+              {MONEDAS.map((m) => (
+                <option key={m} value={m}>
+                  {MONEDA_LABEL[m]}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div>
           <label className="block text-xs text-muted mb-1">Descripción</label>
