@@ -91,10 +91,21 @@ export async function migrateAllToServer(state: {
 export async function fetchServerState(): Promise<ServerState | null> {
   try {
     const res = await fetch("/api/state");
-    if (!res.ok) return null;
-    return (await res.json()) as ServerState;
+    const body = await res.json().catch(() => null);
+    return body as ServerState | null;
   } catch (err) {
     console.warn("No se pudo leer el estado del servidor", err);
     return null;
+  }
+}
+
+export async function initDbSchema(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/db-init", { method: "POST" });
+    const body = await res.json().catch(() => ({}) as { error?: string });
+    if (!res.ok) return { ok: false, error: body.error ?? `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: (err as Error).message };
   }
 }

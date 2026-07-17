@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { fetchServerState, migrateAllToServer } from "@/lib/db/sync";
+import { fetchServerState, initDbSchema, migrateAllToServer } from "@/lib/db/sync";
 
-type DbStatus = "checking" | "no_configurada" | "vacia" | "activa";
+type DbStatus = "checking" | "no_configurada" | "sin_esquema" | "vacia" | "activa";
 
 export default function ConfiguracionPage() {
   const router = useRouter();
@@ -17,6 +17,9 @@ export default function ConfiguracionPage() {
   const [dbStatus, setDbStatus] = useState<DbStatus>("checking");
   const [migrating, setMigrating] = useState(false);
   const [migrationMsg, setMigrationMsg] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(false);
+  const [initMsg, setInitMsg] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,6 +28,10 @@ export default function ConfiguracionPage() {
       if (cancelled) return;
       if (!server || !server.configured) {
         setDbStatus("no_configurada");
+        return;
+      }
+      if (server.error) {
+        setDbStatus("sin_esquema");
         return;
       }
       const hasData =
@@ -40,7 +47,21 @@ export default function ConfiguracionPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshTick]);
+
+  async function handleInitSchema() {
+    setInitializing(true);
+    setInitMsg(null);
+    const result = await initDbSchema();
+    setInitializing(false);
+    if (result.ok) {
+      setInitMsg("Esquema creado. Verificando…");
+      setDbStatus("checking");
+      setRefreshTick((t) => t + 1);
+    } else {
+      setInitMsg(`No se pudo crear el esquema: ${result.error}`);
+    }
+  }
 
   async function handleMigrate() {
     if (
@@ -181,6 +202,26 @@ export default function ConfiguracionPage() {
                 Los datos solo viven en este navegador. Para tener la misma información en el celular y el PC,
                 falta configurar <code className="text-foreground">DATABASE_URL</code> en el servidor.
               </p>
+            </div>
+          )}
+
+          {dbStatus === "sin_esquema" && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm font-medium">Conectada — falta crear las tablas</div>
+                <p className="text-xs text-muted mt-0.5">
+                  La conexión a la base de datos funciona, pero todavía no tiene las tablas necesarias.
+                  Esto se hace una sola vez.
+                </p>
+              </div>
+              <button
+                onClick={handleInitSchema}
+                disabled={initializing}
+                className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-50"
+              >
+                {initializing ? "Creando…" : "Crear tablas en la base de datos"}
+              </button>
+              {initMsg && <p className="text-xs text-muted">{initMsg}</p>}
             </div>
           )}
 
