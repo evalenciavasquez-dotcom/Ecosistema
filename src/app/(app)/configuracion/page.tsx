@@ -1,0 +1,116 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useAppStore } from "@/lib/store";
+
+export default function ConfiguracionPage() {
+  const router = useRouter();
+  const modoEnfoque = useAppStore((s) => s.modoEnfoque);
+  const toggleModoEnfoque = useAppStore((s) => s.toggleModoEnfoque);
+  const resetToSeed = useAppStore((s) => s.resetToSeed);
+  const historial = useAppStore((s) => s.historial);
+
+  function handleExport() {
+    const state = useAppStore.getState();
+    const { proyectos, personas, acciones, decisiones, movimientos, evidencias, bandeja, agenda, historial } = state;
+    const data = { proyectos, personas, acciones, decisiones, movimientos, evidencias, bandeja, agenda, historial };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cco-ev-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleLogout() {
+    await fetch("/api/auth", { method: "DELETE" });
+    router.push("/login");
+    router.refresh();
+  }
+
+  function handleReset() {
+    if (confirm("Esto restaurará los datos de ejemplo y perderás los cambios locales. ¿Continuar?")) {
+      resetToSeed();
+    }
+  }
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <Section title="Cuenta">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium">Eduardo</div>
+            <div className="text-xs text-muted mt-0.5">Sistema privado de un solo usuario</div>
+          </div>
+          <button onClick={handleLogout} className="text-sm text-accent-red font-medium">
+            Cerrar sesión
+          </button>
+        </div>
+      </Section>
+
+      <Section title="Modo de trabajo">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium">Modo enfoque</div>
+            <div className="text-xs text-muted mt-0.5 max-w-sm">
+              Reduce la vista de Inicio a una sola alerta y una acción cuando estás saturado o disperso.
+            </div>
+          </div>
+          <button
+            onClick={toggleModoEnfoque}
+            className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${
+              modoEnfoque ? "bg-accent-blue" : "bg-white/10"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                modoEnfoque ? "translate-x-4" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+      </Section>
+
+      <Section title="Privacidad y seguridad">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-2 text-sm text-muted">
+          <p>Acceso protegido por contraseña, gestionada mediante la variable de entorno del servidor.</p>
+          <p>Los datos se guardan localmente en este navegador — no se comparten con terceros ni se usan para entrenar modelos.</p>
+          <p>{historial.length} cambios registrados en el historial de auditoría.</p>
+        </div>
+      </Section>
+
+      <Section title="Datos">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium">Exportar todos los datos</div>
+              <div className="text-xs text-muted mt-0.5">Descarga un JSON con proyectos, acciones, decisiones y más.</div>
+            </div>
+            <button onClick={handleExport} className="rounded-full bg-surface-2 border border-border-subtle px-4 py-2 text-sm shrink-0">
+              Exportar
+            </button>
+          </div>
+          <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+            <div>
+              <div className="text-sm font-medium">Restaurar datos de ejemplo</div>
+              <div className="text-xs text-muted mt-0.5">Vuelve al estado inicial de demostración.</div>
+            </div>
+            <button onClick={handleReset} className="rounded-full border border-accent-red/40 text-accent-red px-4 py-2 text-sm shrink-0">
+              Restaurar
+            </button>
+          </div>
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-xs uppercase tracking-wide text-muted mb-2">{title}</h3>
+      {children}
+    </div>
+  );
+}
