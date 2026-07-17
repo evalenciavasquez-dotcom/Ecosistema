@@ -38,7 +38,8 @@ import {
   StrategicCase,
 } from "./types";
 import { classifyText } from "./classifier";
-import { genId } from "./id";
+import { genId, pickKeys } from "./id";
+import { dbMutate, fetchServerState } from "./db/sync";
 
 interface AppState {
   modoEnfoque: boolean;
@@ -61,7 +62,14 @@ interface AppState {
 
   addStrategicCase: (strategicCase: StrategicCase) => void;
 
-  logHistorial: (entidadTipo: string, entidadId: string, cambio: string, autor?: "usuario" | "ia") => void;
+  logHistorial: (
+    entidadTipo: string,
+    entidadId: string,
+    cambio: string,
+    autor?: "usuario" | "ia",
+    antes?: Record<string, unknown>,
+    despues?: Record<string, unknown>
+  ) => void;
 
   addBandejaItem: (texto: string) => void;
   setBandejaEstado: (id: string, estado: BandejaEstado) => void;
@@ -92,6 +100,8 @@ interface AppState {
   updatePersona: (id: string, patch: Partial<Persona>) => void;
 
   resetToSeed: () => void;
+
+  hydrateFromServer: () => Promise<void>;
 }
 
 function seedState() {
@@ -128,23 +138,26 @@ export const useAppStore = create<AppState>()(
             ...state.strategicCases.filter((c) => c.decisionId !== strategicCase.decisionId),
           ],
         }));
+        dbMutate("strategicCases", "insert", undefined, strategicCase);
         get().logHistorial("decision", strategicCase.decisionId, "Caso estratégico generado por IA", "ia");
       },
 
-      logHistorial: (entidadTipo, entidadId, cambio, autor = "usuario") =>
+      logHistorial: (entidadTipo, entidadId, cambio, autor = "usuario", antes, despues) => {
+        const entry: HistorialEntry = {
+          id: genId("hist"),
+          timestamp: new Date().toISOString(),
+          entidadTipo,
+          entidadId,
+          cambio,
+          autor,
+          ...(antes ? { antes } : {}),
+          ...(despues ? { despues } : {}),
+        };
         set((state) => ({
-          historial: [
-            {
-              id: genId("hist"),
-              timestamp: new Date().toISOString(),
-              entidadTipo,
-              entidadId,
-              cambio,
-              autor,
-            },
-            ...state.historial,
-          ].slice(0, 500),
-        })),
+          historial: [entry, ...state.historial].slice(0, 500),
+        }));
+        dbMutate("historial", "insert", undefined, entry);
+      },
 
       addBandejaItem: (texto) => {
         const { proyectos, personas } = get();
@@ -157,20 +170,28 @@ export const useAppStore = create<AppState>()(
           clasificacion,
         };
         set((state) => ({ bandeja: [item, ...state.bandeja] }));
+        dbMutate("bandeja", "insert", undefined, item);
         get().logHistorial("bandeja", item.id, "Entrada recibida y clasificada por IA", "ia");
       },
 
-      setBandejaEstado: (id, estado) =>
+      setBandejaEstado: (id, estado) => {
         set((state) => ({
           bandeja: state.bandeja.map((b) => (b.id === id ? { ...b, estado } : b)),
-        })),
+        }));
+        dbMutate("bandeja", "update", id, { estado });
+      },
 
-      reclassifyBandejaItem: (id, patch) =>
+      reclassifyBandejaItem: (id, patch) => {
+        let merged: ClasificacionSugerida | undefined;
         set((state) => ({
-          bandeja: state.bandeja.map((b) =>
-            b.id === id ? { ...b, clasificacion: { ...b.clasificacion, ...patch } } : b
-          ),
-        })),
+          bandeja: state.bandeja.map((b) => {
+            if (b.id !== id) return b;
+            merged = { ...b.clasificacion, ...patch };
+            return { ...b, clasificacion: merged };
+          }),
+        }));
+        if (merged) dbMutate("bandeja", "update", id, { clasificacion: merged });
+      },
 
       approveBandejaItem: (id) => {
         const item = get().bandeja.find((b) => b.id === id);
@@ -252,6 +273,7 @@ export const useAppStore = create<AppState>()(
             b.id === id ? { ...b, estado: "Procesado", resultadoLabel } : b
           ),
         }));
+        dbMutate("bandeja", "update", id, { estado: "Procesado", resultadoLabel });
         get().logHistorial("bandeja", id, `Aprobado por el usuario — ${resultadoLabel}`);
       },
 
@@ -259,6 +281,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           bandeja: state.bandeja.map((b) => (b.id === id ? { ...b, estado: "Descartado" } : b)),
         }));
+        dbMutate("bandeja", "update", id, { estado: "Descartado" });
         get().logHistorial("bandeja", id, "Descartado por el usuario");
       },
 
@@ -266,89 +289,219 @@ export const useAppStore = create<AppState>()(
         const id = genId("proj");
         const nuevo: Proyecto = { ...proyecto, id, creadoEn: new Date().toISOString().slice(0, 10) };
         set((state) => ({ proyectos: [nuevo, ...state.proyectos] }));
+        dbMutate("proyectos", "insert", undefined, nuevo);
         get().logHistorial("proyecto", id, `Proyecto "${proyecto.nombre}" creado`);
         return id;
       },
       updateProyecto: (id, patch) => {
+        const anterior = get().proyectos.find((p) => p.id === id);
         set((state) => ({
           proyectos: state.proyectos.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         }));
-        get().logHistorial("proyecto", id, "Proyecto actualizado");
+        dbMutate("proyectos", "update", id, patch);
+        const keys = Object.keys(patch) as (keyof Proyecto)[];
+        get().logHistorial(
+          "proyecto",
+          id,
+          "Proyecto actualizado",
+          "usuario",
+          anterior ? pickKeys(anterior, keys) : undefined,
+          patch
+        );
       },
-      deleteProyecto: (id) =>
-        set((state) => ({ proyectos: state.proyectos.filter((p) => p.id !== id) })),
+      deleteProyecto: (id) => {
+        set((state) => ({ proyectos: state.proyectos.filter((p) => p.id !== id) }));
+        dbMutate("proyectos", "delete", id);
+      },
 
       addAccion: (accion) => {
         const id = genId("acc");
         const nueva: Accion = { ...accion, id, creadoEn: new Date().toISOString().slice(0, 10) };
         set((state) => ({ acciones: [nueva, ...state.acciones] }));
+        dbMutate("acciones", "insert", undefined, nueva);
         get().logHistorial("accion", id, `Acción "${accion.titulo}" creada`);
         return id;
       },
       updateAccion: (id, patch) => {
+        const anterior = get().acciones.find((a) => a.id === id);
         set((state) => ({ acciones: state.acciones.map((a) => (a.id === id ? { ...a, ...patch } : a)) }));
-        get().logHistorial("accion", id, "Acción actualizada");
+        dbMutate("acciones", "update", id, patch);
+        const keys = Object.keys(patch) as (keyof Accion)[];
+        get().logHistorial(
+          "accion",
+          id,
+          "Acción actualizada",
+          "usuario",
+          anterior ? pickKeys(anterior, keys) : undefined,
+          patch
+        );
       },
       setAccionEstado: (id, estado) => {
+        const anterior = get().acciones.find((a) => a.id === id);
         set((state) => ({ acciones: state.acciones.map((a) => (a.id === id ? { ...a, estado } : a)) }));
-        get().logHistorial("accion", id, `Estado cambiado a "${estado}"`);
+        dbMutate("acciones", "update", id, { estado });
+        get().logHistorial(
+          "accion",
+          id,
+          `Estado cambiado a "${estado}"`,
+          "usuario",
+          anterior ? { estado: anterior.estado } : undefined,
+          { estado }
+        );
       },
-      deleteAccion: (id) => set((state) => ({ acciones: state.acciones.filter((a) => a.id !== id) })),
+      deleteAccion: (id) => {
+        set((state) => ({ acciones: state.acciones.filter((a) => a.id !== id) }));
+        dbMutate("acciones", "delete", id);
+      },
 
       addDecision: (decision) => {
         const id = genId("dec");
         const nueva: Decision = { ...decision, id, creadoEn: new Date().toISOString().slice(0, 10) };
         set((state) => ({ decisiones: [nueva, ...state.decisiones] }));
+        dbMutate("decisiones", "insert", undefined, nueva);
         get().logHistorial("decision", id, "Decisión registrada");
         return id;
       },
       updateDecision: (id, patch) => {
+        const anterior = get().decisiones.find((d) => d.id === id);
         set((state) => ({ decisiones: state.decisiones.map((d) => (d.id === id ? { ...d, ...patch } : d)) }));
-        get().logHistorial("decision", id, "Decisión actualizada");
+        dbMutate("decisiones", "update", id, patch);
+        const keys = Object.keys(patch) as (keyof Decision)[];
+        get().logHistorial(
+          "decision",
+          id,
+          "Decisión actualizada",
+          "usuario",
+          anterior ? pickKeys(anterior, keys) : undefined,
+          patch
+        );
       },
       resolverDecision: (id, decisionFinal) => {
+        const anterior = get().decisiones.find((d) => d.id === id);
         set((state) => ({
           decisiones: state.decisiones.map((d) =>
             d.id === id ? { ...d, decisionFinal, estado: "Decidida" } : d
           ),
         }));
-        get().logHistorial("decision", id, `Decisión final registrada: "${decisionFinal}"`);
+        dbMutate("decisiones", "update", id, { decisionFinal, estado: "Decidida" });
+        get().logHistorial(
+          "decision",
+          id,
+          `Decisión final registrada: "${decisionFinal}"`,
+          "usuario",
+          anterior ? { decisionFinal: anterior.decisionFinal, estado: anterior.estado } : undefined,
+          { decisionFinal, estado: "Decidida" }
+        );
       },
 
       addMovimiento: (mov) => {
         const id = genId("mov");
         const nuevo: MovimientoEconomico = { ...mov, id };
         set((state) => ({ movimientos: [nuevo, ...state.movimientos] }));
+        dbMutate("movimientos", "insert", undefined, nuevo);
         get().logHistorial("economia", id, "Movimiento económico registrado");
         return id;
       },
-      updateMovimiento: (id, patch) =>
+      updateMovimiento: (id, patch) => {
+        const anterior = get().movimientos.find((m) => m.id === id);
         set((state) => ({
           movimientos: state.movimientos.map((m) => (m.id === id ? { ...m, ...patch } : m)),
-        })),
+        }));
+        dbMutate("movimientos", "update", id, patch);
+        const keys = Object.keys(patch) as (keyof MovimientoEconomico)[];
+        get().logHistorial(
+          "economia",
+          id,
+          "Movimiento económico actualizado",
+          "usuario",
+          anterior ? pickKeys(anterior, keys) : undefined,
+          patch
+        );
+      },
 
       addEvidencia: (ev) => {
         const id = genId("ev");
         const nueva: Evidencia = { ...ev, id };
         set((state) => ({ evidencias: [nueva, ...state.evidencias] }));
+        dbMutate("evidencias", "insert", undefined, nueva);
         get().logHistorial("evidencia", id, "Evidencia registrada");
         return id;
       },
-      updateEvidencia: (id, patch) =>
+      updateEvidencia: (id, patch) => {
+        const anterior = get().evidencias.find((e) => e.id === id);
         set((state) => ({
           evidencias: state.evidencias.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-        })),
+        }));
+        dbMutate("evidencias", "update", id, patch);
+        const keys = Object.keys(patch) as (keyof Evidencia)[];
+        get().logHistorial(
+          "evidencia",
+          id,
+          "Evidencia actualizada",
+          "usuario",
+          anterior ? pickKeys(anterior, keys) : undefined,
+          patch
+        );
+      },
 
       addPersona: (persona) => {
         const id = genId("per");
         const nueva: Persona = { ...persona, id };
         set((state) => ({ personas: [nueva, ...state.personas] }));
+        dbMutate("personas", "insert", undefined, nueva);
         return id;
       },
-      updatePersona: (id, patch) =>
-        set((state) => ({ personas: state.personas.map((p) => (p.id === id ? { ...p, ...patch } : p)) })),
+      updatePersona: (id, patch) => {
+        const anterior = get().personas.find((p) => p.id === id);
+        set((state) => ({ personas: state.personas.map((p) => (p.id === id ? { ...p, ...patch } : p)) }));
+        dbMutate("personas", "update", id, patch);
+        const keys = Object.keys(patch) as (keyof Persona)[];
+        get().logHistorial(
+          "persona",
+          id,
+          "Persona actualizada",
+          "usuario",
+          anterior ? pickKeys(anterior, keys) : undefined,
+          patch
+        );
+      },
 
       resetToSeed: () => set(seedState()),
+
+      hydrateFromServer: async () => {
+        const server = await fetchServerState();
+        if (!server || !server.configured) return;
+        const hasData =
+          (server.proyectos?.length ?? 0) > 0 ||
+          (server.acciones?.length ?? 0) > 0 ||
+          (server.decisiones?.length ?? 0) > 0 ||
+          (server.movimientos?.length ?? 0) > 0 ||
+          (server.evidencias?.length ?? 0) > 0 ||
+          (server.bandeja?.length ?? 0) > 0 ||
+          (server.personas?.length ?? 0) > 0;
+        if (!hasData) return;
+
+        const strategicCasesRaw = (server.strategicCases ?? []) as StrategicCase[];
+        const seenDecisionIds = new Set<string>();
+        const strategicCasesDeduped = strategicCasesRaw.filter((c) => {
+          if (seenDecisionIds.has(c.decisionId)) return false;
+          seenDecisionIds.add(c.decisionId);
+          return true;
+        });
+
+        set({
+          proyectos: (server.proyectos ?? []) as Proyecto[],
+          personas: (server.personas ?? []) as Persona[],
+          acciones: (server.acciones ?? []) as Accion[],
+          decisiones: (server.decisiones ?? []) as Decision[],
+          movimientos: (server.movimientos ?? []) as MovimientoEconomico[],
+          evidencias: (server.evidencias ?? []) as Evidencia[],
+          bandeja: (server.bandeja ?? []) as BandejaItem[],
+          agenda: (server.agenda ?? []) as AgendaEvento[],
+          historial: (server.historial ?? []) as HistorialEntry[],
+          strategicCases: strategicCasesDeduped,
+        });
+      },
     }),
     {
       name: "cco-ev-storage",

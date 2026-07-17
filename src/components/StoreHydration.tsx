@@ -7,9 +7,14 @@ export default function StoreHydration({ children }: { children: React.ReactNode
   const [hydrated, setHydrated] = useState(() => useAppStore.persist.hasHydrated());
 
   useEffect(() => {
-    const unsub = useAppStore.persist.onFinishHydration(() => setHydrated(true));
+    const unsub = useAppStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+      useAppStore.getState().hydrateFromServer();
+    });
     if (!useAppStore.persist.hasHydrated()) {
       useAppStore.persist.rehydrate();
+    } else {
+      useAppStore.getState().hydrateFromServer();
     }
     return () => unsub();
   }, []);
