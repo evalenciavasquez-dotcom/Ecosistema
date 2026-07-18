@@ -6,7 +6,6 @@ import type {
   EscenarioProfundo,
   GananciaPerdida,
   HechoOHipotesis,
-  LecturaExperto,
   RecomendacionEjecutiva,
   Rentabilidad,
   StakeholderAnalysis,
@@ -147,7 +146,7 @@ export const strategicCases = pgTable("strategic_cases", {
   // La columna lentes_activos quedó de un intento anterior (revertido por
   // tamaño de esquema en la salida estructurada de Claude) — sigue existiendo
   // en la base de datos pero ya no se lee ni se escribe.
-  panelExpertos: jsonb("panel_expertos").$type<LecturaExperto[]>(),
+  panelExpertos: jsonb("panel_expertos").$type<string>(),
   resumenEjecutivo: text("resumen_ejecutivo").notNull(),
   hechos: jsonb("hechos").$type<HechoOHipotesis[]>().notNull(),
   hipotesis: jsonb("hipotesis").$type<HechoOHipotesis[]>().notNull(),
