@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import TimerChip from "@/components/TimerChip";
 
 const TITLES: Record<string, string> = {
   "/": "Inicio",
@@ -77,6 +78,7 @@ export default function TopBar() {
         <div className="text-xs text-muted truncate">{dateLabel}</div>
         <h1 className="text-lg md:text-xl font-semibold tracking-tight truncate">{titleFor(pathname)}</h1>
       </div>
+      <TimerChip />
       <div className="relative w-36 sm:w-56 md:w-72 shrink-0">
         <input
           value={query}

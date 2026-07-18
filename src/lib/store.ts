@@ -35,6 +35,7 @@ import {
   MovimientoEconomico,
   Persona,
   Proyecto,
+  RegistroTiempo,
   StrategicCase,
 } from "./types";
 import { classifyText } from "./classifier";
@@ -59,6 +60,14 @@ interface AppState {
   agenda: AgendaEvento[];
   historial: HistorialEntry[];
   strategicCases: StrategicCase[];
+  tiempo: RegistroTiempo[];
+
+  // Cronómetro de trabajo: uno activo a la vez, local a este dispositivo.
+  timerActivo: { proyectoId: string; inicio: string } | null;
+  startTimer: (proyectoId: string) => void;
+  stopTimer: (descripcion?: string) => void;
+  addRegistroTiempo: (r: Omit<RegistroTiempo, "id" | "creadoEn">) => void;
+  deleteRegistroTiempo: (id: string) => void;
 
   addStrategicCase: (strategicCase: StrategicCase) => void;
 
@@ -118,6 +127,8 @@ function seedState() {
     agenda: SEED_AGENDA,
     historial: [] as HistorialEntry[],
     strategicCases: [] as StrategicCase[],
+    tiempo: [] as RegistroTiempo[],
+    timerActivo: null as { proyectoId: string; inicio: string } | null,
   };
 }
 
@@ -130,6 +141,34 @@ export const useAppStore = create<AppState>()(
 
       askAssistant: (query) => set({ pendingAssistantQuery: query }),
       clearAssistantQuery: () => set({ pendingAssistantQuery: null }),
+
+      startTimer: (proyectoId) => {
+        // Si hay uno corriendo, se cierra primero para no perder ese tiempo.
+        if (get().timerActivo) get().stopTimer();
+        set({ timerActivo: { proyectoId, inicio: new Date().toISOString() } });
+      },
+      stopTimer: (descripcion = "") => {
+        const timer = get().timerActivo;
+        if (!timer) return;
+        const minutos = Math.max(1, Math.round((Date.now() - new Date(timer.inicio).getTime()) / 60000));
+        set({ timerActivo: null });
+        get().addRegistroTiempo({
+          proyectoId: timer.proyectoId,
+          fecha: timer.inicio.slice(0, 10),
+          minutos,
+          descripcion,
+        });
+      },
+      addRegistroTiempo: (r) => {
+        const nuevo: RegistroTiempo = { ...r, id: genId("tmp"), creadoEn: new Date().toISOString() };
+        set((state) => ({ tiempo: [nuevo, ...state.tiempo] }));
+        dbMutate("tiempo", "insert", undefined, nuevo);
+        get().logHistorial("tiempo", nuevo.id, `${r.minutos} min de trabajo registrados`);
+      },
+      deleteRegistroTiempo: (id) => {
+        set((state) => ({ tiempo: state.tiempo.filter((t) => t.id !== id) }));
+        dbMutate("tiempo", "delete", id);
+      },
 
       addStrategicCase: (strategicCase) => {
         set((state) => ({
@@ -187,6 +226,10 @@ export const useAppStore = create<AppState>()(
           })
             .then((res) => (res.ok ? res.json() : null))
             .then((body) => {
+              // Si Eduardo ya procesó o descartó el ítem mientras la IA
+              // respondía, no pisar su decisión.
+              const actual = get().bandeja.find((b) => b.id === item.id);
+              if (!actual || actual.estado !== "En análisis") return;
               const result = body?.result;
               const estado: BandejaEstado =
                 result && result.confianza < 0.6 ? "Necesita confirmación" : "Nuevo";
@@ -202,7 +245,10 @@ export const useAppStore = create<AppState>()(
               get().setBandejaEstado(item.id, estado);
             })
             .catch(() => {
-              get().setBandejaEstado(item.id, "Nuevo");
+              const actual = get().bandeja.find((b) => b.id === item.id);
+              if (actual && actual.estado === "En análisis") {
+                get().setBandejaEstado(item.id, "Nuevo");
+              }
             });
         } else {
           get().setBandejaEstado(item.id, "Nuevo");
@@ -535,6 +581,7 @@ export const useAppStore = create<AppState>()(
           agenda: (server.agenda ?? []) as AgendaEvento[],
           historial: (server.historial ?? []) as HistorialEntry[],
           strategicCases: strategicCasesDeduped,
+          tiempo: (server.tiempo ?? []) as RegistroTiempo[],
         });
       },
     }),

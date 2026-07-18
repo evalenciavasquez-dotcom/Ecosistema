@@ -216,6 +216,15 @@ export interface BandejaItem {
   resultadoLabel?: string;
 }
 
+export interface RegistroTiempo {
+  id: string;
+  proyectoId: string;
+  fecha: string;
+  minutos: number;
+  descripcion: string;
+  creadoEn: string;
+}
+
 export interface AgendaEvento {
   id: string;
   titulo: string;

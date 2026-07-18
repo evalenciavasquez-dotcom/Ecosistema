@@ -29,6 +29,7 @@ export interface ServerState {
   agenda?: unknown[];
   historial?: unknown[];
   strategicCases?: unknown[];
+  tiempo?: unknown[];
 }
 
 export interface MigrationResult {
@@ -48,6 +49,7 @@ export async function migrateAllToServer(state: {
   agenda: unknown[];
   historial: unknown[];
   strategicCases: unknown[];
+  tiempo: unknown[];
 }): Promise<MigrationResult> {
   const tables: [string, unknown[]][] = [
     ["proyectos", state.proyectos],
@@ -60,6 +62,7 @@ export async function migrateAllToServer(state: {
     ["agenda", state.agenda],
     ["historial", state.historial],
     ["strategicCases", state.strategicCases],
+    ["tiempo", state.tiempo],
   ];
 
   let inserted = 0;

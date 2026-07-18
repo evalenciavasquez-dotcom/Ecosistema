@@ -12,6 +12,7 @@ import {
   personas,
   proyectos,
   strategicCases,
+  tiempo,
 } from "@/lib/db/schema";
 
 export async function GET() {
@@ -45,6 +46,14 @@ export async function GET() {
       db.select().from(strategicCases).orderBy(desc(strategicCases.creadoEn)),
     ]);
 
+    // La tabla de tiempo llegó después del esquema inicial: si aún no existe
+    // en esta base, no debe tumbar todo el estado.
+    const tiempoRows = await db
+      .select()
+      .from(tiempo)
+      .orderBy(desc(tiempo.fecha))
+      .catch(() => []);
+
     return NextResponse.json({
       configured: true,
       proyectos: proyectosRows,
@@ -57,6 +66,7 @@ export async function GET() {
       agenda: agendaRows,
       historial: historialRows,
       strategicCases: strategicCasesRows,
+      tiempo: tiempoRows,
     });
   } catch (err) {
     console.error("Error leyendo estado desde la base de datos", err);
