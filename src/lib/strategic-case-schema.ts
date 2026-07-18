@@ -76,11 +76,6 @@ const escenarioProfundoSchema = z.object({
   consecuenciaPrincipal: z.string(),
 });
 
-const lecturaExpertoSchema = z.object({
-  perfil: z.string().describe("Rol y área entre paréntesis, ej. 'CFO (Finanzas)', 'Asesor Legal (Riesgo y negociación)'"),
-  lectura: z.string().describe("Su lectura del caso desde su especialidad, en 2-4 frases concretas"),
-});
-
 const recomendacionSchema = z.object({
   decision: z.string(),
   razonPrincipal: z.string(),
@@ -96,9 +91,10 @@ export const strategicCaseGeneratedSchema = z.object({
   preguntaEstrategica: z.string(),
   tipoDeCaso: z.string().describe("Clasificación breve del caso, ej. 'Compra importante', 'Contrato musical'"),
   panelExpertos: z
-    .array(lecturaExpertoSchema)
-    .max(6)
-    .describe("Lecturas de los perfiles profesionales activados para este caso — solo relevantes, máx 6."),
+    .string()
+    .describe(
+      "Lecturas de 3-6 perfiles profesionales activados para este caso, en texto corrido. Un párrafo por perfil, empezando con 'Rol (área): ' seguido de 2-4 frases concretas desde su especialidad. Párrafos separados por salto de línea."
+    ),
   resumenEjecutivo: z.string(),
   hechos: z.array(hechoOHipotesisSchema),
   hipotesis: z.array(hechoOHipotesisSchema),

@@ -378,14 +378,13 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
         </details>
       </Section>
 
-      {c.panelExpertos?.length > 0 && (
-        <Section title={`Panel de análisis (${c.panelExpertos.length} especialista${c.panelExpertos.length === 1 ? "" : "s"})`}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {c.panelExpertos.map((e, i) => (
-              <div key={i} className="rounded-xl bg-surface border border-border-subtle p-3">
-                <div className="text-sm font-semibold mb-1">{e.perfil}</div>
-                <p className="text-xs text-muted leading-relaxed">{e.lectura}</p>
-              </div>
+      {c.panelExpertos && (
+        <Section title="Panel de análisis">
+          <div className="space-y-2">
+            {c.panelExpertos.split("\n").filter((p) => p.trim()).map((parrafo, i) => (
+              <p key={i} className="text-xs text-muted leading-relaxed rounded-xl bg-surface border border-border-subtle p-3">
+                {parrafo}
+              </p>
             ))}
           </div>
         </Section>
@@ -395,11 +394,8 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
         <p className="text-sm leading-relaxed rounded-xl border border-accent-blue/40 bg-accent-blue/10 p-4">
           {c.puntoDeVista}
         </p>
-        {c.panelExpertos?.length > 0 && (
-          <p className="text-xs text-muted mt-2">
-            Síntesis integrada del panel de {c.panelExpertos.length} especialista
-            {c.panelExpertos.length === 1 ? "" : "s"} activado{c.panelExpertos.length === 1 ? "" : "s"} para este caso.
-          </p>
+        {c.panelExpertos && (
+          <p className="text-xs text-muted mt-2">Síntesis integrada del panel de especialistas activado para este caso.</p>
         )}
       </Section>
 

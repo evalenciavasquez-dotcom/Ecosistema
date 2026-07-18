@@ -332,17 +332,12 @@ export interface RecomendacionEjecutiva {
 
 export type NivelAnalisis = "1" | "2" | "3";
 
-export interface LecturaExperto {
-  perfil: string;
-  lectura: string;
-}
-
 export interface StrategicCase {
   id: string;
   decisionId: string;
   preguntaEstrategica: string;
   tipoDeCaso: string;
-  panelExpertos: LecturaExperto[];
+  panelExpertos: string;
   resumenEjecutivo: string;
   hechos: HechoOHipotesis[];
   hipotesis: HechoOHipotesis[];
