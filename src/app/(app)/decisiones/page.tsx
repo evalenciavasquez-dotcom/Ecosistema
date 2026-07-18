@@ -181,7 +181,7 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
       {errorAnalisis && <p className="text-xs text-accent-red">{errorAnalisis}</p>}
 
       {strategicCase ? (
-        <StrategicCaseView strategicCase={strategicCase} />
+        <StrategicCaseView strategicCase={strategicCase} decision={decision} />
       ) : (
         <>
           {decision.impactoEconomico && (
@@ -261,13 +261,102 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
   );
 }
 
-function StrategicCaseView({ strategicCase: c }: { strategicCase: StrategicCase }) {
+function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: StrategicCase; decision: Decision }) {
   const riesgoTone = { Alto: "red", Medio: "amber", Bajo: "green" } as const;
+
+  const historial = useAppStore((s) => s.historial);
+  const addAccion = useAppStore((s) => s.addAccion);
+  const resolverDecision = useAppStore((s) => s.resolverDecision);
+  const logHistorial = useAppStore((s) => s.logHistorial);
+  const [aceptado, setAceptado] = useState<string | null>(null);
+
+  // Cambios relacionados con esta decisión o su proyecto ocurridos DESPUÉS de
+  // generado el análisis: señal de que el caso puede estar desactualizado.
+  const cambiosPosteriores = historial.filter(
+    (h) =>
+      h.timestamp > c.creadoEn &&
+      (h.entidadId === decision.id || (decision.proyectoId && h.entidadId === decision.proyectoId)) &&
+      !h.cambio.includes("Caso estratégico")
+  );
+
+  const fuentes = Array.from(
+    new Set([...c.hechos, ...c.hipotesis].map((h) => h.fuente).filter(Boolean))
+  );
+
+  function handleAceptar() {
+    const hoy = new Date().toISOString().slice(0, 10);
+    let creadas = 0;
+    c.recomendacion.condicionesMinimas.forEach((cond) => {
+      addAccion({
+        titulo: cond,
+        resultadoEsperado: `Condición mínima de la decisión: "${decision.pregunta}"`,
+        proyectoId: decision.proyectoId,
+        responsable: "Eduardo",
+        prioridad: "P1",
+        estado: "Pendiente",
+        fecha: hoy,
+        duracionEstimada: "",
+        dependencias: "",
+        impactoFinanciero: "",
+        evidenciaCierre: "",
+      });
+      creadas++;
+    });
+    const fechaRev = /^\d{4}-\d{2}-\d{2}$/.test(c.recomendacion.fechaRevision)
+      ? c.recomendacion.fechaRevision
+      : "";
+    if (c.recomendacion.fechaRevision) {
+      addAccion({
+        titulo: `Revisar decisión: ${decision.pregunta}`,
+        resultadoEsperado: `Señal de salida: ${c.recomendacion.senalSalida || "sin definir"}${
+          fechaRev ? "" : ` · Revisión: ${c.recomendacion.fechaRevision}`
+        }`,
+        proyectoId: decision.proyectoId,
+        responsable: "Eduardo",
+        prioridad: "P2",
+        estado: "Pendiente",
+        fecha: fechaRev || hoy,
+        duracionEstimada: "",
+        dependencias: "",
+        impactoFinanciero: "",
+        evidenciaCierre: "",
+      });
+      creadas++;
+    }
+    resolverDecision(decision.id, c.recomendacion.decision);
+    logHistorial(
+      "decision",
+      decision.id,
+      `Recomendación aceptada — ${creadas} acción(es) creada(s) desde el caso estratégico`
+    );
+    setAceptado(`Decisión registrada y ${creadas} acción(es) creada(s) — revísalas en Acciones.`);
+  }
 
   return (
     <div className="space-y-6">
+      {cambiosPosteriores.length > 0 && (
+        <div className="rounded-xl border border-accent-amber/50 bg-accent-amber/10 p-4 text-sm">
+          <span className="font-medium">Este análisis puede estar desactualizado:</span>{" "}
+          {cambiosPosteriores.length} cambio(s) relacionados ocurrieron después de generarlo
+          (el más reciente: “{cambiosPosteriores[0].cambio}”). Usa «Regenerar análisis» para
+          incorporarlos.
+        </div>
+      )}
+
       <Section title="Resumen ejecutivo">
         <p className="text-sm leading-relaxed">{c.resumenEjecutivo}</p>
+        <details className="mt-2 text-xs text-muted">
+          <summary className="cursor-pointer select-none">
+            En qué se basa este análisis ({c.hechos.length} hechos, {c.hipotesis.length} hipótesis
+            {fuentes.length > 0 ? `, ${fuentes.length} fuentes` : ""})
+          </summary>
+          <ul className="mt-2 space-y-1 list-disc list-inside">
+            {fuentes.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+            {fuentes.length === 0 && <li>Sin fuentes específicas registradas.</li>}
+          </ul>
+        </details>
       </Section>
 
       <Section title="Punto de vista del sistema">
@@ -453,6 +542,30 @@ function StrategicCaseView({ strategicCase: c }: { strategicCase: StrategicCase 
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-accent-blue/20">
             <DetailRow label="Fecha de revisión" value={c.recomendacion.fechaRevision} />
             <DetailRow label="Señal de salida" value={c.recomendacion.senalSalida} />
+          </div>
+
+          <div className="pt-3 border-t border-accent-blue/20">
+            {aceptado ? (
+              <p className="text-sm text-accent-green">{aceptado}</p>
+            ) : decision.estado === "Decidida" || decision.estado === "Cerrada" ? (
+              <p className="text-xs text-muted">
+                Esta decisión ya fue registrada: “{decision.decisionFinal}”.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  onClick={handleAceptar}
+                  className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2"
+                >
+                  Aceptar y crear acciones
+                </button>
+                <p className="text-xs text-muted">
+                  Registra la recomendación como tu decisión y convierte cada condición mínima en una
+                  acción P1{c.recomendacion.fechaRevision ? ", más una acción de revisión con su señal de salida" : ""}.
+                  Si prefieres otro camino, usa el registro manual de abajo.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </Section>
