@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { code: "AC", label: "Acciones", href: "/acciones" },
   { code: "DE", label: "Decisiones", href: "/decisiones" },
   { code: "EC", label: "Economía", href: "/economia" },
+  { code: "ES", label: "Estadísticas", href: "/estadisticas" },
   { code: "EV", label: "Evidencias", href: "/evidencias" },
   { code: "CO", label: "Configuración", href: "/configuracion" },
 ];
