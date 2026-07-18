@@ -62,6 +62,9 @@ export default function EconomiaPage() {
   const gastosConfirmados = sumByMoneda(movimientos.filter((m) => m.tipo === "gasto" && m.estado === "confirmado"));
   const gastosEsperados = sumByMoneda(movimientos.filter((m) => m.tipo === "gasto" && m.estado === "esperado"));
   const sinConciliar = movimientos.filter((m) => m.estado === "sin_conciliar");
+  const esperadosVencidos = movimientos.filter(
+    (m) => m.estado === "esperado" && m.fecha && m.fecha < hoyISO()
+  );
 
   const monedasCaja = mergeMonedas(ingresosConfirmados, gastosConfirmados);
   const caja: Record<string, number> = {};
@@ -97,13 +100,73 @@ export default function EconomiaPage() {
   const proyeccion = useMemo(() => computeProyeccion(movimientos, hoy), [movimientos, hoy]);
   const splitPersonal = useMemo(() => computeSplitPersonalProyectos(movimientos), [movimientos]);
 
+  const [interpretacion, setInterpretacion] = useState<string | null>(null);
+  const [interpretando, setInterpretando] = useState(false);
+  const [errorInterpretacion, setErrorInterpretacion] = useState("");
+
+  async function handleInterpretar() {
+    setInterpretando(true);
+    setErrorInterpretacion("");
+    try {
+      const res = await fetch("/api/interpret-economia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runway,
+          proyeccion,
+          splitPersonal,
+          cajaPorCuenta,
+          movimientosSinConciliar: sinConciliar.length,
+          movimientosEsperadosVencidos: esperadosVencidos.map((m) => ({
+            descripcion: m.descripcion,
+            monto: m.monto,
+            moneda: m.moneda,
+            tipo: m.tipo,
+            fecha: m.fecha,
+          })),
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setErrorInterpretacion(body.error ?? "No se pudo generar la interpretación");
+        return;
+      }
+      setInterpretacion(body.result);
+    } catch {
+      setErrorInterpretacion("Error de conexión al interpretar");
+    } finally {
+      setInterpretando(false);
+    }
+  }
+
   return (
     <div className="max-w-4xl space-y-6">
       {(runway.length > 0 || proyeccion.length > 0) && (
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-5">
-          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">
-            Resumen financiero
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">
+              Resumen financiero
+            </div>
+            <button
+              onClick={handleInterpretar}
+              disabled={interpretando}
+              className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50 shrink-0"
+            >
+              {interpretando ? "Interpretando…" : interpretacion ? "Reinterpretar" : "Interpretar con IA"}
+            </button>
           </div>
+
+          {(interpretacion || errorInterpretacion) && (
+            <div
+              className={`rounded-xl p-4 text-sm leading-relaxed ${
+                errorInterpretacion
+                  ? "bg-accent-red/10 border border-accent-red/30 text-accent-red"
+                  : "bg-accent-blue/10 border border-accent-blue/30"
+              }`}
+            >
+              {errorInterpretacion || interpretacion}
+            </div>
+          )}
 
           {runway.length > 0 && (
             <div>
@@ -256,6 +319,22 @@ export default function EconomiaPage() {
         <div className="rounded-2xl border border-accent-red/30 bg-accent-red/5 p-4">
           <div className="text-xs font-medium text-accent-red">
             {sinConciliar.length} movimiento(s) sin conciliar — revisa para evitar doble contabilización
+          </div>
+        </div>
+      )}
+
+      {esperadosVencidos.length > 0 && (
+        <div className="rounded-2xl border border-accent-amber/30 bg-accent-amber/5 p-4 space-y-1.5">
+          <div className="text-xs font-medium text-accent-amber">
+            {esperadosVencidos.length} movimiento(s) &ldquo;esperado&rdquo; con fecha ya vencida — ¿llegó o no?
+          </div>
+          <div className="space-y-1">
+            {esperadosVencidos.slice(0, 3).map((m) => (
+              <div key={m.id} className="text-xs text-muted">
+                {m.descripcion} · {formatMonto(m.tipo === "ingreso" ? m.monto : -m.monto, m.moneda)} · vencido desde{" "}
+                {m.fecha}
+              </div>
+            ))}
           </div>
         </div>
       )}
