@@ -72,12 +72,12 @@ export default function TopBar() {
   }, [query, proyectos, acciones, decisiones, personas, evidencias]);
 
   return (
-    <header className="relative flex items-center justify-between gap-4 border-b border-border-subtle bg-background px-6 py-4">
-      <div>
-        <div className="text-xs text-muted">{dateLabel}</div>
-        <h1 className="text-xl font-semibold tracking-tight">{titleFor(pathname)}</h1>
+    <header className="relative flex items-center justify-between gap-3 border-b border-border-subtle bg-background px-4 py-3 md:px-6 md:py-4">
+      <div className="min-w-0">
+        <div className="text-xs text-muted truncate">{dateLabel}</div>
+        <h1 className="text-lg md:text-xl font-semibold tracking-tight truncate">{titleFor(pathname)}</h1>
       </div>
-      <div className="relative w-72">
+      <div className="relative w-36 sm:w-56 md:w-72 shrink-0">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -85,7 +85,7 @@ export default function TopBar() {
           className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue transition-colors"
         />
         {results.length > 0 && (
-          <div className="absolute right-0 z-20 mt-2 w-96 rounded-xl border border-border-subtle bg-surface-2 shadow-xl overflow-hidden">
+          <div className="absolute right-0 z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] md:w-96 rounded-xl border border-border-subtle bg-surface-2 shadow-xl overflow-hidden">
             {results.map((r) => (
               <button
                 key={`${r.tipo}-${r.id}`}

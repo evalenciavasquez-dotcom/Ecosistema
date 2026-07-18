@@ -32,7 +32,7 @@ function askWithFreshState(text: string, setMessages: React.Dispatch<React.SetSt
   ]);
 }
 
-export default function AIPanel() {
+export function AnalysisPanelBody() {
   const proyectos = useAppStore((s) => s.proyectos);
   const personas = useAppStore((s) => s.personas);
   const decisiones = useAppStore((s) => s.decisiones);
@@ -58,12 +58,7 @@ export default function AIPanel() {
   }
 
   return (
-    <aside className="hidden xl:flex w-96 shrink-0 flex-col border-l border-border-subtle bg-surface">
-      <div className="px-5 py-5 border-b border-border-subtle">
-        <div className="text-sm font-semibold">Motor de análisis estratégico</div>
-        <div className="text-xs text-muted mt-0.5">El núcleo — presente en todo momento</div>
-      </div>
-
+    <>
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
         {insights.length === 0 && (
           <p className="text-xs text-muted">Sin señales relevantes por ahora.</p>
@@ -116,6 +111,18 @@ export default function AIPanel() {
           →
         </button>
       </form>
+    </>
+  );
+}
+
+export default function AIPanel() {
+  return (
+    <aside className="hidden xl:flex w-96 shrink-0 flex-col border-l border-border-subtle bg-surface">
+      <div className="px-5 py-5 border-b border-border-subtle">
+        <div className="text-sm font-semibold">Motor de análisis estratégico</div>
+        <div className="text-xs text-muted mt-0.5">El núcleo — presente en todo momento</div>
+      </div>
+      <AnalysisPanelBody />
     </aside>
   );
 }
