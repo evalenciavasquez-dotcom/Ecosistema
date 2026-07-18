@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, AccionEstadoBadge } from "@/components/ui/badges";
 import { Proyecto, ProyectoEstado, Prioridad } from "@/lib/types";
+import { formatMinutos, hoyISO, inicioSemanaISO, minutosDe } from "@/lib/tiempo";
 
 const ESTADOS: ProyectoEstado[] = [
   "Idea",
@@ -192,6 +193,8 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
         <Field label="Próxima acción recomendada" value={proyecto.proximaAccionRecomendada || "Sin recomendación"} />
       </div>
 
+      <TiempoSection proyectoId={proyecto.id} />
+
       <Section title="Personas involucradas">
         {personasProyecto.length === 0 && <Empty />}
         <div className="space-y-2">
@@ -287,6 +290,112 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
         ))}
       </div>
     </div>
+  );
+}
+
+function TiempoSection({ proyectoId }: { proyectoId: string }) {
+  const tiempo = useAppStore((s) => s.tiempo);
+  const timerActivo = useAppStore((s) => s.timerActivo);
+  const startTimer = useAppStore((s) => s.startTimer);
+  const stopTimer = useAppStore((s) => s.stopTimer);
+  const addRegistroTiempo = useAppStore((s) => s.addRegistroTiempo);
+  const deleteRegistroTiempo = useAppStore((s) => s.deleteRegistroTiempo);
+
+  const [minutosManual, setMinutosManual] = useState("");
+  const [notaManual, setNotaManual] = useState("");
+
+  const registros = tiempo.filter((t) => t.proyectoId === proyectoId);
+  const hoy = hoyISO();
+  const minHoy = minutosDe(registros, proyectoId, hoy);
+  const minSemana = minutosDe(registros, proyectoId, inicioSemanaISO());
+  const minTotal = registros.reduce((acc, r) => acc + r.minutos, 0);
+
+  const corriendoAqui = timerActivo?.proyectoId === proyectoId;
+  const corriendoOtro = timerActivo && !corriendoAqui;
+
+  function handleAddManual(e: React.FormEvent) {
+    e.preventDefault();
+    const min = parseInt(minutosManual, 10);
+    if (!min || min <= 0) return;
+    addRegistroTiempo({ proyectoId, fecha: hoy, minutos: min, descripcion: notaManual.trim() });
+    setMinutosManual("");
+    setNotaManual("");
+  }
+
+  return (
+    <Section title="Tiempo trabajado">
+      <div className="rounded-2xl border border-border-subtle bg-surface p-4 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {corriendoAqui ? (
+            <button
+              onClick={() => stopTimer()}
+              className="rounded-full bg-accent-red text-white text-sm font-medium px-4 py-2"
+            >
+              ■ Detener y registrar
+            </button>
+          ) : (
+            <button
+              onClick={() => startTimer(proyectoId)}
+              className="rounded-full bg-accent-green text-white text-sm font-medium px-4 py-2"
+            >
+              ▶ Empezar a trabajar aquí
+            </button>
+          )}
+          {corriendoOtro && (
+            <span className="text-xs text-muted">
+              Hay un cronómetro corriendo en otro proyecto — al iniciar aquí, aquel se registra solo.
+            </span>
+          )}
+          <div className="ml-auto flex gap-4 text-xs text-muted">
+            <span>Hoy: <span className="text-foreground font-medium">{formatMinutos(minHoy)}</span></span>
+            <span>Semana: <span className="text-foreground font-medium">{formatMinutos(minSemana)}</span></span>
+            <span>Total: <span className="text-foreground font-medium">{formatMinutos(minTotal)}</span></span>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddManual} className="flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3">
+          <input
+            value={minutosManual}
+            onChange={(e) => setMinutosManual(e.target.value.replace(/\D/g, ""))}
+            placeholder="Minutos"
+            inputMode="numeric"
+            className="w-24 rounded-lg bg-surface-2 border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+          <input
+            value={notaManual}
+            onChange={(e) => setNotaManual(e.target.value)}
+            placeholder="¿En qué trabajaste? (opcional)"
+            className="min-w-0 flex-1 rounded-lg bg-surface-2 border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+          <button
+            type="submit"
+            disabled={!minutosManual}
+            className="rounded-full bg-surface-2 border border-border-subtle px-4 py-2 text-sm disabled:opacity-40"
+          >
+            Registrar
+          </button>
+        </form>
+
+        {registros.length > 0 && (
+          <div className="space-y-1.5 border-t border-border-subtle pt-3">
+            {registros.slice(0, 6).map((r) => (
+              <div key={r.id} className="flex items-center gap-2 text-xs">
+                <span className="text-muted w-20 shrink-0">{r.fecha}</span>
+                <span className="font-medium w-16 shrink-0">{formatMinutos(r.minutos)}</span>
+                <span className="text-muted truncate flex-1">{r.descripcion || "Sin nota"}</span>
+                <button
+                  onClick={() => deleteRegistroTiempo(r.id)}
+                  className="text-accent-red shrink-0"
+                  aria-label="Eliminar registro"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }
 

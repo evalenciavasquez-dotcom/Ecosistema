@@ -117,6 +117,14 @@ const STATEMENTS = [
     antes jsonb,
     despues jsonb
   )`,
+  `CREATE TABLE IF NOT EXISTS tiempo (
+    id text PRIMARY KEY,
+    proyecto_id text NOT NULL,
+    fecha text NOT NULL,
+    minutos integer NOT NULL,
+    descripcion text NOT NULL,
+    creado_en text NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS strategic_cases (
     id text PRIMARY KEY,
     decision_id text NOT NULL,

@@ -9,6 +9,7 @@ import {
   selectPrioridadDelDia,
   selectProximoCompromiso,
 } from "@/lib/selectors";
+import { formatMinutos, hoyISO, minutosPorProyecto } from "@/lib/tiempo";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -24,8 +25,13 @@ export default function InicioPage() {
   const acciones = useAppStore((s) => s.acciones);
   const movimientos = useAppStore((s) => s.movimientos);
   const agenda = useAppStore((s) => s.agenda);
+  const tiempo = useAppStore((s) => s.tiempo);
   const modoEnfoque = useAppStore((s) => s.modoEnfoque);
   const askAssistant = useAppStore((s) => s.askAssistant);
+
+  const tiempoHoy = minutosPorProyecto(tiempo, hoyISO());
+  const tiempoHoyEntries = Object.entries(tiempoHoy).sort((a, b) => b[1] - a[1]);
+  const tiempoHoyTotal = tiempoHoyEntries.reduce((acc, [, m]) => acc + m, 0);
 
   const proximoCompromiso = selectProximoCompromiso(agenda);
   const economiaNueva = selectEconomiaNueva(movimientos);
@@ -151,6 +157,35 @@ export default function InicioPage() {
           ))}
         </div>
       </div>
+
+      {!modoEnfoque && tiempoHoyEntries.length > 0 && (
+        <div>
+          <h3 className="text-xs uppercase tracking-wide text-muted mb-3">
+            Tiempo de hoy — {formatMinutos(tiempoHoyTotal)}
+          </h3>
+          <div className="space-y-2">
+            {tiempoHoyEntries.map(([pid, min]) => (
+              <div
+                key={pid}
+                className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface px-4 py-3"
+              >
+                <div className="flex-1 min-w-0 text-sm font-medium truncate">
+                  {proyectoNombre(proyectos, pid)}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="h-1.5 w-24 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-accent-blue"
+                      style={{ width: `${Math.max(6, Math.round((min / tiempoHoyTotal) * 100))}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-muted tabular-nums w-16 text-right">{formatMinutos(min)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!modoEnfoque && (
         <div>

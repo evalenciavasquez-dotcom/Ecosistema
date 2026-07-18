@@ -205,6 +205,7 @@ export default function ConfiguracionPage() {
       agenda: state.agenda,
       historial: state.historial,
       strategicCases: state.strategicCases,
+      tiempo: state.tiempo,
     });
     setMigrating(false);
     if (result.ok) {

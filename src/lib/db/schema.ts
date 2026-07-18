@@ -158,7 +158,17 @@ export const strategicCases = pgTable("strategic_cases", {
   creadoEn: text("creado_en").notNull(),
 });
 
+export const tiempo = pgTable("tiempo", {
+  id: text("id").primaryKey(),
+  proyectoId: text("proyecto_id").notNull(),
+  fecha: text("fecha").notNull(),
+  minutos: integer("minutos").notNull(),
+  descripcion: text("descripcion").notNull(),
+  creadoEn: text("creado_en").notNull(),
+});
+
 export const TABLES = {
+  tiempo,
   proyectos,
   personas,
   acciones,
