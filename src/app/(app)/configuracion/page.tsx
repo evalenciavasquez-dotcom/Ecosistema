@@ -6,6 +6,13 @@ import { useAppStore } from "@/lib/store";
 import { fetchServerState, initDbSchema, migrateAllToServer } from "@/lib/db/sync";
 
 type DbStatus = "checking" | "no_configurada" | "sin_esquema" | "vacia" | "activa";
+type PushStatus = "checking" | "no_soportado" | "sin_db" | "inactivas" | "activas" | "bloqueadas";
+
+function urlBase64ToUint8Array(base64: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(Array.from(raw, (c) => c.charCodeAt(0)));
+}
 
 export default function ConfiguracionPage() {
   const router = useRouter();
@@ -20,6 +27,119 @@ export default function ConfiguracionPage() {
   const [initializing, setInitializing] = useState(false);
   const [initMsg, setInitMsg] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+
+  const [pushStatus, setPushStatus] = useState<PushStatus>("checking");
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        if (!cancelled) setPushStatus("no_soportado");
+        return;
+      }
+      if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+        if (!cancelled) setPushStatus("bloqueadas");
+        return;
+      }
+      try {
+        const res = await fetch("/api/push");
+        const body = await res.json();
+        if (cancelled) return;
+        if (!body.configured) {
+          setPushStatus("sin_db");
+          return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (cancelled) return;
+        setPushStatus(sub ? "activas" : "inactivas");
+      } catch {
+        if (!cancelled) setPushStatus("inactivas");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleEnablePush() {
+    setPushBusy(true);
+    setPushMsg(null);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushStatus("bloqueadas");
+        setPushMsg("Permiso denegado. Habilítalo en la configuración del navegador.");
+        setPushBusy(false);
+        return;
+      }
+      const res = await fetch("/api/push");
+      const body = await res.json();
+      if (!body.publicKey) throw new Error(body.error ?? "Sin clave pública");
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(body.publicKey) as BufferSource,
+      });
+      const save = await fetch("/api/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "subscribe", subscription: sub.toJSON() }),
+      });
+      if (!save.ok) throw new Error("No se pudo guardar la suscripción");
+      setPushStatus("activas");
+      setPushMsg("Notificaciones activadas en este dispositivo.");
+    } catch (err) {
+      setPushMsg(`No se pudo activar: ${(err as Error).message}`);
+    }
+    setPushBusy(false);
+  }
+
+  async function handleDisablePush() {
+    setPushBusy(true);
+    setPushMsg(null);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "unsubscribe", endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      setPushStatus("inactivas");
+      setPushMsg("Notificaciones desactivadas en este dispositivo.");
+    } catch (err) {
+      setPushMsg(`Error: ${(err as Error).message}`);
+    }
+    setPushBusy(false);
+  }
+
+  async function handleTestPush() {
+    setPushBusy(true);
+    setPushMsg(null);
+    try {
+      const res = await fetch("/api/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test" }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Error");
+      setPushMsg(
+        body.sent > 0
+          ? `Notificación de prueba enviada a ${body.sent} dispositivo(s).`
+          : "No hay dispositivos suscritos todavía."
+      );
+    } catch (err) {
+      setPushMsg(`Error: ${(err as Error).message}`);
+    }
+    setPushBusy(false);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -253,6 +373,80 @@ export default function ConfiguracionPage() {
               </p>
             </div>
           )}
+        </div>
+      </Section>
+
+      <Section title="Notificaciones">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
+          {pushStatus === "checking" && <p className="text-sm text-muted">Verificando…</p>}
+
+          {pushStatus === "no_soportado" && (
+            <p className="text-sm text-muted">
+              Este navegador no soporta notificaciones push. En el celular, instala la app
+              (Añadir a pantalla de inicio) y actívalas desde ahí.
+            </p>
+          )}
+
+          {pushStatus === "sin_db" && (
+            <p className="text-sm text-muted">
+              Las notificaciones requieren la base de datos configurada (sección anterior).
+            </p>
+          )}
+
+          {pushStatus === "bloqueadas" && (
+            <p className="text-sm text-muted">
+              Las notificaciones están bloqueadas para este sitio. Habilítalas en la configuración
+              del navegador y recarga.
+            </p>
+          )}
+
+          {pushStatus === "inactivas" && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm font-medium">Desactivadas en este dispositivo</div>
+                <p className="text-xs text-muted mt-0.5">
+                  Actívalas para recibir el resumen de tu día cada mañana (7 a.m.) y avisos cuando
+                  algo urgente aparezca. Actívalas en cada dispositivo donde las quieras.
+                </p>
+              </div>
+              <button
+                onClick={handleEnablePush}
+                disabled={pushBusy}
+                className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-50"
+              >
+                {pushBusy ? "Activando…" : "Activar notificaciones"}
+              </button>
+            </div>
+          )}
+
+          {pushStatus === "activas" && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm font-medium">Activas en este dispositivo</div>
+                <p className="text-xs text-muted mt-0.5">
+                  Recibirás el resumen de tu día cada mañana a las 7 a.m. (hora Colombia).
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleTestPush}
+                  disabled={pushBusy}
+                  className="rounded-full bg-surface-2 border border-border-subtle px-4 py-2 text-sm disabled:opacity-50"
+                >
+                  Enviar prueba
+                </button>
+                <button
+                  onClick={handleDisablePush}
+                  disabled={pushBusy}
+                  className="rounded-full border border-accent-red/40 text-accent-red px-4 py-2 text-sm disabled:opacity-50"
+                >
+                  Desactivar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {pushMsg && <p className="text-xs text-muted">{pushMsg}</p>}
         </div>
       </Section>
     </div>
