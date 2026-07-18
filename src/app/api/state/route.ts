@@ -14,7 +14,7 @@ import {
   strategicCases,
   tiempo,
 } from "@/lib/db/schema";
-import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
+import { ensureEvidenciaArchivoColumns, ensureStrategicCaseColumns } from "@/lib/db/migrations";
 
 export async function GET() {
   if (!isDbConfigured()) {
@@ -28,6 +28,7 @@ export async function GET() {
     // faltantes. Si la tabla ni siquiera existe todavía (esquema sin
     // inicializar), esto lanza y cae en el catch de más abajo, igual que antes.
     await ensureStrategicCaseColumns();
+    await ensureEvidenciaArchivoColumns();
     const [
       proyectosRows,
       personasRows,

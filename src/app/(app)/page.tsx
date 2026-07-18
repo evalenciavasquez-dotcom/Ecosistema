@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import {
@@ -28,6 +29,13 @@ export default function InicioPage() {
   const tiempo = useAppStore((s) => s.tiempo);
   const modoEnfoque = useAppStore((s) => s.modoEnfoque);
   const askAssistant = useAppStore((s) => s.askAssistant);
+  const deleteAgendaEvento = useAppStore((s) => s.deleteAgendaEvento);
+  const [showAgendaModal, setShowAgendaModal] = useState(false);
+
+  const hoy = hoyISO();
+  const proximosEventos = [...agenda]
+    .filter((e) => e.fecha >= hoy)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora));
 
   const tiempoHoy = minutosPorProyecto(tiempo, hoyISO());
   const tiempoHoyEntries = Object.entries(tiempoHoy).sort((a, b) => b[1] - a[1]);
@@ -105,6 +113,47 @@ export default function InicioPage() {
           )}
         </div>
       </div>
+
+      {!modoEnfoque && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs uppercase tracking-wide text-muted">Próximos eventos</h3>
+            <button
+              onClick={() => setShowAgendaModal(true)}
+              className="text-xs font-medium text-accent-blue"
+            >
+              + Nuevo evento
+            </button>
+          </div>
+          {proximosEventos.length === 0 ? (
+            <p className="text-sm text-muted">Sin eventos próximos registrados.</p>
+          ) : (
+            <div className="space-y-2">
+              {proximosEventos.slice(0, 4).map((e) => (
+                <div
+                  key={e.id}
+                  className="flex items-center gap-3 rounded-xl border border-border-subtle bg-surface px-4 py-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{e.titulo}</div>
+                    <div className="text-xs text-muted">
+                      {proyectoNombre(proyectos, e.proyectoId)} ·{" "}
+                      {new Date(e.fecha).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · {e.hora}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => deleteAgendaEvento(e.id)}
+                    className="text-xs text-accent-red shrink-0"
+                    aria-label="Eliminar evento"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {!modoEnfoque && riesgosCriticos.length > 0 && (
         <div>
@@ -212,6 +261,121 @@ export default function InicioPage() {
           </div>
         </div>
       )}
+
+      {showAgendaModal && <NuevoEventoModal onClose={() => setShowAgendaModal(false)} />}
+    </div>
+  );
+}
+
+function NuevoEventoModal({ onClose }: { onClose: () => void }) {
+  const addAgendaEvento = useAppStore((s) => s.addAgendaEvento);
+  const proyectos = useAppStore((s) => s.proyectos);
+  const [titulo, setTitulo] = useState("");
+  const [fecha, setFecha] = useState(hoyISO());
+  const [hora, setHora] = useState("09:00");
+  const [proyectoId, setProyectoId] = useState<string>("");
+  const [descripcion, setDescripcion] = useState("");
+  const [tipo, setTipo] = useState("Reunión");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!titulo.trim()) return;
+    addAgendaEvento({
+      titulo: titulo.trim(),
+      fecha,
+      hora,
+      proyectoId: proyectoId || null,
+      descripcion: descripcion.trim(),
+      tipo,
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4"
+      >
+        <h3 className="font-semibold">Nuevo evento</h3>
+        <div>
+          <label className="block text-xs text-muted mb-1">Título</label>
+          <input
+            autoFocus
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted mb-1">Fecha</label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-muted mb-1">Hora</label>
+            <input
+              type="time"
+              value={hora}
+              onChange={(e) => setHora(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted mb-1">Proyecto (opcional)</label>
+            <select
+              value={proyectoId}
+              onChange={(e) => setProyectoId(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            >
+              <option value="">Sin proyecto</option>
+              {proyectos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-muted mb-1">Tipo</label>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            >
+              <option value="Reunión">Reunión</option>
+              <option value="Llamada">Llamada</option>
+              <option value="Fecha límite">Fecha límite</option>
+              <option value="Recordatorio">Recordatorio</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Notas (opcional)</label>
+          <textarea
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            rows={2}
+            className="w-full resize-none rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="text-sm text-muted">
+            Cancelar
+          </button>
+          <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
+            Guardar
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

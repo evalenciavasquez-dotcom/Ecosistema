@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { EvidenceBadge, RiesgoBadge } from "@/components/ui/badges";
 import { Pill } from "@/components/ui/Pill";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/types";
 import { buildAnalysisContext, proyectoNombre } from "@/lib/selectors";
 import { genId } from "@/lib/id";
+import { useOpenParam } from "@/lib/useOpenParam";
 
 const ESCENARIO_ORDEN: EscenarioTipo[] = [
   "avanzar",
@@ -28,10 +29,15 @@ const ESCENARIO_ORDEN: EscenarioTipo[] = [
   "no_hacer_nada",
 ];
 
-export default function DecisionesPage() {
+function DecisionesContent() {
   const decisiones = useAppStore((s) => s.decisiones);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const openId = useOpenParam();
+  const [selectedId, setSelectedId] = useState<string | null>(() => openId);
   const [showNew, setShowNew] = useState(false);
+
+  useEffect(() => {
+    if (openId) window.history.replaceState(null, "", "/decisiones");
+  }, [openId]);
 
   const selected = decisiones.find((d) => d.id === selectedId) ?? null;
 
@@ -63,6 +69,14 @@ export default function DecisionesPage() {
 
       {showNew && <NuevaDecisionModal onClose={() => setShowNew(false)} />}
     </div>
+  );
+}
+
+export default function DecisionesPage() {
+  return (
+    <Suspense>
+      <DecisionesContent />
+    </Suspense>
   );
 }
 

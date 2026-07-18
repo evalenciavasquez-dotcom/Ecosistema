@@ -7,6 +7,7 @@ import TimerChip from "@/components/TimerChip";
 
 const TITLES: Record<string, string> = {
   "/": "Inicio",
+  "/actividad": "Actividad",
   "/bandeja": "Bandeja de entrada",
   "/proyectos": "Proyectos",
   "/acciones": "Acciones",
@@ -57,19 +58,19 @@ export default function TopBar() {
     const out: SearchResult[] = [];
     proyectos
       .filter((p) => p.nombre.toLowerCase().includes(q) || p.objetivo.toLowerCase().includes(q))
-      .forEach((p) => out.push({ id: p.id, tipo: "Proyecto", texto: p.nombre, href: "/proyectos" }));
+      .forEach((p) => out.push({ id: p.id, tipo: "Proyecto", texto: p.nombre, href: `/proyectos?open=${p.id}` }));
     acciones
       .filter((a) => a.titulo.toLowerCase().includes(q))
-      .forEach((a) => out.push({ id: a.id, tipo: "Acción", texto: a.titulo, href: "/acciones" }));
+      .forEach((a) => out.push({ id: a.id, tipo: "Acción", texto: a.titulo, href: `/acciones?open=${a.id}` }));
     decisiones
       .filter((d) => d.pregunta.toLowerCase().includes(q))
-      .forEach((d) => out.push({ id: d.id, tipo: "Decisión", texto: d.pregunta, href: "/decisiones" }));
+      .forEach((d) => out.push({ id: d.id, tipo: "Decisión", texto: d.pregunta, href: `/decisiones?open=${d.id}` }));
     personas
       .filter((p) => p.nombre.toLowerCase().includes(q))
       .forEach((p) => out.push({ id: p.id, tipo: "Persona", texto: `${p.nombre} — ${p.empresaProyecto}`, href: "/proyectos" }));
     evidencias
       .filter((e) => e.afirmacionRespaldada.toLowerCase().includes(q))
-      .forEach((e) => out.push({ id: e.id, tipo: "Evidencia", texto: e.afirmacionRespaldada, href: "/evidencias" }));
+      .forEach((e) => out.push({ id: e.id, tipo: "Evidencia", texto: e.afirmacionRespaldada, href: `/evidencias?open=${e.id}` }));
     return out.slice(0, 8);
   }, [query, proyectos, acciones, decisiones, personas, evidencias]);
 

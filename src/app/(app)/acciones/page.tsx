@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { AccionEstadoBadge } from "@/components/ui/badges";
 import { Accion, AccionEstado } from "@/lib/types";
 import { proyectoNombre } from "@/lib/selectors";
+import { useOpenParam } from "@/lib/useOpenParam";
 
 const ESTADOS: AccionEstado[] = ["Pendiente", "En curso", "Bloqueada", "Esperando tercero", "Completada", "Cancelada"];
 
-export default function AccionesPage() {
+function AccionesContent() {
   const acciones = useAppStore((s) => s.acciones);
   const proyectos = useAppStore((s) => s.proyectos);
   const setAccionEstado = useAppStore((s) => s.setAccionEstado);
-  const [filtro, setFiltro] = useState<string>("Abiertas");
+  const openId = useOpenParam();
+  const [filtro, setFiltro] = useState<string>(() => (openId ? "Todas" : "Abiertas"));
   const [showNew, setShowNew] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(() => openId);
+
+  useEffect(() => {
+    if (!openId) return;
+    window.history.replaceState(null, "", "/acciones");
+    const t = setTimeout(() => {
+      document.getElementById(`accion-${openId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [openId]);
 
   const visibles = acciones.filter((a) => {
     if (filtro === "Todas") return true;
@@ -54,7 +65,13 @@ export default function AccionesPage() {
       <div className="space-y-3">
         {ordenadas.length === 0 && <p className="text-sm text-muted">No hay acciones en este filtro.</p>}
         {ordenadas.map((a) => (
-          <div key={a.id} className="rounded-2xl border border-border-subtle bg-surface p-4">
+          <div
+            key={a.id}
+            id={`accion-${a.id}`}
+            className={`rounded-2xl border bg-surface p-4 transition-colors ${
+              openId === a.id ? "border-accent-blue" : "border-border-subtle"
+            }`}
+          >
             <div className="flex items-start gap-3">
               <button
                 onClick={() => setAccionEstado(a.id, a.estado === "Completada" ? "Pendiente" : "Completada")}
@@ -113,6 +130,14 @@ export default function AccionesPage() {
 
       {showNew && <NuevaAccionModal onClose={() => setShowNew(false)} />}
     </div>
+  );
+}
+
+export default function AccionesPage() {
+  return (
+    <Suspense>
+      <AccionesContent />
+    </Suspense>
   );
 }
 

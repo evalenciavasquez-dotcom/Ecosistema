@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { EvidenceBadge } from "@/components/ui/badges";
 import { Pill } from "@/components/ui/Pill";
 import { Evidencia, EvidenciaTipo } from "@/lib/types";
 import { proyectoNombre } from "@/lib/selectors";
+import { useOpenParam } from "@/lib/useOpenParam";
 
 const TIPOS: EvidenciaTipo[] = [
   "contrato",
@@ -39,10 +40,31 @@ const VERIFICACION_TONE = {
   rechazada: "red",
 } as const;
 
-export default function EvidenciasPage() {
+function EvidenciasContent() {
   const evidencias = useAppStore((s) => s.evidencias);
   const proyectos = useAppStore((s) => s.proyectos);
+  const openId = useOpenParam();
   const [showNew, setShowNew] = useState(false);
+
+  useEffect(() => {
+    if (!openId) return;
+    const t = setTimeout(() => {
+      document.getElementById(`evidencia-${openId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [openId]);
+
+  function verArchivo(e: Evidencia) {
+    if (!e.archivoDatos || !e.archivoTipo) return;
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(
+        e.archivoTipo === "application/pdf"
+          ? `<iframe src="data:${e.archivoTipo};base64,${e.archivoDatos}" style="width:100%;height:100%;border:0"></iframe>`
+          : `<img src="data:${e.archivoTipo};base64,${e.archivoDatos}" style="max-width:100%" />`
+      );
+    }
+  }
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -58,7 +80,13 @@ export default function EvidenciasPage() {
       <div className="space-y-3">
         {evidencias.length === 0 && <p className="text-sm text-muted">No hay evidencias registradas.</p>}
         {evidencias.map((e) => (
-          <div key={e.id} className="rounded-2xl border border-border-subtle bg-surface p-4">
+          <div
+            key={e.id}
+            id={`evidencia-${e.id}`}
+            className={`rounded-2xl border bg-surface p-4 transition-colors ${
+              openId === e.id ? "border-accent-blue" : "border-border-subtle"
+            }`}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="text-[10px] uppercase tracking-wide text-muted">{TIPO_LABEL[e.tipo]}</span>
@@ -69,7 +97,7 @@ export default function EvidenciasPage() {
             <div className="text-xs text-muted mt-2">
               {e.fuente} · {proyectoNombre(proyectos, e.proyectoId)} · {e.fecha}
             </div>
-            <div className="mt-2">
+            <div className="mt-2 flex items-center gap-2">
               <Pill tone={VERIFICACION_TONE[e.estadoVerificacion]}>
                 {e.estadoVerificacion === "verificada"
                   ? "Verificada"
@@ -77,6 +105,11 @@ export default function EvidenciasPage() {
                   ? "Verificación pendiente"
                   : "Rechazada"}
               </Pill>
+              {e.archivoDatos && (
+                <button onClick={() => verArchivo(e)} className="text-xs font-medium text-accent-blue">
+                  📎 Ver archivo{e.archivoNombre ? ` (${e.archivoNombre})` : ""}
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -87,6 +120,28 @@ export default function EvidenciasPage() {
   );
 }
 
+export default function EvidenciasPage() {
+  return (
+    <Suspense>
+      <EvidenciasContent />
+    </Suspense>
+  );
+}
+
+const MAX_ARCHIVO_BYTES = 6 * 1024 * 1024;
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.slice(result.indexOf(",") + 1));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 function NuevaEvidenciaModal({ onClose }: { onClose: () => void }) {
   const addEvidencia = useAppStore((s) => s.addEvidencia);
   const proyectos = useAppStore((s) => s.proyectos);
@@ -95,10 +150,55 @@ function NuevaEvidenciaModal({ onClose }: { onClose: () => void }) {
   const [afirmacion, setAfirmacion] = useState("");
   const [proyectoId, setProyectoId] = useState<string>(proyectos[0]?.id ?? "");
   const [nivel, setNivel] = useState<Evidencia["nivelConfiabilidad"]>("reportado");
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [archivoError, setArchivoError] = useState("");
+  const [leyendoArchivo, setLeyendoArchivo] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleArchivo(file: File | null) {
+    setArchivoError("");
+    if (file && file.size > MAX_ARCHIVO_BYTES) {
+      setArchivoError("El archivo supera el límite de 6 MB.");
+      setArchivo(null);
+      return;
+    }
+    setArchivo(file);
+  }
+
+  async function handleLeerConIA() {
+    if (!archivo) return;
+    setLeyendoArchivo(true);
+    setArchivoError("");
+    try {
+      const data = await fileToBase64(archivo);
+      const res = await fetch("/api/interpret-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data, mediaType: archivo.type }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "No se pudo leer el archivo");
+      setAfirmacion(body.result);
+    } catch (err) {
+      setArchivoError((err as Error).message);
+    }
+    setLeyendoArchivo(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!afirmacion.trim()) return;
+    if (!afirmacion.trim() || guardando) return;
+    setGuardando(true);
+    let archivoDatos: string | undefined;
+    if (archivo) {
+      try {
+        archivoDatos = await fileToBase64(archivo);
+      } catch {
+        setArchivoError("No se pudo adjuntar el archivo.");
+        setGuardando(false);
+        return;
+      }
+    }
     addEvidencia({
       tipo,
       fuente: fuente.trim() || "Sin especificar",
@@ -107,6 +207,9 @@ function NuevaEvidenciaModal({ onClose }: { onClose: () => void }) {
       nivelConfiabilidad: nivel,
       afirmacionRespaldada: afirmacion.trim(),
       estadoVerificacion: "pendiente",
+      ...(archivoDatos && archivo
+        ? { archivoDatos, archivoTipo: archivo.type, archivoNombre: archivo.name }
+        : {}),
     });
     onClose();
   }
@@ -126,6 +229,26 @@ function NuevaEvidenciaModal({ onClose }: { onClose: () => void }) {
             onChange={(e) => setAfirmacion(e.target.value)}
             className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
           />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Adjuntar archivo (foto o PDF, opcional)</label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            onChange={(e) => handleArchivo(e.target.files?.[0] ?? null)}
+            className="w-full text-xs text-muted file:mr-3 file:rounded-full file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-xs"
+          />
+          {archivo && (
+            <button
+              type="button"
+              onClick={handleLeerConIA}
+              disabled={leyendoArchivo}
+              className="mt-2 text-xs font-medium text-accent-blue disabled:opacity-50"
+            >
+              {leyendoArchivo ? "Leyendo…" : "Usar IA para completar la afirmación desde el archivo"}
+            </button>
+          )}
+          {archivoError && <p className="text-xs text-accent-red mt-1">{archivoError}</p>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -183,8 +306,12 @@ function NuevaEvidenciaModal({ onClose }: { onClose: () => void }) {
           <button type="button" onClick={onClose} className="text-sm text-muted">
             Cancelar
           </button>
-          <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
-            Guardar
+          <button
+            type="submit"
+            disabled={guardando}
+            className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-50"
+          >
+            {guardando ? "Guardando…" : "Guardar"}
           </button>
         </div>
       </form>

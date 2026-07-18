@@ -285,7 +285,15 @@ export default function ConfiguracionPage() {
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-2 text-sm text-muted">
           <p>Acceso protegido por contraseña, gestionada mediante la variable de entorno del servidor.</p>
           <p>Los datos se guardan localmente en este navegador — no se comparten con terceros ni se usan para entrenar modelos.</p>
-          <p>{historial.length} cambios registrados en el historial de auditoría.</p>
+          <div className="flex items-center justify-between gap-3">
+            <p>{historial.length} cambios registrados en el historial de auditoría.</p>
+            <button
+              onClick={() => router.push("/actividad")}
+              className="text-xs font-medium text-accent-blue shrink-0"
+            >
+              Ver historial completo
+            </button>
+          </div>
         </div>
       </Section>
 
@@ -303,9 +311,17 @@ export default function ConfiguracionPage() {
           <div className="flex items-center justify-between border-t border-border-subtle pt-3">
             <div>
               <div className="text-sm font-medium">Restaurar datos de ejemplo</div>
-              <div className="text-xs text-muted mt-0.5">Vuelve al estado inicial de demostración.</div>
+              <div className="text-xs text-muted mt-0.5">
+                {dbStatus === "activa"
+                  ? "No disponible: la base de datos es la fuente activa, así que al recargar volverían tus datos reales."
+                  : "Vuelve al estado inicial de demostración."}
+              </div>
             </div>
-            <button onClick={handleReset} className="rounded-full border border-accent-red/40 text-accent-red px-4 py-2 text-sm shrink-0">
+            <button
+              onClick={handleReset}
+              disabled={dbStatus === "activa"}
+              className="rounded-full border border-accent-red/40 text-accent-red px-4 py-2 text-sm shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               Restaurar
             </button>
           </div>

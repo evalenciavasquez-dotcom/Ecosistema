@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, AccionEstadoBadge } from "@/components/ui/badges";
 import { Proyecto, ProyectoEstado, Prioridad } from "@/lib/types";
 import { formatMinutos, hoyISO, inicioSemanaISO, minutosDe } from "@/lib/tiempo";
+import { useOpenParam } from "@/lib/useOpenParam";
 
 const ESTADOS: ProyectoEstado[] = [
   "Idea",
@@ -19,10 +20,15 @@ const ESTADOS: ProyectoEstado[] = [
   "Descartado",
 ];
 
-export default function ProyectosPage() {
+function ProyectosContent() {
   const proyectos = useAppStore((s) => s.proyectos);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const openId = useOpenParam();
+  const [selectedId, setSelectedId] = useState<string | null>(() => openId);
   const [showNew, setShowNew] = useState(false);
+
+  useEffect(() => {
+    if (openId) window.history.replaceState(null, "", "/proyectos");
+  }, [openId]);
 
   const selected = proyectos.find((p) => p.id === selectedId) ?? null;
 
@@ -62,6 +68,14 @@ export default function ProyectosPage() {
 
       {showNew && <NuevoProyectoModal onClose={() => setShowNew(false)} />}
     </div>
+  );
+}
+
+export default function ProyectosPage() {
+  return (
+    <Suspense>
+      <ProyectosContent />
+    </Suspense>
   );
 }
 
