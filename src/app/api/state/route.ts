@@ -14,6 +14,7 @@ import {
   strategicCases,
   tiempo,
 } from "@/lib/db/schema";
+import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
 
 export async function GET() {
   if (!isDbConfigured()) {
@@ -22,6 +23,11 @@ export async function GET() {
 
   try {
     const db = getDb();
+    // Si la tabla existe pero es de antes del panel de expertos, añade las
+    // columnas nuevas primero — así el SELECT de abajo no falla por columnas
+    // faltantes. Si la tabla ni siquiera existe todavía (esquema sin
+    // inicializar), esto lanza y cae en el catch de más abajo, igual que antes.
+    await ensureStrategicCaseColumns();
     const [
       proyectosRows,
       personasRows,

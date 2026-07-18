@@ -10,6 +10,7 @@ import {
   ESCENARIO_DESCRIPCION,
   ESCENARIO_LABEL,
   EscenarioTipo,
+  LENTE_LABEL,
   NivelRiesgo,
   StrategicCase,
 } from "@/lib/types";
@@ -344,6 +345,11 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
       )}
 
       <Section title="Resumen ejecutivo">
+        {c.tipoDeCaso && (
+          <div className="mb-2 text-xs text-muted">
+            Tipo de caso: <span className="text-foreground font-medium">{c.tipoDeCaso}</span>
+          </div>
+        )}
         <p className="text-sm leading-relaxed">{c.resumenEjecutivo}</p>
         <details className="mt-2 text-xs text-muted">
           <summary className="cursor-pointer select-none">
@@ -357,12 +363,46 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
             {fuentes.length === 0 && <li>Sin fuentes específicas registradas.</li>}
           </ul>
         </details>
+        {c.lentesActivos?.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {c.lentesActivos.map((l) => (
+              <span
+                key={l}
+                className="rounded-full bg-surface-2 border border-border-subtle px-2.5 py-1 text-[11px] text-muted"
+              >
+                {LENTE_LABEL[l]}
+              </span>
+            ))}
+          </div>
+        )}
       </Section>
+
+      {c.panelExpertos?.length > 0 && (
+        <Section title={`Panel de análisis (${c.panelExpertos.length} especialista${c.panelExpertos.length === 1 ? "" : "s"})`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {c.panelExpertos.map((e, i) => (
+              <div key={i} className="rounded-xl bg-surface border border-border-subtle p-3">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <span className="text-sm font-semibold">{e.perfil}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted shrink-0">{e.area}</span>
+                </div>
+                <p className="text-xs text-muted leading-relaxed">{e.lectura}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section title="Punto de vista del sistema">
         <p className="text-sm leading-relaxed rounded-xl border border-accent-blue/40 bg-accent-blue/10 p-4">
           {c.puntoDeVista}
         </p>
+        {c.panelExpertos?.length > 0 && (
+          <p className="text-xs text-muted mt-2">
+            Síntesis integrada del panel de {c.panelExpertos.length} especialista
+            {c.panelExpertos.length === 1 ? "" : "s"} activado{c.panelExpertos.length === 1 ? "" : "s"} para este caso.
+          </p>
+        )}
       </Section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
