@@ -76,6 +76,24 @@ const escenarioProfundoSchema = z.object({
   consecuenciaPrincipal: z.string(),
 });
 
+const lenteAnalisisEnum = z.enum([
+  "estrategico",
+  "economico_financiero",
+  "operativo",
+  "proyectos",
+  "riesgo_reputacion",
+  "comercial_negociacion",
+  "viabilidad_negocio",
+  "industria_musical",
+  "conductual",
+]);
+
+const lecturaExpertoSchema = z.object({
+  perfil: z.string().describe("Nombre del rol activado, ej. 'CFO', 'Project Manager', 'Asesor Legal'"),
+  area: z.string().describe("Área a la que pertenece ese perfil, ej. 'Finanzas', 'Riesgo y negociación'"),
+  lectura: z.string().describe("Su lectura del caso desde su especialidad, en 2-4 frases concretas"),
+});
+
 const recomendacionSchema = z.object({
   decision: z.string(),
   razonPrincipal: z.string(),
@@ -89,6 +107,15 @@ const recomendacionSchema = z.object({
 
 export const strategicCaseGeneratedSchema = z.object({
   preguntaEstrategica: z.string(),
+  tipoDeCaso: z
+    .string()
+    .describe("Clasificación breve del caso, ej. 'Compra importante', 'Contrato musical', 'Decidir si soltar un proyecto'"),
+  lentesActivos: z
+    .array(lenteAnalisisEnum)
+    .describe("Los lentes de análisis relevantes para este caso, solo los que apliquen"),
+  panelExpertos: z
+    .array(lecturaExpertoSchema)
+    .describe("Lecturas de los perfiles profesionales activados para este caso — solo los relevantes, no todos"),
   resumenEjecutivo: z.string(),
   hechos: z.array(hechoOHipotesisSchema),
   hipotesis: z.array(hechoOHipotesisSchema),

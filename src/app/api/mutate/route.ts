@@ -1,25 +1,8 @@
 import { NextResponse } from "next/server";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/lib/db/client";
 import { TABLES, type TableName } from "@/lib/db/schema";
-
-// La tabla de tiempo llegó después del esquema inicial: se asegura bajo
-// demanda para que las bases ya inicializadas no requieran pasos manuales.
-let tiempoAsegurada = false;
-async function ensureTiempoTable() {
-  if (tiempoAsegurada) return;
-  await getDb().execute(
-    sql.raw(`CREATE TABLE IF NOT EXISTS tiempo (
-      id text PRIMARY KEY,
-      proyecto_id text NOT NULL,
-      fecha text NOT NULL,
-      minutos integer NOT NULL,
-      descripcion text NOT NULL,
-      creado_en text NOT NULL
-    )`)
-  );
-  tiempoAsegurada = true;
-}
+import { ensureStrategicCaseColumns, ensureTiempoTable } from "@/lib/db/migrations";
 
 type MutateBody = {
   table: TableName;
@@ -49,6 +32,7 @@ export async function POST(request: Request) {
   try {
     const db = getDb();
     if (table === "tiempo") await ensureTiempoTable();
+    if (table === "strategicCases") await ensureStrategicCaseColumns();
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });

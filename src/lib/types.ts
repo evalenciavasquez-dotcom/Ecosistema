@@ -329,10 +329,42 @@ export interface RecomendacionEjecutiva {
 
 export type NivelAnalisis = "1" | "2" | "3";
 
+export type LenteAnalisis =
+  | "estrategico"
+  | "economico_financiero"
+  | "operativo"
+  | "proyectos"
+  | "riesgo_reputacion"
+  | "comercial_negociacion"
+  | "viabilidad_negocio"
+  | "industria_musical"
+  | "conductual";
+
+export const LENTE_LABEL: Record<LenteAnalisis, string> = {
+  estrategico: "Estratégico",
+  economico_financiero: "Económico-financiero",
+  operativo: "Operativo",
+  proyectos: "Proyectos",
+  riesgo_reputacion: "Riesgo y reputación",
+  comercial_negociacion: "Comercial y negociación",
+  viabilidad_negocio: "Viabilidad de negocio",
+  industria_musical: "Industria musical",
+  conductual: "Conductual",
+};
+
+export interface LecturaExperto {
+  perfil: string;
+  area: string;
+  lectura: string;
+}
+
 export interface StrategicCase {
   id: string;
   decisionId: string;
   preguntaEstrategica: string;
+  tipoDeCaso: string;
+  lentesActivos: LenteAnalisis[];
+  panelExpertos: LecturaExperto[];
   resumenEjecutivo: string;
   hechos: HechoOHipotesis[];
   hipotesis: HechoOHipotesis[];
