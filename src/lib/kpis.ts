@@ -8,6 +8,7 @@ import {
   RegistroTiempo,
 } from "./types";
 import { formatMinutos, hoyISO, inicioSemanaISO, minutosDe } from "./tiempo";
+import { computeRunway } from "./finanzas";
 
 export type KpiTone = "green" | "amber" | "red" | undefined;
 
@@ -112,6 +113,16 @@ export function computeProjectKpis(
         label: `Balance (${moneda})`,
         value: formatMonto(valor, moneda),
         tone: valor >= 0 ? "green" : "red",
+      });
+    });
+
+    computeRunway(movProy, hoy).forEach((r) => {
+      if (r.mesesRunway === null) return;
+      tiles.push({
+        key: `runway-${r.moneda}`,
+        label: `Runway del proyecto (${r.moneda})`,
+        value: r.mesesRunway < 0 ? "En déficit" : `${r.mesesRunway.toFixed(1)} meses`,
+        tone: r.mesesRunway < 0 || r.mesesRunway < 2 ? "red" : r.mesesRunway < 4 ? "amber" : "green",
       });
     });
   }

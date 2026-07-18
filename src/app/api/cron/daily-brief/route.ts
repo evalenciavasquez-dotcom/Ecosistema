@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb, isDbConfigured } from "@/lib/db/client";
-import { acciones, agenda, decisiones, personas } from "@/lib/db/schema";
+import { acciones, agenda, decisiones, movimientos, personas } from "@/lib/db/schema";
 import { sendPushToAll } from "@/lib/db/push";
+import { computeProyeccion, computeRunway } from "@/lib/finanzas";
+import type { MovimientoEconomico } from "@/lib/types";
 
 function hoyISO(): string {
   // Fecha "hoy" en hora de Colombia (UTC-5), independiente del reloj del servidor.
@@ -31,11 +33,12 @@ export async function GET(request: Request) {
 
   try {
     const db = getDb();
-    const [accionesRows, decisionesRows, personasRows, agendaRows] = await Promise.all([
+    const [accionesRows, decisionesRows, personasRows, agendaRows, movimientosRows] = await Promise.all([
       db.select().from(acciones),
       db.select().from(decisiones),
       db.select().from(personas),
       db.select().from(agenda),
+      db.select().from(movimientos),
     ]);
 
     const hoy = hoyISO();
@@ -77,13 +80,32 @@ export async function GET(request: Request) {
       lineas.push(`${p.nombre} lleva ${p.diasSinResponder} días sin responder`);
     }
 
+    const runway = computeRunway(movimientosRows as MovimientoEconomico[], hoy);
+    const proyeccion = computeProyeccion(movimientosRows as MovimientoEconomico[], hoy);
+    const runwayCorto = runway.filter((r) => r.mesesRunway !== null && r.mesesRunway < 2);
+    if (runwayCorto.length > 0) {
+      urgente = true;
+      const r = runwayCorto[0];
+      lineas.push(
+        r.mesesRunway! < 0
+          ? `Caja en déficit en ${r.moneda} — revisa Economía`
+          : `Runway de ${r.mesesRunway!.toFixed(1)} meses en ${r.moneda} — caja baja`
+      );
+    }
+    const proyeccionNegativa = proyeccion.filter((p) => p.proyeccion30 < 0);
+    if (proyeccionNegativa.length > 0) {
+      urgente = true;
+      const p = proyeccionNegativa[0];
+      lineas.push(`Caja proyectada a 30 días se vuelve negativa en ${p.moneda}`);
+    }
+
     if (lineas.length === 0) {
       lineas.push("Sin pendientes críticos registrados. Buen momento para revisar la Bandeja.");
     }
 
     const payload = {
       title: urgente ? "⚠ Tu día — hay algo urgente" : "Tu día — C.C.O. E.V.",
-      body: lineas.slice(0, 4).join("\n"),
+      body: lineas.slice(0, 5).join("\n"),
       url: "/",
     };
 
