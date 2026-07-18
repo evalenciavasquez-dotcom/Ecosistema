@@ -88,7 +88,10 @@ const STATEMENTS = [
     proyecto_id text,
     nivel_confiabilidad text NOT NULL,
     afirmacion_respaldada text NOT NULL,
-    estado_verificacion text NOT NULL
+    estado_verificacion text NOT NULL,
+    archivo_datos text,
+    archivo_tipo text,
+    archivo_nombre text
   )`,
   `CREATE TABLE IF NOT EXISTS bandeja (
     id text PRIMARY KEY,

@@ -185,6 +185,9 @@ export interface Evidencia {
   nivelConfiabilidad: EvidenceLevel;
   afirmacionRespaldada: string;
   estadoVerificacion: "verificada" | "pendiente" | "rechazada";
+  archivoDatos?: string | null;
+  archivoTipo?: string | null;
+  archivoNombre?: string | null;
 }
 
 export type BandejaEstado = "Nuevo" | "En análisis" | "Necesita confirmación" | "Procesado" | "Descartado";

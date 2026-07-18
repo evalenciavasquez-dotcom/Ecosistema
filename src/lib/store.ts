@@ -108,6 +108,9 @@ interface AppState {
   addPersona: (persona: Omit<Persona, "id">) => string;
   updatePersona: (id: string, patch: Partial<Persona>) => void;
 
+  addAgendaEvento: (evento: Omit<AgendaEvento, "id">) => string;
+  deleteAgendaEvento: (id: string) => void;
+
   resetToSeed: () => void;
 
   hydrateFromServer: () => Promise<void>;
@@ -545,6 +548,19 @@ export const useAppStore = create<AppState>()(
           anterior ? pickKeys(anterior, keys) : undefined,
           patch
         );
+      },
+
+      addAgendaEvento: (evento) => {
+        const id = genId("evt");
+        const nuevo: AgendaEvento = { ...evento, id };
+        set((state) => ({ agenda: [nuevo, ...state.agenda] }));
+        dbMutate("agenda", "insert", undefined, nuevo);
+        get().logHistorial("agenda", id, `Evento "${evento.titulo}" creado`);
+        return id;
+      },
+      deleteAgendaEvento: (id) => {
+        set((state) => ({ agenda: state.agenda.filter((e) => e.id !== id) }));
+        dbMutate("agenda", "delete", id);
       },
 
       resetToSeed: () => set(seedState()),

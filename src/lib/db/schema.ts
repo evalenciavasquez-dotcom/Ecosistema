@@ -105,6 +105,9 @@ export const evidencias = pgTable("evidencias", {
   nivelConfiabilidad: text("nivel_confiabilidad").notNull(),
   afirmacionRespaldada: text("afirmacion_respaldada").notNull(),
   estadoVerificacion: text("estado_verificacion").notNull(),
+  archivoDatos: text("archivo_datos"),
+  archivoTipo: text("archivo_tipo"),
+  archivoNombre: text("archivo_nombre"),
 });
 
 export const bandeja = pgTable("bandeja", {

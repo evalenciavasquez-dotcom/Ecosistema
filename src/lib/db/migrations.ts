@@ -33,3 +33,15 @@ export async function ensureStrategicCaseColumns() {
   );
   strategicCaseColumnsEnsured = true;
 }
+
+let evidenciaArchivoColumnsEnsured = false;
+export async function ensureEvidenciaArchivoColumns() {
+  if (evidenciaArchivoColumnsEnsured) return;
+  await getDb().execute(
+    sql.raw(`ALTER TABLE evidencias
+      ADD COLUMN IF NOT EXISTS archivo_datos text,
+      ADD COLUMN IF NOT EXISTS archivo_tipo text,
+      ADD COLUMN IF NOT EXISTS archivo_nombre text`)
+  );
+  evidenciaArchivoColumnsEnsured = true;
+}
