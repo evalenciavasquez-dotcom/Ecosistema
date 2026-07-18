@@ -15,6 +15,7 @@ const TABS = [
 const MORE_ITEMS = [
   { code: "AC", label: "Acciones", href: "/acciones" },
   { code: "EC", label: "Economía", href: "/economia" },
+  { code: "ES", label: "Estadísticas", href: "/estadisticas" },
   { code: "EV", label: "Evidencias", href: "/evidencias" },
   { code: "CO", label: "Configuración", href: "/configuracion" },
 ];
