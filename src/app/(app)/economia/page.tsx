@@ -5,6 +5,8 @@ import { useAppStore } from "@/lib/store";
 import { proyectoNombre } from "@/lib/selectors";
 import { MovimientoEconomico, MovimientoEstado, MovimientoTipo } from "@/lib/types";
 import { Pill } from "@/components/ui/Pill";
+import { computeProyeccion, computeRunway, computeSplitPersonalProyectos } from "@/lib/finanzas";
+import { hoyISO } from "@/lib/tiempo";
 
 const ESTADO_TONE: Record<MovimientoEstado, "green" | "amber" | "red"> = {
   confirmado: "green",
@@ -90,8 +92,128 @@ export default function EconomiaPage() {
     (m) => (filtroEstado === "Todos" || m.estado === filtroEstado) && (filtroTipo === "Todos" || m.tipo === filtroTipo)
   );
 
+  const hoy = hoyISO();
+  const runway = useMemo(() => computeRunway(movimientos, hoy), [movimientos, hoy]);
+  const proyeccion = useMemo(() => computeProyeccion(movimientos, hoy), [movimientos, hoy]);
+  const splitPersonal = useMemo(() => computeSplitPersonalProyectos(movimientos), [movimientos]);
+
   return (
     <div className="max-w-4xl space-y-6">
+      {(runway.length > 0 || proyeccion.length > 0) && (
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-5">
+          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">
+            Resumen financiero
+          </div>
+
+          {runway.length > 0 && (
+            <div>
+              <div className="text-xs text-muted mb-2">Runway — cuánto aguanta la caja actual al ritmo de gasto reciente</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {runway.map((r) => (
+                  <div key={r.moneda} className="rounded-xl bg-surface-2 p-3.5">
+                    <div className="text-xs text-muted">{r.moneda}</div>
+                    {r.mesesRunway === null ? (
+                      <div className="text-sm mt-1">
+                        {r.gastoMensualPromedio === 0
+                          ? "Sin gasto confirmado reciente — no hay quema de caja detectada."
+                          : "Datos insuficientes para calcular runway."}
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className={`text-xl font-bold mt-1 tabular-nums ${
+                            r.mesesRunway < 0
+                              ? "text-accent-red"
+                              : r.mesesRunway < 2
+                              ? "text-accent-red"
+                              : r.mesesRunway < 4
+                              ? "text-accent-amber"
+                              : "text-accent-green"
+                          }`}
+                        >
+                          {r.mesesRunway < 0 ? "En déficit" : `${r.mesesRunway.toFixed(1)} meses`}
+                        </div>
+                        <div className="text-[11px] text-muted mt-0.5">
+                          gasto promedio ~{Math.round(r.gastoMensualPromedio).toLocaleString("es-ES")} {r.moneda}/mes
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {proyeccion.length > 0 && (
+            <div>
+              <div className="text-xs text-muted mb-2">Caja proyectada — actual + esperados dentro de cada ventana</div>
+              <div className="space-y-2">
+                {proyeccion.map((p) => (
+                  <div key={p.moneda} className="grid grid-cols-4 gap-2 text-center rounded-xl bg-surface-2 p-3">
+                    <div>
+                      <div className="text-[10px] text-muted">Hoy ({p.moneda})</div>
+                      <div className="text-sm font-semibold tabular-nums">{formatMonto(p.cajaActual, p.moneda)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">30 días</div>
+                      <div
+                        className={`text-sm font-semibold tabular-nums ${p.proyeccion30 >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                      >
+                        {formatMonto(p.proyeccion30, p.moneda)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">60 días</div>
+                      <div
+                        className={`text-sm font-semibold tabular-nums ${p.proyeccion60 >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                      >
+                        {formatMonto(p.proyeccion60, p.moneda)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">90 días</div>
+                      <div
+                        className={`text-sm font-semibold tabular-nums ${p.proyeccion90 >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                      >
+                        {formatMonto(p.proyeccion90, p.moneda)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {splitPersonal.length > 0 && (
+            <div>
+              <div className="text-xs text-muted mb-2">Personal vs. en proyectos — de lo confirmado, cuánto está en cada lado</div>
+              <div className="space-y-2">
+                {splitPersonal.map((s) => {
+                  const total = Math.abs(s.personal) + Math.abs(s.proyectos) || 1;
+                  const pctPersonal = Math.round((Math.abs(s.personal) / total) * 100);
+                  return (
+                    <div key={s.moneda} className="rounded-xl bg-surface-2 p-3">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span>
+                          Sin proyecto: <span className="font-semibold">{formatMonto(s.personal, s.moneda)}</span>
+                        </span>
+                        <span>
+                          En proyectos: <span className="font-semibold">{formatMonto(s.proyectos, s.moneda)}</span>
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-accent-blue/20 overflow-hidden flex">
+                        <div className="h-full bg-accent-blue" style={{ width: `${pctPersonal}%` }} />
+                        <div className="h-full bg-white/20" style={{ width: `${100 - pctPersonal}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard label="Caja disponible" values={caja} positiveTone />
         <SummaryCard label="Ingresos confirmados" values={ingresosConfirmados} tone="text-accent-green" />
