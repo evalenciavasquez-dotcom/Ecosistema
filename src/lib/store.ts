@@ -166,12 +166,47 @@ export const useAppStore = create<AppState>()(
           id: genId("bnd"),
           texto,
           fecha: new Date().toISOString().slice(0, 10),
-          estado: "Nuevo",
+          estado: "En análisis",
           clasificacion,
         };
         set((state) => ({ bandeja: [item, ...state.bandeja] }));
         dbMutate("bandeja", "insert", undefined, item);
-        get().logHistorial("bandeja", item.id, "Entrada recibida y clasificada por IA", "ia");
+        get().logHistorial("bandeja", item.id, "Entrada recibida — clasificación preliminar por reglas", "ia");
+
+        // Mejora asíncrona con IA real: si responde, reemplaza la clasificación
+        // por reglas; si falla (sin API key, sin red), la preliminar se queda.
+        if (typeof window !== "undefined") {
+          fetch("/api/classify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              texto,
+              proyectos: proyectos.map((p) => ({ id: p.id, nombre: p.nombre })),
+              personas: personas.map((p) => ({ nombre: p.nombre, proyectoIds: p.proyectoIds })),
+            }),
+          })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((body) => {
+              const result = body?.result;
+              const estado: BandejaEstado =
+                result && result.confianza < 0.6 ? "Necesita confirmación" : "Nuevo";
+              if (result) {
+                get().reclassifyBandejaItem(item.id, {
+                  destino: result.destino,
+                  proyectoId: result.proyectoId,
+                  confianza: result.confianza,
+                  razon: result.razon,
+                });
+                get().logHistorial("bandeja", item.id, "Clasificación afinada por IA", "ia");
+              }
+              get().setBandejaEstado(item.id, estado);
+            })
+            .catch(() => {
+              get().setBandejaEstado(item.id, "Nuevo");
+            });
+        } else {
+          get().setBandejaEstado(item.id, "Nuevo");
+        }
       },
 
       setBandejaEstado: (id, estado) => {

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // El indicador flotante de dev tapa la barra de navegación móvil en pruebas.
+  devIndicators: false,
 };
 
 export default nextConfig;

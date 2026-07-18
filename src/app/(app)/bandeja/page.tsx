@@ -12,7 +12,12 @@ const ESTADOS_ORDEN = ["Nuevo", "En análisis", "Necesita confirmación", "Proce
 function BandejaContent() {
   const params = useSearchParams();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [texto, setTexto] = useState("");
+  // Share target de la PWA: texto compartido desde otra app (p. ej. WhatsApp)
+  // llega como ?text=...&title=...&url=... — se precarga en el cuadro para que
+  // Eduardo lo revise y lo envíe, nunca se registra solo.
+  const [texto, setTexto] = useState(() =>
+    [params.get("title"), params.get("text"), params.get("url")].filter(Boolean).join("\n").trim()
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<string>("Todos");
 
@@ -26,6 +31,13 @@ function BandejaContent() {
 
   useEffect(() => {
     if (params.get("focus") === "1") textareaRef.current?.focus();
+  }, [params]);
+
+  useEffect(() => {
+    if (params.get("text") || params.get("title") || params.get("url")) {
+      textareaRef.current?.focus();
+      window.history.replaceState(null, "", "/bandeja");
+    }
   }, [params]);
 
   function handleSubmit(e: React.FormEvent) {
