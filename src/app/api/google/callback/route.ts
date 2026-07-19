@@ -38,6 +38,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/configuracion?google=error_no_refresh", request.url));
     }
 
+    // Guardar la conexión es lo crítico — si esto falla, sí es un error real.
     await saveConnection({
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -45,9 +46,17 @@ export async function GET(request: Request) {
       scope: tokens.scope ?? "",
     });
 
-    client.setCredentials(tokens);
-    const labelId = await ensureLabel(client);
-    if (labelId) await updateGmailLabelId(labelId);
+    // Crear la etiqueta "CCO" es un extra de conveniencia, no el objetivo
+    // de esta ruta — si falla (permiso insuficiente, Gmail API caída),
+    // la conexión ya quedó guardada y sigue siendo un éxito real. Eduardo
+    // puede crear la etiqueta a mano en Gmail si esto no logra hacerlo.
+    try {
+      client.setCredentials(tokens);
+      const labelId = await ensureLabel(client);
+      if (labelId) await updateGmailLabelId(labelId);
+    } catch (labelErr) {
+      console.error("No se pudo crear la etiqueta CCO en Gmail (no crítico)", labelErr);
+    }
 
     return NextResponse.redirect(new URL("/configuracion?google=success", request.url));
   } catch (err) {

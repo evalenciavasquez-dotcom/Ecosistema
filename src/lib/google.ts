@@ -4,12 +4,15 @@ import { getDb, isDbConfigured } from "./db/client";
 import { googleConnection } from "./db/schema";
 import { ensureGoogleSchema } from "./db/migrations";
 
-// Alcance mínimo necesario: leer correo (para el barrido de Gmail) y
-// crear/editar/borrar eventos de Calendar (para la sincronización de
-// doble vía) — nunca acceso a la bandeja completa de Calendar ni a otros
-// datos de la cuenta de Google.
+// Alcance mínimo necesario: leer correo (para el barrido de Gmail),
+// gestionar SOLO etiquetas de Gmail (gmail.labels — necesario para crear
+// la etiqueta "CCO" al conectar; no da acceso de escritura al contenido
+// de los correos, gmail.readonly ya cubre eso), y crear/editar/borrar
+// eventos de Calendar (para la sincronización de doble vía) — nunca
+// acceso a la bandeja completa de Calendar ni a otros datos de la cuenta.
 const SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.labels",
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
