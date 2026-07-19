@@ -232,6 +232,101 @@ function NuevoProyectoModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function EditarProyectoModal({ proyecto, onClose }: { proyecto: Proyecto; onClose: () => void }) {
+  const updateProyecto = useAppStore((s) => s.updateProyecto);
+  const [rolUsuario, setRolUsuario] = useState(proyecto.rolUsuario);
+  const [situacionEconomica, setSituacionEconomica] = useState(proyecto.situacionEconomica);
+  const [proximoHito, setProximoHito] = useState(proyecto.proximoHito);
+  const [proximaAccionRecomendada, setProximaAccionRecomendada] = useState(proyecto.proximaAccionRecomendada);
+  const [riesgos, setRiesgos] = useState(proyecto.riesgos.join("\n"));
+  const [oportunidades, setOportunidades] = useState(proyecto.oportunidades.join("\n"));
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    updateProyecto(proyecto.id, {
+      rolUsuario,
+      situacionEconomica,
+      proximoHito,
+      proximaAccionRecomendada,
+      riesgos: riesgos.split("\n").map((r) => r.trim()).filter(Boolean),
+      oportunidades: oportunidades.split("\n").map((o) => o.trim()).filter(Boolean),
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4 py-8 overflow-y-auto">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4 my-auto"
+      >
+        <h3 className="font-semibold">Editar «{proyecto.nombre}»</h3>
+        <div>
+          <label className="block text-xs text-muted mb-1">Rol de Eduardo</label>
+          <input
+            value={rolUsuario}
+            onChange={(e) => setRolUsuario(e.target.value)}
+            placeholder="Ej. Director, Comprador, Consultor…"
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Próximo hito</label>
+          <input
+            value={proximoHito}
+            onChange={(e) => setProximoHito(e.target.value)}
+            placeholder="Ej. Firma de contrato — 20 jul · 10:00"
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Situación económica</label>
+          <textarea
+            value={situacionEconomica}
+            onChange={(e) => setSituacionEconomica(e.target.value)}
+            rows={2}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue resize-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Próxima acción recomendada</label>
+          <input
+            value={proximaAccionRecomendada}
+            onChange={(e) => setProximaAccionRecomendada(e.target.value)}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Riesgos (uno por línea)</label>
+          <textarea
+            value={riesgos}
+            onChange={(e) => setRiesgos(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue resize-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Oportunidades (una por línea)</label>
+          <textarea
+            value={oportunidades}
+            onChange={(e) => setOportunidades(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue resize-none"
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="text-sm text-muted">
+            Cancelar
+          </button>
+          <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: () => void }) {
   const personas = useAppStore((s) => s.personas);
   const acciones = useAppStore((s) => s.acciones).filter((a) => a.proyectoId === proyecto.id);
@@ -242,6 +337,7 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
   const updateProyecto = useAppStore((s) => s.updateProyecto);
 
   const personasProyecto = personas.filter((p) => proyecto.personaIds.includes(p.id));
+  const [editando, setEditando] = useState(false);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -252,7 +348,15 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
       <div>
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-2xl font-bold tracking-tight">{proyecto.nombre}</h2>
-          <EvidenceBadge level={proyecto.evidenceLevel} />
+          <div className="flex items-center gap-2 shrink-0">
+            <EvidenceBadge level={proyecto.evidenceLevel} />
+            <button
+              onClick={() => setEditando(true)}
+              className="rounded-full border border-border-subtle px-3 py-1 text-xs text-muted hover:text-foreground"
+            >
+              Editar
+            </button>
+          </div>
         </div>
         <p className="text-sm text-muted mt-2">{proyecto.objetivo}</p>
         <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -268,6 +372,8 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
         <Field label="Situación económica" value={proyecto.situacionEconomica || "Sin registrar"} />
         <Field label="Próxima acción recomendada" value={proyecto.proximaAccionRecomendada || "Sin recomendación"} />
       </div>
+
+      {editando && <EditarProyectoModal proyecto={proyecto} onClose={() => setEditando(false)} />}
 
       <AnalisisEconomicoSection proyecto={proyecto} decisiones={decisiones} movimientos={movimientos} />
 
