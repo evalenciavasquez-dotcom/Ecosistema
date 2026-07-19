@@ -17,7 +17,8 @@ const STATEMENTS = [
     oportunidades jsonb NOT NULL,
     proxima_accion_recomendada text NOT NULL,
     evidence_level text NOT NULL,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    analisis_economico jsonb
   )`,
   `CREATE TABLE IF NOT EXISTS personas (
     id text PRIMARY KEY,

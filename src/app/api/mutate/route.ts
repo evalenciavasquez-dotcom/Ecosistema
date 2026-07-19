@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/lib/db/client";
 import { TABLES, type TableName } from "@/lib/db/schema";
-import { ensureEvidenciaArchivoColumns, ensureStrategicCaseColumns, ensureTiempoTable } from "@/lib/db/migrations";
+import {
+  ensureEvidenciaArchivoColumns,
+  ensureProyectoAnalisisColumn,
+  ensureStrategicCaseColumns,
+  ensureTiempoTable,
+} from "@/lib/db/migrations";
 
 type MutateBody = {
   table: TableName;
@@ -34,6 +39,7 @@ export async function POST(request: Request) {
     if (table === "tiempo") await ensureTiempoTable();
     if (table === "strategicCases") await ensureStrategicCaseColumns();
     if (table === "evidencias") await ensureEvidenciaArchivoColumns();
+    if (table === "proyectos") await ensureProyectoAnalisisColumn();
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });

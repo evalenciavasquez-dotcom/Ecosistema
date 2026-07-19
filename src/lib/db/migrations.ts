@@ -45,3 +45,12 @@ export async function ensureEvidenciaArchivoColumns() {
   );
   evidenciaArchivoColumnsEnsured = true;
 }
+
+let proyectoAnalisisColumnEnsured = false;
+export async function ensureProyectoAnalisisColumn() {
+  if (proyectoAnalisisColumnEnsured) return;
+  await getDb().execute(
+    sql.raw(`ALTER TABLE proyectos ADD COLUMN IF NOT EXISTS analisis_economico jsonb`)
+  );
+  proyectoAnalisisColumnEnsured = true;
+}
