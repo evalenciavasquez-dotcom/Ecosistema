@@ -109,6 +109,67 @@ export function computeCajaPorCuenta(movimientos: MovimientoEconomico[]): SaldoP
   return Array.from(porCuenta.values()).sort((a, b) => b.saldo - a.saldo);
 }
 
+export interface ResumenMensual {
+  moneda: string;
+  ingresosMes: number;
+  gastosMes: number;
+  deficitMes: number;
+}
+
+// Ingresos y gastos CONFIRMADOS del mes calendario actual (según hoyISO),
+// y el déficit resultante (negativo = gastó más de lo que confirmó de ingreso).
+export function computeResumenMensual(movimientos: MovimientoEconomico[], hoyISO: string): ResumenMensual[] {
+  const mesActual = hoyISO.slice(0, 7);
+  const delMes = movimientos.filter((m) => m.estado === "confirmado" && m.fecha.slice(0, 7) === mesActual);
+  const ingresos = sumByMoneda(delMes.filter((m) => m.tipo === "ingreso"));
+  const gastos = sumByMoneda(delMes.filter((m) => m.tipo === "gasto"));
+  const monedas = mergeMonedas(ingresos, gastos);
+  return monedas.map((moneda) => ({
+    moneda,
+    ingresosMes: ingresos[moneda] ?? 0,
+    gastosMes: gastos[moneda] ?? 0,
+    deficitMes: (ingresos[moneda] ?? 0) - (gastos[moneda] ?? 0),
+  }));
+}
+
+export interface PagoPendiente {
+  id: string;
+  descripcion: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  diasRestantes: number;
+}
+
+export interface PagosPendientesVentanas {
+  dias3: PagoPendiente[];
+  dias5: PagoPendiente[];
+  dias8: PagoPendiente[];
+}
+
+// Gastos "esperado" (por pagar) que vencen hoy o en los próximos 3/5/8 días —
+// ventanas acumulativas para dar visibilidad de corto plazo sobre lo que se
+// viene. No incluye ingresos esperados: esto es específicamente "qué debo pagar".
+export function computePagosPendientes(movimientos: MovimientoEconomico[], hoyISO: string): PagosPendientesVentanas {
+  const pendientes = movimientos
+    .filter((m) => m.tipo === "gasto" && m.estado === "esperado" && m.fecha >= hoyISO)
+    .map((m) => ({
+      id: m.id,
+      descripcion: m.descripcion,
+      monto: m.monto,
+      moneda: m.moneda,
+      fecha: m.fecha,
+      diasRestantes: diasEntre(m.fecha, hoyISO),
+    }))
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+  return {
+    dias3: pendientes.filter((p) => p.diasRestantes <= 3),
+    dias5: pendientes.filter((p) => p.diasRestantes <= 5),
+    dias8: pendientes.filter((p) => p.diasRestantes <= 8),
+  };
+}
+
 export interface SplitPersonalProyectos {
   moneda: string;
   personal: number;

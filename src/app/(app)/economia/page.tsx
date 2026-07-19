@@ -4,10 +4,24 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { proyectoNombre } from "@/lib/selectors";
-import { MovimientoEconomico, MovimientoEstado, MovimientoTipo } from "@/lib/types";
+import { EvidenceLevel, MovimientoEconomico, MovimientoEstado, MovimientoTipo } from "@/lib/types";
 import { Pill } from "@/components/ui/Pill";
 import { EvidenceBadge } from "@/components/ui/badges";
-import { computeCajaPorCuenta, computeProyeccion, computeRunway, computeSplitPersonalProyectos } from "@/lib/finanzas";
+
+interface InterpretacionEconomia {
+  diagnostico: string;
+  pasosASeguir: string[];
+  rutasMejoraDeficit: string[];
+  evidenceLevel: EvidenceLevel;
+}
+import {
+  computeCajaPorCuenta,
+  computePagosPendientes,
+  computeProyeccion,
+  computeResumenMensual,
+  computeRunway,
+  computeSplitPersonalProyectos,
+} from "@/lib/finanzas";
 import { hoyISO } from "@/lib/tiempo";
 
 const ESTADO_TONE: Record<MovimientoEstado, "green" | "amber" | "red"> = {
@@ -52,10 +66,19 @@ function mergeMonedas(...records: Record<string, number>[]): string[] {
   return Array.from(set).sort((a, b) => (a === "USD" ? -1 : b === "USD" ? 1 : a.localeCompare(b)));
 }
 
+function sumPagosPorMoneda(pagos: { moneda: string; monto: number }[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  pagos.forEach((p) => {
+    out[p.moneda] = (out[p.moneda] ?? 0) + p.monto;
+  });
+  return out;
+}
+
 export default function EconomiaPage() {
   const router = useRouter();
   const movimientos = useAppStore((s) => s.movimientos);
   const proyectos = useAppStore((s) => s.proyectos);
+  const decisionesAbiertas = useAppStore((s) => s.decisiones).filter((d) => d.estado === "Abierta");
   const proyectosConAnalisis = proyectos.filter((p) => p.analisisEconomico);
   const [showNew, setShowNew] = useState(false);
   const [editando, setEditando] = useState<MovimientoEconomico | null>(null);
@@ -93,8 +116,10 @@ export default function EconomiaPage() {
   const runway = useMemo(() => computeRunway(movimientos, hoy), [movimientos, hoy]);
   const proyeccion = useMemo(() => computeProyeccion(movimientos, hoy), [movimientos, hoy]);
   const splitPersonal = useMemo(() => computeSplitPersonalProyectos(movimientos), [movimientos]);
+  const resumenMensual = useMemo(() => computeResumenMensual(movimientos, hoy), [movimientos, hoy]);
+  const pagosPendientes = useMemo(() => computePagosPendientes(movimientos, hoy), [movimientos, hoy]);
 
-  const [interpretacion, setInterpretacion] = useState<string | null>(null);
+  const [interpretacion, setInterpretacion] = useState<InterpretacionEconomia | null>(null);
   const [interpretando, setInterpretando] = useState(false);
   const [errorInterpretacion, setErrorInterpretacion] = useState("");
 
@@ -110,6 +135,12 @@ export default function EconomiaPage() {
           proyeccion,
           splitPersonal,
           cajaPorCuenta,
+          resumenMensual,
+          pagosPendientes: {
+            dias3: pagosPendientes.dias3.map((p) => ({ descripcion: p.descripcion, monto: p.monto, moneda: p.moneda, fecha: p.fecha })),
+            dias5: pagosPendientes.dias5.map((p) => ({ descripcion: p.descripcion, monto: p.monto, moneda: p.moneda, fecha: p.fecha })),
+            dias8: pagosPendientes.dias8.map((p) => ({ descripcion: p.descripcion, monto: p.monto, moneda: p.moneda, fecha: p.fecha })),
+          },
           movimientosSinConciliar: sinConciliar.length,
           movimientosEsperadosVencidos: esperadosVencidos.map((m) => ({
             descripcion: m.descripcion,
@@ -117,6 +148,19 @@ export default function EconomiaPage() {
             moneda: m.moneda,
             tipo: m.tipo,
             fecha: m.fecha,
+          })),
+          decisionesAbiertas: decisionesAbiertas.map((d) => ({
+            pregunta: d.pregunta,
+            nivelRiesgo: d.nivelRiesgo,
+            impactoEconomico: d.impactoEconomico,
+            recomendacionSistema: d.recomendacionSistema,
+            proyecto: proyectoNombre(proyectos, d.proyectoId),
+          })),
+          proyectosPotencial: proyectosConAnalisis.map((p) => ({
+            nombre: p.nombre,
+            potencialIngresos: p.analisisEconomico!.potencialIngresos,
+            viasMonetizacion: p.analisisEconomico!.viasMonetizacion,
+            impactoEnCajaPersonal: p.analisisEconomico!.impactoEnCajaPersonal,
           })),
         }),
       });
@@ -150,15 +194,109 @@ export default function EconomiaPage() {
             </button>
           </div>
 
-          {(interpretacion || errorInterpretacion) && (
-            <div
-              className={`rounded-xl p-4 text-sm leading-relaxed ${
-                errorInterpretacion
-                  ? "bg-accent-red/10 border border-accent-red/30 text-accent-red"
-                  : "bg-accent-blue/10 border border-accent-blue/30"
-              }`}
-            >
-              {errorInterpretacion || interpretacion}
+          {errorInterpretacion && (
+            <div className="rounded-xl p-4 text-sm leading-relaxed bg-accent-red/10 border border-accent-red/30 text-accent-red">
+              {errorInterpretacion}
+            </div>
+          )}
+
+          {interpretacion && (
+            <div className="rounded-xl p-4 space-y-3 bg-accent-blue/10 border border-accent-blue/30">
+              <div className="flex items-center gap-2">
+                <EvidenceBadge level={interpretacion.evidenceLevel} />
+              </div>
+              <p className="text-sm leading-relaxed">{interpretacion.diagnostico}</p>
+              {interpretacion.pasosASeguir.length > 0 && (
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted mb-1.5">Pasos a seguir</div>
+                  <ul className="space-y-1 list-disc list-inside text-sm">
+                    {interpretacion.pasosASeguir.map((p, i) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {interpretacion.rutasMejoraDeficit.length > 0 && (
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted mb-1.5">Rutas para mejorar el déficit</div>
+                  <ul className="space-y-1 list-disc list-inside text-sm">
+                    {interpretacion.rutasMejoraDeficit.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {resumenMensual.length > 0 && (
+            <div>
+              <div className="text-xs text-muted mb-2">Este mes — ingresos, gastos y déficit confirmados</div>
+              <div className="space-y-2">
+                {resumenMensual.map((r) => (
+                  <div key={r.moneda} className="grid grid-cols-3 gap-2 text-center rounded-xl bg-surface-2 p-3">
+                    <div>
+                      <div className="text-[10px] text-muted">Ingresos ({r.moneda})</div>
+                      <div className="text-sm font-semibold tabular-nums text-accent-green">
+                        {formatMonto(r.ingresosMes, r.moneda)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">Gastos</div>
+                      <div className="text-sm font-semibold tabular-nums text-accent-red">
+                        {formatMonto(r.gastosMes, r.moneda)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-muted">Déficit</div>
+                      <div
+                        className={`text-sm font-semibold tabular-nums ${r.deficitMes >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                      >
+                        {formatMonto(r.deficitMes, r.moneda)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(pagosPendientes.dias8.length > 0) && (
+            <div>
+              <div className="text-xs text-muted mb-2">Pagos pendientes por vencer</div>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { key: "dias3" as const, label: "En 3 días" },
+                    { key: "dias5" as const, label: "En 5 días" },
+                    { key: "dias8" as const, label: "En 8 días" },
+                  ]
+                ).map(({ key, label }) => {
+                  const items = pagosPendientes[key];
+                  const totales = sumPagosPorMoneda(items);
+                  return (
+                    <div key={key} className="rounded-xl bg-surface-2 p-3">
+                      <div className="text-[10px] text-muted">{label}</div>
+                      {items.length === 0 ? (
+                        <div className="text-sm text-muted mt-1">—</div>
+                      ) : (
+                        Object.entries(totales).map(([moneda, monto]) => (
+                          <div key={moneda} className="text-sm font-semibold tabular-nums text-accent-amber mt-1">
+                            {formatMonto(monto, moneda)}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="space-y-1 mt-2">
+                {pagosPendientes.dias8.slice(0, 4).map((p) => (
+                  <div key={p.id} className="text-xs text-muted">
+                    {p.descripcion} · {formatMonto(-p.monto, p.moneda)} · en {p.diasRestantes} día{p.diasRestantes === 1 ? "" : "s"}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
