@@ -3,9 +3,11 @@
 import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, AccionEstadoBadge } from "@/components/ui/badges";
-import { Proyecto, ProyectoEstado, Prioridad } from "@/lib/types";
+import { Decision, MovimientoEconomico, Proyecto, ProyectoEstado, Prioridad } from "@/lib/types";
 import { formatMinutos, hoyISO, inicioSemanaISO, minutosDe } from "@/lib/tiempo";
 import { useOpenParam } from "@/lib/useOpenParam";
+import { computeProyeccion, computeRunway } from "@/lib/finanzas";
+import type { ProyectoAnalysis } from "@/lib/proyecto-analysis-schema";
 
 const ESTADOS: ProyectoEstado[] = [
   "Idea",
@@ -178,6 +180,7 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
   const decisiones = useAppStore((s) => s.decisiones).filter((d) => d.proyectoId === proyecto.id);
   const evidencias = useAppStore((s) => s.evidencias).filter((e) => e.proyectoId === proyecto.id);
   const historial = useAppStore((s) => s.historial).filter((h) => h.entidadId === proyecto.id);
+  const movimientos = useAppStore((s) => s.movimientos);
   const updateProyecto = useAppStore((s) => s.updateProyecto);
 
   const personasProyecto = personas.filter((p) => proyecto.personaIds.includes(p.id));
@@ -206,6 +209,8 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
         <Field label="Situación económica" value={proyecto.situacionEconomica || "Sin registrar"} />
         <Field label="Próxima acción recomendada" value={proyecto.proximaAccionRecomendada || "Sin recomendación"} />
       </div>
+
+      <AnalisisEconomicoSection proyecto={proyecto} decisiones={decisiones} movimientos={movimientos} />
 
       <TiempoSection proyectoId={proyecto.id} />
 
@@ -303,6 +308,127 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function AnalisisEconomicoSection({
+  proyecto,
+  decisiones,
+  movimientos,
+}: {
+  proyecto: Proyecto;
+  decisiones: Decision[];
+  movimientos: MovimientoEconomico[];
+}) {
+  const [analisis, setAnalisis] = useState<ProyectoAnalysis | null>(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  const movimientosProyecto = movimientos.filter((m) => m.proyectoId === proyecto.id);
+  const hoy = hoyISO();
+
+  async function handleAnalizar() {
+    setCargando(true);
+    setError("");
+    try {
+      const res = await fetch("/api/analyze-proyecto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          proyecto: {
+            nombre: proyecto.nombre,
+            objetivo: proyecto.objetivo,
+            estado: proyecto.estado,
+            situacionEconomica: proyecto.situacionEconomica,
+            riesgos: proyecto.riesgos,
+            oportunidades: proyecto.oportunidades,
+            evidenceLevel: proyecto.evidenceLevel,
+          },
+          movimientosProyecto: movimientosProyecto.map((m) => ({
+            tipo: m.tipo,
+            monto: m.monto,
+            moneda: m.moneda,
+            estado: m.estado,
+            fecha: m.fecha,
+            descripcion: m.descripcion,
+          })),
+          decisionesProyecto: decisiones.map((d) => ({
+            pregunta: d.pregunta,
+            nivelRiesgo: d.nivelRiesgo,
+            impactoEconomico: d.impactoEconomico,
+            recomendacionSistema: d.recomendacionSistema,
+            estado: d.estado,
+          })),
+          runwayProyecto: computeRunway(movimientosProyecto, hoy),
+          proyeccionPersonalActual: computeProyeccion(movimientos, hoy),
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error ?? "No se pudo generar el análisis");
+        return;
+      }
+      setAnalisis(body.result);
+    } catch {
+      setError("Error de conexión al analizar");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  return (
+    <Section title="Análisis económico">
+      <div className="rounded-2xl border border-border-subtle bg-surface p-4 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted">
+            Potencial de ingresos, monetización y cómo este proyecto afecta tu caja personal.
+          </p>
+          <button
+            onClick={handleAnalizar}
+            disabled={cargando}
+            className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50 shrink-0"
+          >
+            {cargando ? "Analizando…" : analisis ? "Reanalizar" : "Analizar potencial económico"}
+          </button>
+        </div>
+
+        {error && (
+          <div className="rounded-xl bg-accent-red/10 border border-accent-red/30 text-accent-red p-3 text-sm">
+            {error}
+          </div>
+        )}
+
+        {analisis && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <EvidenceBadge level={analisis.evidenceLevel} />
+            </div>
+            <AnalisisBloque titulo="Potencial de ingresos" texto={analisis.potencialIngresos} />
+            {analisis.viasMonetizacion.length > 0 && (
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-muted mb-1.5">Vías de monetización</div>
+                <ul className="space-y-1 list-disc list-inside text-sm">
+                  {analisis.viasMonetizacion.map((v, i) => (
+                    <li key={i}>{v}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <AnalisisBloque titulo="Impacto en tu caja personal" texto={analisis.impactoEnCajaPersonal} />
+            <AnalisisBloque titulo="Riesgo financiero" texto={analisis.riesgoFinanciero} />
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+function AnalisisBloque({ titulo, texto }: { titulo: string; texto: string }) {
+  return (
+    <div>
+      <div className="text-[11px] uppercase tracking-wide text-muted mb-1">{titulo}</div>
+      <p className="text-sm leading-relaxed">{texto}</p>
     </div>
   );
 }
