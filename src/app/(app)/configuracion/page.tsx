@@ -9,6 +9,27 @@ import ThemeToggle from "@/components/ThemeToggle";
 type DbStatus = "checking" | "no_configurada" | "sin_esquema" | "vacia" | "activa";
 type PushStatus = "checking" | "no_soportado" | "sin_db" | "inactivas" | "activas" | "bloqueadas";
 
+interface GoogleStatus {
+  configured: boolean;
+  connected: boolean;
+  connectedAt?: string;
+  lastGmailSync?: string | null;
+  gmailLabelReady?: boolean;
+  error?: string;
+}
+
+const GOOGLE_FEEDBACK: Record<string, { tono: "ok" | "error"; texto: string }> = {
+  success: { tono: "ok", texto: "Cuenta de Google conectada correctamente." },
+  error_config: { tono: "error", texto: "Faltan las credenciales de Google en el servidor." },
+  error_code: { tono: "error", texto: "Google no envió un código de autorización válido." },
+  error_no_refresh: {
+    tono: "error",
+    texto:
+      "Google no devolvió un token de actualización. Ve a myaccount.google.com/permissions, quita el acceso de C.C.O. E.V. y vuelve a conectar.",
+  },
+  error: { tono: "error", texto: "No se pudo completar la conexión con Google." },
+};
+
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
@@ -28,6 +49,35 @@ export default function ConfiguracionPage() {
   const [initializing, setInitializing] = useState(false);
   const [initMsg, setInitMsg] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+
+  const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
+  const [googleFeedback, setGoogleFeedback] = useState<{ tono: "ok" | "error"; texto: string } | null>(() => {
+    if (typeof window === "undefined") return null;
+    const param = new URLSearchParams(window.location.search).get("google");
+    return param ? (GOOGLE_FEEDBACK[param] ?? null) : null;
+  });
+  const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("google")) {
+      window.history.replaceState(null, "", "/configuracion");
+    }
+    fetch("/api/google/status")
+      .then((r) => r.json())
+      .then(setGoogleStatus)
+      .catch(() => setGoogleStatus({ configured: false, connected: false }));
+  }, []);
+
+  async function handleDisconnectGoogle() {
+    setDisconnectingGoogle(true);
+    try {
+      await fetch("/api/google/disconnect", { method: "POST" });
+      setGoogleStatus((s) => (s ? { ...s, connected: false } : s));
+      setGoogleFeedback(null);
+    } finally {
+      setDisconnectingGoogle(false);
+    }
+  }
 
   const [pushStatus, setPushStatus] = useState<PushStatus>("checking");
   const [pushBusy, setPushBusy] = useState(false);
@@ -401,6 +451,84 @@ export default function ConfiguracionPage() {
               <p className="text-xs text-muted">
                 Los cambios se guardan en la base de datos y se ven igual en cualquier dispositivo donde entres.
               </p>
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <Section title="Google">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
+          {googleFeedback && (
+            <div
+              className={`rounded-xl p-3 text-sm ${
+                googleFeedback.tono === "ok"
+                  ? "bg-accent-green/10 border border-accent-green/30 text-accent-green"
+                  : "bg-accent-red/10 border border-accent-red/30 text-accent-red"
+              }`}
+            >
+              {googleFeedback.texto}
+            </div>
+          )}
+
+          {!googleStatus && <p className="text-sm text-muted">Verificando…</p>}
+
+          {googleStatus && !googleStatus.configured && (
+            <p className="text-sm text-muted">
+              Falta configurar <code className="font-mono text-xs">GOOGLE_CLIENT_ID</code>,{" "}
+              <code className="font-mono text-xs">GOOGLE_CLIENT_SECRET</code> y{" "}
+              <code className="font-mono text-xs">GOOGLE_REDIRECT_URI</code> en el servidor.
+            </p>
+          )}
+
+          {googleStatus?.configured && !googleStatus.connected && (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium">Sin conectar</div>
+                <p className="text-xs text-muted mt-0.5 max-w-sm">
+                  Conecta tu cuenta para leer correo etiquetado &ldquo;CCO&rdquo; en Gmail y sincronizar tu agenda con
+                  Google Calendar en doble vía.
+                </p>
+              </div>
+              <a
+                href="/api/google/start"
+                className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 shrink-0"
+              >
+                Conectar con Google
+              </a>
+            </div>
+          )}
+
+          {googleStatus?.connected && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium">Conectado</div>
+                  {googleStatus.connectedAt && (
+                    <p className="text-xs text-muted mt-0.5">
+                      Desde {new Date(googleStatus.connectedAt).toLocaleDateString("es-ES")}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={handleDisconnectGoogle}
+                  disabled={disconnectingGoogle}
+                  className="rounded-full border border-accent-red/40 text-accent-red px-4 py-2 text-sm disabled:opacity-50 shrink-0"
+                >
+                  {disconnectingGoogle ? "Desconectando…" : "Desconectar"}
+                </button>
+              </div>
+              {googleStatus.gmailLabelReady && (
+                <p className="text-xs text-muted">
+                  Etiqueta &ldquo;CCO&rdquo; lista en Gmail. Crea un filtro en Gmail que le ponga esa etiqueta a los
+                  correos que quieras que el sistema revise (bancos, reuniones, avisos importantes) — el barrido solo
+                  lee lo que tenga esa etiqueta.
+                </p>
+              )}
+              {googleStatus.lastGmailSync && (
+                <p className="text-xs text-muted">
+                  Último barrido de Gmail: {new Date(googleStatus.lastGmailSync).toLocaleString("es-ES")}
+                </p>
+              )}
             </div>
           )}
         </div>

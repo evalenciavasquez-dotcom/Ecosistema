@@ -14,7 +14,12 @@ import {
   strategicCases,
   tiempo,
 } from "@/lib/db/schema";
-import { ensureEvidenciaArchivoColumns, ensureProyectoAnalisisColumn, ensureStrategicCaseColumns } from "@/lib/db/migrations";
+import {
+  ensureEvidenciaArchivoColumns,
+  ensureGoogleSchema,
+  ensureProyectoAnalisisColumn,
+  ensureStrategicCaseColumns,
+} from "@/lib/db/migrations";
 
 export async function GET() {
   if (!isDbConfigured()) {
@@ -30,6 +35,7 @@ export async function GET() {
     await ensureStrategicCaseColumns();
     await ensureEvidenciaArchivoColumns();
     await ensureProyectoAnalisisColumn();
+    await ensureGoogleSchema();
     const [
       proyectosRows,
       personasRows,
