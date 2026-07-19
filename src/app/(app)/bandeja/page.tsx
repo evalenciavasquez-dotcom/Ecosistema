@@ -20,6 +20,8 @@ function BandejaContent() {
   );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<string>("Todos");
+  const [dividiendo, setDividiendo] = useState(false);
+  const [errorDividir, setErrorDividir] = useState("");
 
   const bandeja = useAppStore((s) => s.bandeja);
   const proyectos = useAppStore((s) => s.proyectos);
@@ -47,6 +49,36 @@ function BandejaContent() {
     setTexto("");
   }
 
+  async function handleBulkSubmit() {
+    const trimmed = texto.trim();
+    if (!trimmed) return;
+    setDividiendo(true);
+    setErrorDividir("");
+    try {
+      const res = await fetch("/api/split-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: trimmed }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setErrorDividir(body.error ?? "No se pudo dividir el texto");
+        return;
+      }
+      const fragmentos: string[] = body.result?.fragmentos ?? [];
+      if (fragmentos.length === 0) {
+        setErrorDividir("No se encontraron novedades separables en el texto");
+        return;
+      }
+      fragmentos.forEach((f) => addBandejaItem(f));
+      setTexto("");
+    } catch {
+      setErrorDividir("Error de conexión al dividir el texto");
+    } finally {
+      setDividiendo(false);
+    }
+  }
+
   const items = bandeja.filter((b) => filtro === "Todos" || b.estado === filtro);
 
   return (
@@ -56,14 +88,25 @@ function BandejaContent() {
           ref={textareaRef}
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="Cuéntale al sistema qué pasó — una idea, un pago, una novedad de un proyecto..."
-          rows={3}
+          placeholder="Cuéntale al sistema qué pasó — una idea, un pago, una novedad de un proyecto... o pega un resumen largo con varias novedades de golpe."
+          rows={4}
           className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted"
         />
-        <div className="flex justify-end">
+        {errorDividir && <div className="text-xs text-accent-red mt-1">{errorDividir}</div>}
+        <div className="flex justify-end items-center gap-3 mt-1">
+          {texto.trim().length > 150 && (
+            <button
+              type="button"
+              onClick={handleBulkSubmit}
+              disabled={dividiendo}
+              className="text-xs font-medium text-muted hover:text-foreground disabled:opacity-40"
+            >
+              {dividiendo ? "Dividiendo…" : "Dividir en varios ítems"}
+            </button>
+          )}
           <button
             type="submit"
-            disabled={!texto.trim()}
+            disabled={!texto.trim() || dividiendo}
             className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-40 transition-opacity"
           >
             Enviar a análisis
