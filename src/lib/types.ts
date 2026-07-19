@@ -96,6 +96,15 @@ export interface HistorialEntry {
   despues?: Record<string, unknown>;
 }
 
+export interface AnalisisEconomicoProyecto {
+  potencialIngresos: string;
+  viasMonetizacion: string[];
+  impactoEnCajaPersonal: string;
+  riesgoFinanciero: string;
+  evidenceLevel: EvidenceLevel;
+  generadoEn: string;
+}
+
 export interface Proyecto {
   id: string;
   nombre: string;
@@ -111,6 +120,7 @@ export interface Proyecto {
   proximaAccionRecomendada: string;
   evidenceLevel: EvidenceLevel;
   creadoEn: string;
+  analisisEconomico?: AnalisisEconomicoProyecto | null;
 }
 
 export interface Accion {

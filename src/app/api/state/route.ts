@@ -14,7 +14,7 @@ import {
   strategicCases,
   tiempo,
 } from "@/lib/db/schema";
-import { ensureEvidenciaArchivoColumns, ensureStrategicCaseColumns } from "@/lib/db/migrations";
+import { ensureEvidenciaArchivoColumns, ensureProyectoAnalisisColumn, ensureStrategicCaseColumns } from "@/lib/db/migrations";
 
 export async function GET() {
   if (!isDbConfigured()) {
@@ -29,6 +29,7 @@ export async function GET() {
     // inicializar), esto lanza y cae en el catch de más abajo, igual que antes.
     await ensureStrategicCaseColumns();
     await ensureEvidenciaArchivoColumns();
+    await ensureProyectoAnalisisColumn();
     const [
       proyectosRows,
       personasRows,

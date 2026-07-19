@@ -1,5 +1,6 @@
 import { doublePrecision, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 import type {
+  AnalisisEconomicoProyecto,
   ClasificacionSugerida,
   Dofa,
   EscenarioEvaluacion,
@@ -27,6 +28,7 @@ export const proyectos = pgTable("proyectos", {
   proximaAccionRecomendada: text("proxima_accion_recomendada").notNull(),
   evidenceLevel: text("evidence_level").notNull(),
   creadoEn: text("creado_en").notNull(),
+  analisisEconomico: jsonb("analisis_economico").$type<AnalisisEconomicoProyecto>(),
 });
 
 export const personas = pgTable("personas", {

@@ -3,11 +3,17 @@
 import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, AccionEstadoBadge } from "@/components/ui/badges";
-import { Decision, MovimientoEconomico, Proyecto, ProyectoEstado, Prioridad } from "@/lib/types";
+import {
+  AnalisisEconomicoProyecto,
+  Decision,
+  MovimientoEconomico,
+  Proyecto,
+  ProyectoEstado,
+  Prioridad,
+} from "@/lib/types";
 import { formatMinutos, hoyISO, inicioSemanaISO, minutosDe } from "@/lib/tiempo";
 import { useOpenParam } from "@/lib/useOpenParam";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
-import type { ProyectoAnalysis } from "@/lib/proyecto-analysis-schema";
 
 const ESTADOS: ProyectoEstado[] = [
   "Idea",
@@ -321,7 +327,8 @@ function AnalisisEconomicoSection({
   decisiones: Decision[];
   movimientos: MovimientoEconomico[];
 }) {
-  const [analisis, setAnalisis] = useState<ProyectoAnalysis | null>(null);
+  const updateProyecto = useAppStore((s) => s.updateProyecto);
+  const [analisis, setAnalisis] = useState<AnalisisEconomicoProyecto | null>(proyecto.analisisEconomico ?? null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
@@ -369,7 +376,9 @@ function AnalisisEconomicoSection({
         setError(body.error ?? "No se pudo generar el análisis");
         return;
       }
-      setAnalisis(body.result);
+      const nuevo: AnalisisEconomicoProyecto = { ...body.result, generadoEn: hoy };
+      setAnalisis(nuevo);
+      updateProyecto(proyecto.id, { analisisEconomico: nuevo });
     } catch {
       setError("Error de conexión al analizar");
     } finally {
@@ -403,6 +412,7 @@ function AnalisisEconomicoSection({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <EvidenceBadge level={analisis.evidenceLevel} />
+              <span className="text-xs text-muted">Generado el {analisis.generadoEn}</span>
             </div>
             <AnalisisBloque titulo="Potencial de ingresos" texto={analisis.potencialIngresos} />
             {analisis.viasMonetizacion.length > 0 && (

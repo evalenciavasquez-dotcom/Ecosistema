@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { proyectoNombre } from "@/lib/selectors";
 import { MovimientoEconomico, MovimientoEstado, MovimientoTipo } from "@/lib/types";
 import { Pill } from "@/components/ui/Pill";
+import { EvidenceBadge } from "@/components/ui/badges";
 import { computeCajaPorCuenta, computeProyeccion, computeRunway, computeSplitPersonalProyectos } from "@/lib/finanzas";
 import { hoyISO } from "@/lib/tiempo";
 
@@ -51,8 +53,10 @@ function mergeMonedas(...records: Record<string, number>[]): string[] {
 }
 
 export default function EconomiaPage() {
+  const router = useRouter();
   const movimientos = useAppStore((s) => s.movimientos);
   const proyectos = useAppStore((s) => s.proyectos);
+  const proyectosConAnalisis = proyectos.filter((p) => p.analisisEconomico);
   const [showNew, setShowNew] = useState(false);
   const [editando, setEditando] = useState<MovimientoEconomico | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<"Todos" | MovimientoEstado>("Todos");
@@ -264,6 +268,29 @@ export default function EconomiaPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {proyectosConAnalisis.length > 0 && (
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
+          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">
+            Proyectos — potencial económico
+          </div>
+          <div className="space-y-2">
+            {proyectosConAnalisis.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => router.push(`/proyectos?open=${p.id}`)}
+                className="w-full text-left rounded-xl bg-surface-2 border border-border-subtle p-3.5 hover:border-accent-blue/50 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium">{p.nombre}</span>
+                  <EvidenceBadge level={p.analisisEconomico!.evidenceLevel} />
+                </div>
+                <p className="text-xs text-muted mt-1.5 leading-relaxed">{p.analisisEconomico!.impactoEnCajaPersonal}</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
