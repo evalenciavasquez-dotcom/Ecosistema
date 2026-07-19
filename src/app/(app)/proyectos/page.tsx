@@ -327,6 +327,96 @@ function EditarProyectoModal({ proyecto, onClose }: { proyecto: Proyecto; onClos
   );
 }
 
+function NuevaPersonaModal({ proyecto, onClose }: { proyecto: Proyecto; onClose: () => void }) {
+  const addPersona = useAppStore((s) => s.addPersona);
+  const updateProyecto = useAppStore((s) => s.updateProyecto);
+  const [nombre, setNombre] = useState("");
+  const [rol, setRol] = useState("");
+  const [relacion, setRelacion] = useState("");
+  const [nivelInfluencia, setNivelInfluencia] = useState<Prioridad>("Media");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nombre.trim()) return;
+    const id = addPersona({
+      nombre: nombre.trim(),
+      empresaProyecto: proyecto.nombre,
+      rol,
+      relacion,
+      nivelInfluencia,
+      intereses: [],
+      compromisos: [],
+      conversacionesPendientes: "",
+      pagosRelacionados: "",
+      riesgos: [],
+      ultimoContacto: new Date().toISOString().slice(0, 10),
+      proyectoIds: [proyecto.id],
+    });
+    updateProyecto(proyecto.id, { personaIds: [...proyecto.personaIds, id] });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4"
+      >
+        <h3 className="font-semibold">Agregar persona a «{proyecto.nombre}»</h3>
+        <div>
+          <label className="block text-xs text-muted mb-1">Nombre</label>
+          <input
+            autoFocus
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted mb-1">Rol</label>
+            <input
+              value={rol}
+              onChange={(e) => setRol(e.target.value)}
+              placeholder="Ej. Socio, Cliente…"
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-muted mb-1">Relación</label>
+            <input
+              value={relacion}
+              onChange={(e) => setRelacion(e.target.value)}
+              placeholder="Ej. Confianza alta"
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Nivel de influencia</label>
+          <select
+            value={nivelInfluencia}
+            onChange={(e) => setNivelInfluencia(e.target.value as Prioridad)}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          >
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+            <option value="Baja">Baja</option>
+          </select>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="text-sm text-muted">
+            Cancelar
+          </button>
+          <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
+            Agregar
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: () => void }) {
   const personas = useAppStore((s) => s.personas);
   const acciones = useAppStore((s) => s.acciones).filter((a) => a.proyectoId === proyecto.id);
@@ -338,6 +428,7 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
 
   const personasProyecto = personas.filter((p) => proyecto.personaIds.includes(p.id));
   const [editando, setEditando] = useState(false);
+  const [agregandoPersona, setAgregandoPersona] = useState(false);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -389,6 +480,15 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
             </div>
           ))}
         </div>
+        <button
+          onClick={() => setAgregandoPersona(true)}
+          className="mt-2 text-xs font-medium text-accent-blue"
+        >
+          + Agregar persona
+        </button>
+        {agregandoPersona && (
+          <NuevaPersonaModal proyecto={proyecto} onClose={() => setAgregandoPersona(false)} />
+        )}
       </Section>
 
       <Section title="Riesgos">
