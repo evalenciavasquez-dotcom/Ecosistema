@@ -127,6 +127,7 @@ function BandejaCard({
   onReclassify: (destino: BandejaDestino) => void;
 }) {
   const procesado = item.estado === "Procesado" || item.estado === "Descartado";
+  const clasificando = item.estado === "En análisis";
   const c = item.clasificacion;
   const previewEconomia =
     c.destino === "economia" && !procesado
@@ -173,7 +174,13 @@ function BandejaCard({
         </div>
       )}
 
-      {!procesado && (
+      {!procesado && clasificando && (
+        <div className="text-xs text-muted mt-3 italic">
+          Clasificando con IA — espera un momento antes de aprobar, para que no se te escape un dato real.
+        </div>
+      )}
+
+      {!procesado && !clasificando && (
         <div className="flex items-center gap-4 mt-3">
           <button onClick={onApprove} className="text-xs font-medium text-accent-blue">
             Aprobar

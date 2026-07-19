@@ -54,6 +54,7 @@ export default function EconomiaPage() {
   const movimientos = useAppStore((s) => s.movimientos);
   const proyectos = useAppStore((s) => s.proyectos);
   const [showNew, setShowNew] = useState(false);
+  const [editando, setEditando] = useState<MovimientoEconomico | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<"Todos" | MovimientoEstado>("Todos");
   const [filtroTipo, setFiltroTipo] = useState<"Todos" | MovimientoTipo>("Todos");
 
@@ -380,7 +381,11 @@ export default function EconomiaPage() {
       <div className="space-y-2">
         {visibles.length === 0 && <p className="text-sm text-muted">No hay movimientos en este filtro.</p>}
         {visibles.map((m) => (
-          <div key={m.id} className="flex items-center justify-between rounded-xl border border-border-subtle bg-surface p-4">
+          <button
+            key={m.id}
+            onClick={() => setEditando(m)}
+            className="w-full flex items-center justify-between rounded-xl border border-border-subtle bg-surface p-4 text-left hover:border-accent-blue/50 transition-colors"
+          >
             <div className="min-w-0">
               <div className="text-sm font-medium truncate">{m.descripcion}</div>
               <div className="text-xs text-muted mt-0.5">
@@ -393,13 +398,20 @@ export default function EconomiaPage() {
               </span>
               <Pill tone={ESTADO_TONE[m.estado]}>{ESTADO_LABEL[m.estado]}</Pill>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       {showNew && (
-        <NuevoMovimientoModal
+        <MovimientoModal
           onClose={() => setShowNew(false)}
+          cuentasExistentes={Array.from(new Set(cajaPorCuenta.map((c) => c.cuenta)))}
+        />
+      )}
+      {editando && (
+        <MovimientoModal
+          movimiento={editando}
+          onClose={() => setEditando(null)}
           cuentasExistentes={Array.from(new Set(cajaPorCuenta.map((c) => c.cuenta)))}
         />
       )}
@@ -439,39 +451,61 @@ function SummaryCard({
   );
 }
 
-function NuevoMovimientoModal({
+function MovimientoModal({
+  movimiento,
   onClose,
   cuentasExistentes,
 }: {
+  movimiento?: MovimientoEconomico;
   onClose: () => void;
   cuentasExistentes: string[];
 }) {
   const addMovimiento = useAppStore((s) => s.addMovimiento);
+  const updateMovimiento = useAppStore((s) => s.updateMovimiento);
+  const deleteMovimiento = useAppStore((s) => s.deleteMovimiento);
   const proyectos = useAppStore((s) => s.proyectos);
-  const [tipo, setTipo] = useState<MovimientoTipo>("ingreso");
-  const [monto, setMonto] = useState("");
-  const [moneda, setMoneda] = useState<string>("USD");
-  const [descripcion, setDescripcion] = useState("");
-  const [proyectoId, setProyectoId] = useState<string>(proyectos[0]?.id ?? "");
-  const [estado, setEstado] = useState<MovimientoEstado>("confirmado");
-  const [cuenta, setCuenta] = useState(cuentasExistentes[0] ?? "");
+  const [tipo, setTipo] = useState<MovimientoTipo>(movimiento?.tipo ?? "ingreso");
+  const [monto, setMonto] = useState(movimiento ? String(movimiento.monto) : "");
+  const [moneda, setMoneda] = useState<string>(movimiento?.moneda ?? "USD");
+  const [descripcion, setDescripcion] = useState(movimiento?.descripcion ?? "");
+  const [proyectoId, setProyectoId] = useState<string>(movimiento?.proyectoId ?? proyectos[0]?.id ?? "");
+  const [estado, setEstado] = useState<MovimientoEstado>(movimiento?.estado ?? "confirmado");
+  const [cuenta, setCuenta] = useState(movimiento?.cuenta ?? cuentasExistentes[0] ?? "");
   const [cuentaNueva, setCuentaNueva] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const cuentaFinal = cuenta === "__nueva__" ? cuentaNueva.trim() : cuenta;
     if (!descripcion.trim() || !monto || !cuentaFinal) return;
-    addMovimiento({
-      tipo,
-      monto: Number(monto),
-      moneda,
-      fecha: new Date().toISOString().slice(0, 10),
-      proyectoId: proyectoId || null,
-      descripcion: descripcion.trim(),
-      estado,
-      fuente: "Registro manual",
-      cuenta: cuentaFinal,
-    });
+    if (movimiento) {
+      updateMovimiento(movimiento.id, {
+        tipo,
+        monto: Number(monto),
+        moneda,
+        proyectoId: proyectoId || null,
+        descripcion: descripcion.trim(),
+        estado,
+        cuenta: cuentaFinal,
+      });
+    } else {
+      addMovimiento({
+        tipo,
+        monto: Number(monto),
+        moneda,
+        fecha: new Date().toISOString().slice(0, 10),
+        proyectoId: proyectoId || null,
+        descripcion: descripcion.trim(),
+        estado,
+        fuente: "Registro manual",
+        cuenta: cuentaFinal,
+      });
+    }
+    onClose();
+  }
+
+  function handleDelete() {
+    if (!movimiento) return;
+    deleteMovimiento(movimiento.id);
     onClose();
   }
 
@@ -481,7 +515,7 @@ function NuevoMovimientoModal({
         onSubmit={handleSubmit}
         className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4 max-h-[85vh] overflow-y-auto"
       >
-        <h3 className="font-semibold">Nuevo movimiento económico</h3>
+        <h3 className="font-semibold">{movimiento ? "Editar movimiento económico" : "Nuevo movimiento económico"}</h3>
         <div>
           <label className="block text-xs text-muted mb-1">Tipo</label>
           <div className="grid grid-cols-2 gap-2">
@@ -550,7 +584,7 @@ function NuevoMovimientoModal({
             onChange={(e) => setCuenta(e.target.value)}
             className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
           >
-            {cuentasExistentes.map((c) => (
+            {Array.from(new Set([...cuentasExistentes, ...(movimiento ? [movimiento.cuenta] : [])])).map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -596,13 +630,22 @@ function NuevoMovimientoModal({
             </select>
           </div>
         </div>
-        <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="text-sm text-muted">
-            Cancelar
-          </button>
-          <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
-            Registrar
-          </button>
+        <div className="flex items-center justify-between gap-3 pt-2">
+          {movimiento ? (
+            <button type="button" onClick={handleDelete} className="text-sm text-accent-red">
+              Eliminar
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose} className="text-sm text-muted">
+              Cancelar
+            </button>
+            <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
+              {movimiento ? "Guardar" : "Registrar"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

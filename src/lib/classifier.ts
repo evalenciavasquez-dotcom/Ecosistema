@@ -2,7 +2,7 @@ import { BandejaDestino, ClasificacionSugerida, MovimientoTipo, Persona, Proyect
 
 const KEYWORDS: Record<BandejaDestino, string[]> = {
   economia: [
-    "pago", "pagué", "pague", "cobr", "factura", "transferencia", "deposito",
+    "pag", "cobr", "factura", "transferencia", "deposito", "recib",
     "depósito", "gasto", "ingreso", "entraron", "entro", "entró", "monto", "cuenta", "saldo", "$", "usd",
     "dolares", "dólares", "pesos", "plata",
   ],
