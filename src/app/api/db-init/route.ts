@@ -119,7 +119,9 @@ const STATEMENTS = [
     expiry_date text NOT NULL,
     scope text NOT NULL,
     gmail_label_id text,
+    gmail_processed_label_id text,
     last_gmail_sync text,
+    calendar_sync_token text,
     connected_at text NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS historial (

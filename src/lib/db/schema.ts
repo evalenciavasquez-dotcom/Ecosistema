@@ -190,7 +190,14 @@ export const googleConnection = pgTable("google_connection", {
   expiryDate: text("expiry_date").notNull(),
   scope: text("scope").notNull(),
   gmailLabelId: text("gmail_label_id"),
+  // Etiqueta "CCO-Sincronizado" — marca los correos ya procesados por el
+  // barrido para no volver a leerlos en la siguiente pasada.
+  gmailProcessedLabelId: text("gmail_processed_label_id"),
   lastGmailSync: text("last_gmail_sync"),
+  // Token de sincronización incremental de Google Calendar (events.list) —
+  // permite traer solo lo que cambió desde la última pasada, incluyendo
+  // eliminaciones, en vez de releer todo el calendario cada vez.
+  calendarSyncToken: text("calendar_sync_token"),
   connectedAt: text("connected_at").notNull(),
 });
 

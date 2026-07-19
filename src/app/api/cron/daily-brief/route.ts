@@ -3,6 +3,8 @@ import { getDb, isDbConfigured } from "@/lib/db/client";
 import { acciones, agenda, decisiones, movimientos, personas } from "@/lib/db/schema";
 import { sendPushToAll } from "@/lib/db/push";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
+import { getConnection, isGoogleConfigured } from "@/lib/google";
+import { runGoogleSync } from "@/lib/googleSync";
 import type { MovimientoEconomico } from "@/lib/types";
 
 function hoyISO(): string {
@@ -33,6 +35,30 @@ export async function GET(request: Request) {
 
   try {
     const db = getDb();
+    const hoy = hoyISO();
+    const lineas: string[] = [];
+    let urgente = false;
+
+    // Sincronización con Google (Gmail + Calendar) primero, para que el
+    // resumen de abajo ya cuente con lo que trajo el barrido de hoy. No es
+    // crítica — un fallo aquí no debe romper el push del día.
+    if (isGoogleConfigured()) {
+      try {
+        const connection = await getConnection();
+        if (connection) {
+          const { gmail, calendar } = await runGoogleSync();
+          if (gmail.nuevos > 0) {
+            lineas.push(`${gmail.nuevos} correo(s) nuevo(s) en tu Bandeja desde Gmail`);
+          }
+          if (calendar.creados > 0) {
+            lineas.push(`${calendar.creados} evento(s) nuevo(s) desde Google Calendar`);
+          }
+        }
+      } catch (err) {
+        console.error("Error sincronizando con Google desde el resumen diario", err);
+      }
+    }
+
     const [accionesRows, decisionesRows, personasRows, agendaRows, movimientosRows] = await Promise.all([
       db.select().from(acciones),
       db.select().from(decisiones),
@@ -40,10 +66,6 @@ export async function GET(request: Request) {
       db.select().from(agenda),
       db.select().from(movimientos),
     ]);
-
-    const hoy = hoyISO();
-    const lineas: string[] = [];
-    let urgente = false;
 
     const abiertas = accionesRows.filter((a) => a.estado === "Pendiente" || a.estado === "En curso");
     const vencidas = abiertas.filter((a) => a.fecha && a.fecha < hoy);

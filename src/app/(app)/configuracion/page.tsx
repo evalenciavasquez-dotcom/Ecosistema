@@ -57,6 +57,8 @@ export default function ConfiguracionPage() {
     return param ? (GOOGLE_FEEDBACK[param] ?? null) : null;
   });
   const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
+  const [syncingGoogle, setSyncingGoogle] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("google")) {
@@ -76,6 +78,30 @@ export default function ConfiguracionPage() {
       setGoogleFeedback(null);
     } finally {
       setDisconnectingGoogle(false);
+    }
+  }
+
+  async function handleSyncGoogleNow() {
+    setSyncingGoogle(true);
+    setSyncMsg(null);
+    try {
+      const res = await fetch("/api/google/sync", { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSyncMsg(body.error ?? "No se pudo sincronizar.");
+        return;
+      }
+      const partes: string[] = [];
+      partes.push(`${body.gmail?.nuevos ?? 0} correo(s) nuevo(s)`);
+      const cal = body.calendar ?? {};
+      partes.push(`${cal.creados ?? 0} evento(s) nuevo(s), ${cal.actualizados ?? 0} actualizado(s), ${cal.eliminados ?? 0} eliminado(s)`);
+      setSyncMsg(partes.join(" · "));
+      const statusRes = await fetch("/api/google/status");
+      setGoogleStatus(await statusRes.json());
+    } catch {
+      setSyncMsg("No se pudo sincronizar — revisa tu conexión.");
+    } finally {
+      setSyncingGoogle(false);
     }
   }
 
@@ -529,6 +555,20 @@ export default function ConfiguracionPage() {
                   Último barrido de Gmail: {new Date(googleStatus.lastGmailSync).toLocaleString("es-ES")}
                 </p>
               )}
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={handleSyncGoogleNow}
+                  disabled={syncingGoogle}
+                  className="rounded-full border border-border-subtle px-4 py-2 text-sm disabled:opacity-50 shrink-0"
+                >
+                  {syncingGoogle ? "Sincronizando…" : "Sincronizar ahora"}
+                </button>
+                {syncMsg && <p className="text-xs text-muted">{syncMsg}</p>}
+              </div>
+              <p className="text-xs text-muted">
+                La sincronización también corre automáticamente una vez al día. Los eventos que crees en Agenda se
+                envían a Google Calendar al instante; si los borras, también se borran allá.
+              </p>
             </div>
           )}
         </div>

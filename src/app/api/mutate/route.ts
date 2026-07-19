@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/lib/db/client";
-import { TABLES, type TableName } from "@/lib/db/schema";
+import { agenda, TABLES, type TableName } from "@/lib/db/schema";
 import {
   ensureEvidenciaArchivoColumns,
   ensureGoogleSchema,
@@ -9,6 +9,8 @@ import {
   ensureStrategicCaseColumns,
   ensureTiempoTable,
 } from "@/lib/db/migrations";
+import { isGoogleConfigured } from "@/lib/google";
+import { pushAgendaEventoCreado, pushAgendaEventoEliminado } from "@/lib/googleSync";
 
 type MutateBody = {
   table: TableName;
@@ -47,6 +49,19 @@ export async function POST(request: Request) {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await db.insert(target as any).values(values as any);
+        if (table === "agenda" && isGoogleConfigured()) {
+          const v = values as { id?: string; titulo?: string; fecha?: string; hora?: string; descripcion?: string };
+          if (v.id && v.titulo && v.fecha) {
+            pushAgendaEventoCreado(v.id, {
+              titulo: v.titulo,
+              fecha: v.fecha,
+              hora: v.hora ?? "",
+              descripcion: v.descripcion,
+            }).catch((err) => {
+              console.error("No se pudo crear el evento en Google Calendar (no crítico)", err);
+            });
+          }
+        }
         break;
       }
       case "update": {
@@ -58,6 +73,18 @@ export async function POST(request: Request) {
       }
       case "delete": {
         if (!id) return NextResponse.json({ error: "Falta 'id'" }, { status: 400 });
+        if (table === "agenda" && isGoogleConfigured()) {
+          const existingRows = await db.select().from(agenda).where(eq(agenda.id, id));
+          const existing = existingRows[0];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await db.delete(target as any).where(eq((target as any).id, id));
+          if (existing?.googleEventId) {
+            pushAgendaEventoEliminado(existing.googleEventId).catch((err) => {
+              console.error("No se pudo eliminar el evento en Google Calendar (no crítico)", err);
+            });
+          }
+          break;
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await db.delete(target as any).where(eq((target as any).id, id));
         break;

@@ -118,6 +118,20 @@ export async function updateGmailLabelId(labelId: string): Promise<void> {
   await getDb().update(googleConnection).set({ gmailLabelId: labelId }).where(eq(googleConnection.id, CONNECTION_ID));
 }
 
+export async function updateGmailProcessedLabelId(labelId: string): Promise<void> {
+  await getDb()
+    .update(googleConnection)
+    .set({ gmailProcessedLabelId: labelId })
+    .where(eq(googleConnection.id, CONNECTION_ID));
+}
+
 export async function updateLastGmailSync(isoDate: string): Promise<void> {
   await getDb().update(googleConnection).set({ lastGmailSync: isoDate }).where(eq(googleConnection.id, CONNECTION_ID));
+}
+
+export async function updateCalendarSyncToken(token: string | null): Promise<void> {
+  await getDb()
+    .update(googleConnection)
+    .set({ calendarSyncToken: token })
+    .where(eq(googleConnection.id, CONNECTION_ID));
 }
