@@ -466,6 +466,19 @@ export default function ConfiguracionPage() {
           {pushMsg && <p className="text-xs text-muted">{pushMsg}</p>}
         </div>
       </Section>
+
+      <Section title="Versión">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 text-sm text-muted">
+          <p>
+            <span className="font-mono text-foreground">{process.env.NEXT_PUBLIC_BUILD_SHA}</span>
+            {" · desplegado "}
+            {new Date(process.env.NEXT_PUBLIC_BUILD_TIME as string).toLocaleString("es-ES", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </p>
+        </div>
+      </Section>
     </div>
   );
 }
