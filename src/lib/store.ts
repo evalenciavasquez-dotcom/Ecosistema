@@ -101,6 +101,7 @@ interface AppState {
 
   addMovimiento: (mov: Omit<MovimientoEconomico, "id">) => string;
   updateMovimiento: (id: string, patch: Partial<MovimientoEconomico>) => void;
+  deleteMovimiento: (id: string) => void;
 
   addEvidencia: (ev: Omit<Evidencia, "id">) => string;
   updateEvidencia: (id: string, patch: Partial<Evidencia>) => void;
@@ -512,6 +513,11 @@ export const useAppStore = create<AppState>()(
           anterior ? pickKeys(anterior, keys) : undefined,
           patch
         );
+      },
+      deleteMovimiento: (id) => {
+        set((state) => ({ movimientos: state.movimientos.filter((m) => m.id !== id) }));
+        dbMutate("movimientos", "delete", id);
+        get().logHistorial("economia", id, "Movimiento económico eliminado");
       },
 
       addEvidencia: (ev) => {
