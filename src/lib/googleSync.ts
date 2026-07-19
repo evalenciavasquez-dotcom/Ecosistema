@@ -236,6 +236,9 @@ export async function syncCalendarPull(): Promise<CalendarSyncResult> {
       } else {
         params.timeMin = new Date(Date.now() - 7 * 86400000).toISOString();
         params.timeMax = new Date(Date.now() + 180 * 86400000).toISOString();
+        // Sin syncToken la API omite los eventos cancelados por defecto —
+        // sin esto, algo borrado en Google Calendar nunca se borraría acá.
+        params.showDeleted = true;
       }
       const res = await calendar.events.list(params);
       events.push(...(res.data.items ?? []));
