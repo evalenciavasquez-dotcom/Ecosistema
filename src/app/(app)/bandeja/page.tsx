@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { BandejaEstadoBadge } from "@/components/ui/badges";
-import { BANDEJA_DESTINO_LABEL, BandejaDestino, BandejaItem } from "@/lib/types";
+import { BANDEJA_DESTINO_LABEL, BandejaDestino, BandejaItem, ClasificacionSugerida, Proyecto } from "@/lib/types";
 import { proyectoNombre } from "@/lib/selectors";
 
 const ESTADOS_ORDEN = ["Nuevo", "En análisis", "Necesita confirmación", "Procesado", "Descartado"] as const;
@@ -93,13 +93,14 @@ function BandejaContent() {
           <BandejaCard
             key={item.id}
             item={item}
+            proyectos={proyectos}
             proyectoLabel={proyectoNombre(proyectos, item.clasificacion.proyectoId)}
             editing={editingId === item.id}
             onToggleEdit={() => setEditingId(editingId === item.id ? null : item.id)}
             onApprove={() => approveBandejaItem(item.id)}
             onDiscard={() => discardBandejaItem(item.id)}
-            onReclassify={(destino) => {
-              reclassifyBandejaItem(item.id, { destino });
+            onReclassify={(patch) => {
+              reclassifyBandejaItem(item.id, patch);
               setEditingId(null);
             }}
           />
@@ -111,6 +112,7 @@ function BandejaContent() {
 
 function BandejaCard({
   item,
+  proyectos,
   proyectoLabel,
   editing,
   onToggleEdit,
@@ -119,12 +121,13 @@ function BandejaCard({
   onReclassify,
 }: {
   item: BandejaItem;
+  proyectos: Proyecto[];
   proyectoLabel: string;
   editing: boolean;
   onToggleEdit: () => void;
   onApprove: () => void;
   onDiscard: () => void;
-  onReclassify: (destino: BandejaDestino) => void;
+  onReclassify: (patch: Partial<ClasificacionSugerida>) => void;
 }) {
   const procesado = item.estado === "Procesado" || item.estado === "Descartado";
   const clasificando = item.estado === "En análisis";
@@ -157,21 +160,7 @@ function BandejaCard({
       {item.resultadoLabel && <div className="text-xs text-accent-green mt-1">{item.resultadoLabel}</div>}
 
       {editing && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(Object.keys(BANDEJA_DESTINO_LABEL) as BandejaDestino[]).map((destino) => (
-            <button
-              key={destino}
-              onClick={() => onReclassify(destino)}
-              className={`rounded-full px-3 py-1 text-xs border transition-colors ${
-                item.clasificacion.destino === destino
-                  ? "bg-accent-blue/20 border-accent-blue text-accent-blue"
-                  : "border-border-subtle text-muted hover:text-foreground"
-              }`}
-            >
-              {BANDEJA_DESTINO_LABEL[destino]}
-            </button>
-          ))}
-        </div>
+        <CorreccionForm item={item} proyectos={proyectos} onSave={onReclassify} onCancel={onToggleEdit} />
       )}
 
       {!procesado && clasificando && (
@@ -193,6 +182,181 @@ function BandejaCard({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function CorreccionForm({
+  item,
+  proyectos,
+  onSave,
+  onCancel,
+}: {
+  item: BandejaItem;
+  proyectos: Proyecto[];
+  onSave: (patch: Partial<ClasificacionSugerida>) => void;
+  onCancel: () => void;
+}) {
+  const c = item.clasificacion;
+  const [destino, setDestino] = useState<BandejaDestino>(c.destino);
+  const [proyectoId, setProyectoId] = useState<string>(c.proyectoId ?? "");
+  const [monto, setMonto] = useState(c.monto ? String(c.monto) : "");
+  const [moneda, setMoneda] = useState(c.moneda ?? "USD");
+  const [cuenta, setCuenta] = useState(c.cuenta ?? "");
+  const [tipoMovimiento, setTipoMovimiento] = useState<"ingreso" | "gasto">(c.tipoMovimiento ?? "ingreso");
+  const [fechaEvento, setFechaEvento] = useState(c.fechaEvento ?? "");
+  const [horaEvento, setHoraEvento] = useState(c.horaEvento ?? "");
+
+  function handleSave() {
+    const patch: Partial<ClasificacionSugerida> = { destino, proyectoId: proyectoId || null };
+    if (destino === "economia") {
+      patch.monto = monto ? Number(monto) : null;
+      patch.moneda = moneda;
+      patch.cuenta = cuenta || null;
+      patch.tipoMovimiento = tipoMovimiento;
+    }
+    if (destino === "evento") {
+      patch.fechaEvento = fechaEvento || null;
+      patch.horaEvento = horaEvento || null;
+    }
+    onSave(patch);
+  }
+
+  return (
+    <div className="mt-3 space-y-3 rounded-xl bg-surface-2 p-3">
+      <div>
+        <div className="text-[11px] text-muted mb-1.5">Tipo</div>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(BANDEJA_DESTINO_LABEL) as BandejaDestino[]).map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setDestino(d)}
+              className={`rounded-full px-3 py-1 text-xs border transition-colors ${
+                destino === d
+                  ? "bg-accent-blue/20 border-accent-blue text-accent-blue"
+                  : "border-border-subtle text-muted hover:text-foreground"
+              }`}
+            >
+              {BANDEJA_DESTINO_LABEL[d]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-[11px] text-muted mb-1.5">Proyecto</div>
+        <select
+          value={proyectoId}
+          onChange={(e) => setProyectoId(e.target.value)}
+          className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-xs outline-none focus:border-accent-blue"
+        >
+          <option value="">Sin proyecto</option>
+          {proyectos.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {destino === "economia" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <div className="text-[11px] text-muted mb-1.5">Monto</div>
+            <input
+              type="number"
+              value={monto}
+              onChange={(e) => setMonto(e.target.value)}
+              placeholder="0"
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-xs outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <div className="text-[11px] text-muted mb-1.5">Moneda</div>
+            <select
+              value={moneda}
+              onChange={(e) => setMoneda(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-xs outline-none focus:border-accent-blue"
+            >
+              <option value="USD">USD</option>
+              <option value="COP">COP</option>
+            </select>
+          </div>
+          <div>
+            <div className="text-[11px] text-muted mb-1.5">Tipo de movimiento</div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTipoMovimiento("ingreso")}
+                className={`rounded-lg border px-2 py-1.5 text-xs font-medium ${
+                  tipoMovimiento === "ingreso"
+                    ? "bg-accent-green/15 border-accent-green text-accent-green"
+                    : "border-border-subtle text-muted"
+                }`}
+              >
+                Ingreso
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipoMovimiento("gasto")}
+                className={`rounded-lg border px-2 py-1.5 text-xs font-medium ${
+                  tipoMovimiento === "gasto"
+                    ? "bg-accent-red/15 border-accent-red text-accent-red"
+                    : "border-border-subtle text-muted"
+                }`}
+              >
+                Gasto
+              </button>
+            </div>
+          </div>
+          <div>
+            <div className="text-[11px] text-muted mb-1.5">Cuenta</div>
+            <input
+              value={cuenta}
+              onChange={(e) => setCuenta(e.target.value)}
+              placeholder="Ej. Cuenta bancaria"
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-xs outline-none focus:border-accent-blue"
+            />
+          </div>
+        </div>
+      )}
+
+      {destino === "evento" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <div className="text-[11px] text-muted mb-1.5">Fecha</div>
+            <input
+              type="date"
+              value={fechaEvento}
+              onChange={(e) => setFechaEvento(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-xs outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <div className="text-[11px] text-muted mb-1.5">Hora</div>
+            <input
+              type="time"
+              value={horaEvento}
+              onChange={(e) => setHoraEvento(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-xs outline-none focus:border-accent-blue"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={onCancel} className="text-xs text-muted">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5"
+        >
+          Guardar
+        </button>
+      </div>
     </div>
   );
 }
