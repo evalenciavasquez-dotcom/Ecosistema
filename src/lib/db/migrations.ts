@@ -54,3 +54,22 @@ export async function ensureProyectoAnalisisColumn() {
   );
   proyectoAnalisisColumnEnsured = true;
 }
+
+let googleSchemaEnsured = false;
+export async function ensureGoogleSchema() {
+  if (googleSchemaEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS google_connection (
+      id text PRIMARY KEY,
+      access_token text NOT NULL,
+      refresh_token text NOT NULL,
+      expiry_date text NOT NULL,
+      scope text NOT NULL,
+      gmail_label_id text,
+      last_gmail_sync text,
+      connected_at text NOT NULL
+    )`)
+  );
+  await getDb().execute(sql.raw(`ALTER TABLE agenda ADD COLUMN IF NOT EXISTS google_event_id text`));
+  googleSchemaEnsured = true;
+}

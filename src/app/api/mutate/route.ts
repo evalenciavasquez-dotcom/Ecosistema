@@ -4,6 +4,7 @@ import { getDb, isDbConfigured } from "@/lib/db/client";
 import { TABLES, type TableName } from "@/lib/db/schema";
 import {
   ensureEvidenciaArchivoColumns,
+  ensureGoogleSchema,
   ensureProyectoAnalisisColumn,
   ensureStrategicCaseColumns,
   ensureTiempoTable,
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
     if (table === "strategicCases") await ensureStrategicCaseColumns();
     if (table === "evidencias") await ensureEvidenciaArchivoColumns();
     if (table === "proyectos") await ensureProyectoAnalisisColumn();
+    if (table === "agenda") await ensureGoogleSchema();
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });

@@ -127,6 +127,9 @@ export const agenda = pgTable("agenda", {
   proyectoId: text("proyecto_id"),
   descripcion: text("descripcion").notNull(),
   tipo: text("tipo").notNull(),
+  // Vincula este evento con su contraparte en Google Calendar, para la
+  // sincronización de doble vía — evita crear duplicados en cada sync.
+  googleEventId: text("google_event_id"),
 });
 
 export const historial = pgTable("historial", {
@@ -175,6 +178,20 @@ export const tiempo = pgTable("tiempo", {
   minutos: integer("minutos").notNull(),
   descripcion: text("descripcion").notNull(),
   creadoEn: text("creado_en").notNull(),
+});
+
+// Conexión OAuth con Google — una sola fila (id fijo "default"), no es
+// parte del modelo de dominio sincronizado con el cliente vía TABLES/mutate.
+// Se maneja directamente desde src/lib/google.ts.
+export const googleConnection = pgTable("google_connection", {
+  id: text("id").primaryKey(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  expiryDate: text("expiry_date").notNull(),
+  scope: text("scope").notNull(),
+  gmailLabelId: text("gmail_label_id"),
+  lastGmailSync: text("last_gmail_sync"),
+  connectedAt: text("connected_at").notNull(),
 });
 
 export const TABLES = {

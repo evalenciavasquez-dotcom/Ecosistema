@@ -109,7 +109,18 @@ const STATEMENTS = [
     hora text NOT NULL,
     proyecto_id text,
     descripcion text NOT NULL,
-    tipo text NOT NULL
+    tipo text NOT NULL,
+    google_event_id text
+  )`,
+  `CREATE TABLE IF NOT EXISTS google_connection (
+    id text PRIMARY KEY,
+    access_token text NOT NULL,
+    refresh_token text NOT NULL,
+    expiry_date text NOT NULL,
+    scope text NOT NULL,
+    gmail_label_id text,
+    last_gmail_sync text,
+    connected_at text NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS historial (
     id text PRIMARY KEY,
