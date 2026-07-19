@@ -119,6 +119,7 @@ interface AppState {
   deleteAgendaEvento: (id: string) => void;
 
   resetToSeed: () => void;
+  resetToEmpty: () => void;
 
   hydrateFromServer: () => Promise<void>;
 }
@@ -613,6 +614,26 @@ export const useAppStore = create<AppState>()(
       },
 
       resetToSeed: () => set(seedState()),
+
+      // Deja el sistema realmente vacío (no la demo) — para cuando la base
+      // de datos ya se vació del lado del servidor y hay que arrancar limpio
+      // también en este dispositivo, antes de meter información real.
+      resetToEmpty: () =>
+        set({
+          proyectos: [],
+          personas: [],
+          acciones: [],
+          decisiones: [],
+          movimientos: [],
+          evidencias: [],
+          bandeja: [],
+          agenda: [],
+          historial: [],
+          strategicCases: [],
+          tiempo: [],
+          metasFinancieras: [],
+          timerActivo: null,
+        }),
 
       hydrateFromServer: async () => {
         const server = await fetchServerState();

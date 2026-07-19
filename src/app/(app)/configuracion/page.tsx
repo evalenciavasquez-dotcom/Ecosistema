@@ -41,7 +41,10 @@ export default function ConfiguracionPage() {
   const modoEnfoque = useAppStore((s) => s.modoEnfoque);
   const toggleModoEnfoque = useAppStore((s) => s.toggleModoEnfoque);
   const resetToSeed = useAppStore((s) => s.resetToSeed);
+  const resetToEmpty = useAppStore((s) => s.resetToEmpty);
   const historial = useAppStore((s) => s.historial);
+  const [wiping, setWiping] = useState(false);
+  const [wipeMsg, setWipeMsg] = useState<string | null>(null);
 
   const [dbStatus, setDbStatus] = useState<DbStatus>("checking");
   const [migrating, setMigrating] = useState(false);
@@ -322,6 +325,33 @@ export default function ConfiguracionPage() {
     }
   }
 
+  async function handleWipe() {
+    const escrito = prompt(
+      'Esto borra TODO lo que hay en la base de datos — proyectos, economía, decisiones, todo — de forma permanente, en todos tus dispositivos. No se puede deshacer.\n\nSi quieres seguir, escribe BORRAR (en mayúsculas) y confirma.'
+    );
+    if (escrito !== "BORRAR") return;
+    setWiping(true);
+    setWipeMsg(null);
+    try {
+      const res = await fetch("/api/wipe-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "BORRAR" }),
+      });
+      const body = await res.json().catch(() => ({}) as { error?: string });
+      if (!res.ok) {
+        setWipeMsg(body.error ?? "No se pudo vaciar la base de datos.");
+        return;
+      }
+      resetToEmpty();
+      setWipeMsg("Listo — el sistema está vacío. Ya puedes empezar a meter tu información real.");
+    } catch {
+      setWipeMsg("Error de conexión al vaciar la base de datos.");
+    } finally {
+      setWiping(false);
+    }
+  }
+
   return (
     <div className="max-w-2xl space-y-6">
       <Section title="Cuenta">
@@ -415,6 +445,29 @@ export default function ConfiguracionPage() {
               Restaurar
             </button>
           </div>
+          {dbStatus === "activa" && (
+            <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+              <div>
+                <div className="text-sm font-medium">Vaciar todo y empezar de cero</div>
+                <div className="text-xs text-muted mt-0.5">
+                  Borra permanentemente todo lo real (proyectos, economía, decisiones, todo) en todos tus
+                  dispositivos, para arrancar limpio antes de meter tu información.
+                </div>
+              </div>
+              <button
+                onClick={handleWipe}
+                disabled={wiping}
+                className="rounded-full border border-accent-red/40 text-accent-red px-4 py-2 text-sm shrink-0 disabled:opacity-40"
+              >
+                {wiping ? "Vaciando…" : "Vaciar todo"}
+              </button>
+            </div>
+          )}
+          {wipeMsg && (
+            <p className={`text-xs ${wipeMsg.startsWith("Listo") ? "text-accent-green" : "text-accent-red"}`}>
+              {wipeMsg}
+            </p>
+          )}
         </div>
       </Section>
 
