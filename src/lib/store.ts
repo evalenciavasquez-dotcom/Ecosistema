@@ -280,7 +280,8 @@ export const useAppStore = create<AppState>()(
       approveBandejaItem: (id) => {
         const item = get().bandeja.find((b) => b.id === id);
         if (!item) return;
-        const { destino, proyectoId } = item.clasificacion;
+        const { destino, proyectoId, monto, moneda, cuenta, tipoMovimiento, fechaEvento, horaEvento } =
+          item.clasificacion;
         let resultadoLabel = "Registrado";
 
         switch (destino) {
@@ -321,17 +322,19 @@ export const useAppStore = create<AppState>()(
             break;
           case "economia":
             get().addMovimiento({
-              tipo: "ingreso",
-              monto: 0,
-              moneda: "USD",
+              tipo: tipoMovimiento ?? "ingreso",
+              monto: monto ?? 0,
+              moneda: moneda ?? "USD",
               fecha: new Date().toISOString().slice(0, 10),
               proyectoId,
               descripcion: item.texto,
               estado: "sin_conciliar",
               fuente: "Bandeja de entrada",
-              cuenta: "Sin clasificar",
+              cuenta: cuenta ?? "Sin clasificar",
             });
-            resultadoLabel = "Registrado como movimiento económico";
+            resultadoLabel = monto
+              ? "Registrado como movimiento económico"
+              : "Registrado como movimiento económico — sin monto detectado, revísalo en Economía";
             break;
           case "evidencia":
             get().addEvidencia({
@@ -346,6 +349,14 @@ export const useAppStore = create<AppState>()(
             resultadoLabel = "Registrado como evidencia";
             break;
           case "evento":
+            get().addAgendaEvento({
+              titulo: item.texto,
+              fecha: fechaEvento ?? new Date().toISOString().slice(0, 10),
+              hora: horaEvento ?? "",
+              proyectoId,
+              descripcion: "",
+              tipo: "Reunión",
+            });
             resultadoLabel = "Registrado en agenda";
             break;
           default:

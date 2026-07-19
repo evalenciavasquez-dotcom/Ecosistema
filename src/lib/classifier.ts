@@ -1,9 +1,10 @@
-import { BandejaDestino, ClasificacionSugerida, Persona, Proyecto } from "./types";
+import { BandejaDestino, ClasificacionSugerida, MovimientoTipo, Persona, Proyecto } from "./types";
 
 const KEYWORDS: Record<BandejaDestino, string[]> = {
   economia: [
     "pago", "pagué", "pague", "cobr", "factura", "transferencia", "deposito",
-    "depósito", "gasto", "ingreso", "monto", "cuenta", "saldo", "$", "usd",
+    "depósito", "gasto", "ingreso", "entraron", "entro", "entró", "monto", "cuenta", "saldo", "$", "usd",
+    "dolares", "dólares", "pesos", "plata",
   ],
   decision: [
     "firmar", "decidir", "debería", "deberia", "aceptar", "renegociar",
@@ -27,6 +28,47 @@ function normalize(text: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Extrae un monto en texto libre, ej. "60.000 dolares", "$1.000", "1000 pesos".
+// Solo cubre casos claros, es un respaldo instantaneo mientras responde la IA real.
+function extractMonto(text: string): number | null {
+  const match = text.match(/\$?\s?(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{2}))?/);
+  if (!match) return null;
+  const entero = match[1].replace(/[.,]/g, "");
+  const decimales = match[2] ?? "";
+  const num = Number(decimales ? `${entero}.${decimales}` : entero);
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
+function extractMoneda(normalized: string): string | null {
+  if (/\busd\b|dolar/.test(normalized)) return "USD";
+  if (/\bcop\b|peso/.test(normalized)) return "COP";
+  if (normalized.includes("$")) return "USD";
+  return null;
+}
+
+function extractCuenta(normalized: string): string | null {
+  if (/cuenta de banco|cuenta bancaria|transferencia/.test(normalized)) return "Cuenta bancaria";
+  if (/efectivo|cash/.test(normalized)) return "Efectivo";
+  if (/tarjeta/.test(normalized)) return "Tarjeta";
+  return null;
+}
+
+function extractTipoMovimiento(normalized: string): MovimientoTipo | null {
+  if (/ingres|entr[oa]ron|cobr|recib[ií]|deposit/.test(normalized)) return "ingreso";
+  if (/gast|pagu|pague|sali[oó]|factura a pagar/.test(normalized)) return "gasto";
+  return null;
+}
+
+function extractHora(normalized: string): string | null {
+  const match = normalized.match(/\ba las?\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (!match) return null;
+  let hora = Number(match[1]);
+  const minutos = match[2] ?? "00";
+  if (match[3] === "pm" && hora < 12) hora += 12;
+  if (match[3] === "am" && hora === 12) hora = 0;
+  return `${String(hora).padStart(2, "0")}:${minutos}`;
 }
 
 export function classifyText(
@@ -85,5 +127,16 @@ export function classifyText(
     ? `${destinoTexto[bestDestino]} — coincide con "${bestKeyword}"`
     : `${destinoTexto[bestDestino]} — sin señales fuertes, revisión manual recomendada`;
 
-  return { destino: bestDestino, proyectoId, confianza, razon };
+  const base: ClasificacionSugerida = { destino: bestDestino, proyectoId, confianza, razon };
+
+  if (base.destino === "economia") {
+    base.monto = extractMonto(text);
+    base.moneda = extractMoneda(normalized);
+    base.cuenta = extractCuenta(normalized);
+    base.tipoMovimiento = extractTipoMovimiento(normalized);
+  } else if (base.destino === "evento") {
+    base.horaEvento = extractHora(normalized);
+  }
+
+  return base;
 }
