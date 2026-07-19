@@ -90,6 +90,25 @@ export function computeProyeccion(movimientos: MovimientoEconomico[], hoyISO: st
   });
 }
 
+export interface SaldoPorCuenta {
+  cuenta: string;
+  moneda: string;
+  saldo: number;
+}
+
+export function computeCajaPorCuenta(movimientos: MovimientoEconomico[]): SaldoPorCuenta[] {
+  const porCuenta = new Map<string, SaldoPorCuenta>();
+  movimientos
+    .filter((m) => m.estado === "confirmado")
+    .forEach((m) => {
+      const key = `${m.cuenta}__${m.moneda}`;
+      const actual = porCuenta.get(key) ?? { cuenta: m.cuenta, moneda: m.moneda, saldo: 0 };
+      actual.saldo += m.tipo === "ingreso" ? m.monto : -m.monto;
+      porCuenta.set(key, actual);
+    });
+  return Array.from(porCuenta.values()).sort((a, b) => b.saldo - a.saldo);
+}
+
 export interface SplitPersonalProyectos {
   moneda: string;
   personal: number;

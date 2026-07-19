@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
-import { selectInsights } from "@/lib/selectors";
+import { selectInsights, selectPersonasEsperando, proyectoNombre } from "@/lib/selectors";
 import { answerQuery } from "@/lib/assistant";
+import { computeCajaPorCuenta, computeProyeccion, computeRunway, computeSplitPersonalProyectos } from "@/lib/finanzas";
+import { hoyISO } from "@/lib/tiempo";
 import { EvidenceBadge } from "@/components/ui/badges";
 
 interface ChatMessage {
@@ -12,24 +14,88 @@ interface ChatMessage {
   texto: string;
   evidenceLevel?: "verificado" | "documentado" | "reportado" | "interpretacion";
   etiqueta?: string;
+  pending?: boolean;
 }
 
-function askWithFreshState(text: string, setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>) {
+async function askWithFreshState(text: string, setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>) {
   const trimmed = text.trim();
   if (!trimmed) return;
-  const { proyectos, personas, decisiones, acciones } = useAppStore.getState();
-  const answer = answerQuery(trimmed, { proyectos, personas, decisiones, acciones });
+  const { proyectos, personas, decisiones, acciones, movimientos } = useAppStore.getState();
+  const userMsgId = `u-${Date.now()}`;
+  const pendingId = `s-${Date.now()}`;
   setMessages((prev) => [
     ...prev,
-    { id: `u-${Date.now()}`, role: "user", texto: trimmed },
-    {
-      id: `s-${Date.now()}`,
-      role: "system",
-      texto: answer.texto,
-      evidenceLevel: answer.evidenceLevel,
-      etiqueta: answer.etiqueta,
-    },
+    { id: userMsgId, role: "user", texto: trimmed },
+    { id: pendingId, role: "system", texto: "Pensando…", pending: true },
   ]);
+
+  const hoy = hoyISO();
+  const decisionesAbiertas = decisiones
+    .filter((d) => d.estado === "Abierta")
+    .map((d) => ({
+      pregunta: d.pregunta,
+      nivelRiesgo: d.nivelRiesgo,
+      impactoEconomico: d.impactoEconomico,
+      recomendacionSistema: d.recomendacionSistema,
+      proyecto: proyectoNombre(proyectos, d.proyectoId),
+    }));
+  const accionesAbiertas = acciones
+    .filter((a) => a.estado !== "Completada" && a.estado !== "Cancelada")
+    .map((a) => ({ titulo: a.titulo, estado: a.estado, fecha: a.fecha, proyecto: proyectoNombre(proyectos, a.proyectoId) }));
+  const movimientosSinConciliar = movimientos.filter((m) => m.estado === "sin_conciliar").length;
+  const movimientosEsperadosVencidos = movimientos
+    .filter((m) => m.estado === "esperado" && m.fecha && m.fecha < hoy)
+    .map((m) => ({ descripcion: m.descripcion, monto: m.monto, moneda: m.moneda, tipo: m.tipo, fecha: m.fecha }));
+  const personasEsperando = selectPersonasEsperando(personas).map((p) => ({
+    nombre: p.nombre,
+    diasSinResponder: p.diasSinResponder,
+    empresaProyecto: p.empresaProyecto,
+  }));
+
+  try {
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pregunta: trimmed,
+        proyectos: proyectos.map((p) => ({
+          nombre: p.nombre,
+          estado: p.estado,
+          prioridad: p.prioridad,
+          situacionEconomica: p.situacionEconomica,
+          riesgos: p.riesgos,
+          oportunidades: p.oportunidades,
+          evidenceLevel: p.evidenceLevel,
+        })),
+        decisionesAbiertas,
+        runway: computeRunway(movimientos, hoy),
+        proyeccion: computeProyeccion(movimientos, hoy),
+        cajaPorCuenta: computeCajaPorCuenta(movimientos),
+        splitPersonalProyectos: computeSplitPersonalProyectos(movimientos),
+        movimientosSinConciliar,
+        movimientosEsperadosVencidos,
+        personasEsperando,
+        accionesAbiertas,
+      }),
+    });
+    const body = await res.json();
+    if (!res.ok || !body.result) throw new Error(body.error ?? "Sin respuesta");
+    const { respuesta, evidenceLevel, etiqueta } = body.result;
+    setMessages((prev) =>
+      prev.map((m) => (m.id === pendingId ? { id: pendingId, role: "system", texto: respuesta, evidenceLevel, etiqueta } : m))
+    );
+  } catch {
+    // Sin IA disponible (sin API key, sin red) — respaldo instantáneo por reglas,
+    // más limitado pero mejor que dejar la pregunta sin respuesta.
+    const answer = answerQuery(trimmed, { proyectos, personas, decisiones, acciones });
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === pendingId
+          ? { id: pendingId, role: "system", texto: answer.texto, evidenceLevel: answer.evidenceLevel, etiqueta: answer.etiqueta }
+          : m
+      )
+    );
+  }
 }
 
 export function AnalysisPanelBody() {
@@ -84,7 +150,7 @@ export function AnalysisPanelBody() {
                 </div>
               ) : (
                 <div key={m.id} className="rounded-xl bg-surface-2 border border-border-subtle p-4">
-                  <p className="text-sm leading-snug">{m.texto}</p>
+                  <p className={`text-sm leading-snug ${m.pending ? "text-muted italic" : ""}`}>{m.texto}</p>
                   <div className="flex items-center gap-2 mt-3">
                     {m.evidenceLevel && <EvidenceBadge level={m.evidenceLevel} />}
                     {m.etiqueta && <span className="text-xs text-muted">{m.etiqueta}</span>}
