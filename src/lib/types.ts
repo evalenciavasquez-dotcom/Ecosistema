@@ -208,6 +208,13 @@ export interface ClasificacionSugerida {
   proyectoId: string | null;
   confianza: number;
   razon: string;
+  // Campos extraídos del texto libre, según destino — null si no se detectaron.
+  monto?: number | null;
+  moneda?: string | null;
+  cuenta?: string | null;
+  tipoMovimiento?: MovimientoTipo | null;
+  fechaEvento?: string | null;
+  horaEvento?: string | null;
 }
 
 export interface BandejaItem {

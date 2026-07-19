@@ -27,7 +27,6 @@ function BandejaContent() {
   const approveBandejaItem = useAppStore((s) => s.approveBandejaItem);
   const discardBandejaItem = useAppStore((s) => s.discardBandejaItem);
   const reclassifyBandejaItem = useAppStore((s) => s.reclassifyBandejaItem);
-  const setBandejaEstado = useAppStore((s) => s.setBandejaEstado);
 
   useEffect(() => {
     if (params.get("focus") === "1") textareaRef.current?.focus();
@@ -103,7 +102,6 @@ function BandejaContent() {
               reclassifyBandejaItem(item.id, { destino });
               setEditingId(null);
             }}
-            onSetAnalisis={() => setBandejaEstado(item.id, "En análisis")}
           />
         ))}
       </div>
@@ -119,7 +117,6 @@ function BandejaCard({
   onApprove,
   onDiscard,
   onReclassify,
-  onSetAnalisis,
 }: {
   item: BandejaItem;
   proyectoLabel: string;
@@ -128,9 +125,19 @@ function BandejaCard({
   onApprove: () => void;
   onDiscard: () => void;
   onReclassify: (destino: BandejaDestino) => void;
-  onSetAnalisis: () => void;
 }) {
   const procesado = item.estado === "Procesado" || item.estado === "Descartado";
+  const c = item.clasificacion;
+  const previewEconomia =
+    c.destino === "economia" && !procesado
+      ? c.monto
+        ? `Se registrará: ${c.tipoMovimiento === "gasto" ? "gasto" : "ingreso"} de ${c.monto.toLocaleString("es-CO")} ${c.moneda ?? "USD"}${c.cuenta ? ` · ${c.cuenta}` : ""}`
+        : "No se detectó un monto claro — quedará en $0, corrígelo en Economía después de aprobar"
+      : null;
+  const previewEvento =
+    c.destino === "evento" && !procesado
+      ? `Se registrará en agenda${c.fechaEvento ? ` · ${c.fechaEvento}` : ""}${c.horaEvento ? ` ${c.horaEvento}` : ""}`
+      : null;
 
   return (
     <div className="rounded-2xl border border-border-subtle bg-surface p-4">
@@ -142,6 +149,10 @@ function BandejaCard({
         IA: {BANDEJA_DESTINO_LABEL[item.clasificacion.destino]} — {item.clasificacion.razon}
         {proyectoLabel !== "Sin proyecto" && <> · {proyectoLabel}</>}
       </div>
+      {previewEconomia && (
+        <div className={`text-xs mt-1 ${c.monto ? "text-muted" : "text-accent-amber"}`}>{previewEconomia}</div>
+      )}
+      {previewEvento && <div className="text-xs text-muted mt-1">{previewEvento}</div>}
       {item.resultadoLabel && <div className="text-xs text-accent-green mt-1">{item.resultadoLabel}</div>}
 
       {editing && (
@@ -170,11 +181,6 @@ function BandejaCard({
           <button onClick={onToggleEdit} className="text-xs font-medium text-muted hover:text-foreground">
             Corregir clasificación
           </button>
-          {item.estado === "Nuevo" && (
-            <button onClick={onSetAnalisis} className="text-xs font-medium text-muted hover:text-foreground">
-              Marcar en análisis
-            </button>
-          )}
           <button onClick={onDiscard} className="text-xs font-medium text-accent-red ml-auto">
             Descartar
           </button>
