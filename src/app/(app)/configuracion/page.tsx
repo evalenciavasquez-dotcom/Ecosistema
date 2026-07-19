@@ -283,6 +283,7 @@ export default function ConfiguracionPage() {
       historial: state.historial,
       strategicCases: state.strategicCases,
       tiempo: state.tiempo,
+      metasFinancieras: state.metasFinancieras,
     });
     setMigrating(false);
     if (result.ok) {

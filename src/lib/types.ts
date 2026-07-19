@@ -105,10 +105,13 @@ export interface AnalisisEconomicoProyecto {
   generadoEn: string;
 }
 
+export type ProyectoAmbito = "personal" | "negocio";
+
 export interface Proyecto {
   id: string;
   nombre: string;
   objetivo: string;
+  ambito: ProyectoAmbito;
   estado: ProyectoEstado;
   prioridad: Prioridad;
   personaIds: string[];
@@ -242,6 +245,19 @@ export interface RegistroTiempo {
   fecha: string;
   minutos: number;
   descripcion: string;
+  creadoEn: string;
+}
+
+export interface MetaFinanciera {
+  id: string;
+  descripcion: string;
+  moneda: string;
+  // Caja personal en esa moneda al momento de crear la meta — capturada
+  // automáticamente, sirve de punto de partida para medir el avance real
+  // (funciona igual para "ahorrar hasta X" que para "salir de deuda hasta 0").
+  montoInicial: number;
+  montoObjetivo: number;
+  fechaObjetivo?: string | null;
   creadoEn: string;
 }
 

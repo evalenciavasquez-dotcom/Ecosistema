@@ -1,4 +1,4 @@
-import { MovimientoEconomico } from "./types";
+import { MetaFinanciera, MovimientoEconomico } from "./types";
 
 function sumByMoneda(movs: MovimientoEconomico[]): Record<string, number> {
   const out: Record<string, number> = {};
@@ -193,4 +193,50 @@ export function computeSplitPersonalProyectos(movimientos: MovimientoEconomico[]
     personal: personal[moneda] ?? 0,
     proyectos: proyectos[moneda] ?? 0,
   }));
+}
+
+export interface ProgresoMeta {
+  id: string;
+  descripcion: string;
+  moneda: string;
+  montoInicial: number;
+  montoObjetivo: number;
+  montoActual: number;
+  progreso: number; // 0..1
+  cumplida: boolean;
+  diasRestantes: number | null;
+}
+
+// Avance real hacia una meta financiera personal — mide sobre la caja
+// personal (movimientos sin proyecto, igual que computeSplitPersonalProyectos)
+// desde el punto de partida capturado al crear la meta. La misma fórmula
+// sirve tanto para "ahorrar hasta X" como para "salir de deuda hasta 0":
+// lo que importa es el avance entre el inicio y el objetivo, sea cual sea
+// la dirección.
+export function computeProgresoMetas(
+  metas: MetaFinanciera[],
+  movimientos: MovimientoEconomico[],
+  hoyISO: string
+): ProgresoMeta[] {
+  const split = computeSplitPersonalProyectos(movimientos);
+  const actualPorMoneda = new Map(split.map((s) => [s.moneda, s.personal]));
+
+  return metas.map((m) => {
+    const montoActual = actualPorMoneda.get(m.moneda) ?? 0;
+    const rango = m.montoObjetivo - m.montoInicial;
+    const avance = montoActual - m.montoInicial;
+    const progreso = rango === 0 ? 1 : Math.min(1, Math.max(0, avance / rango));
+    const cumplida = rango >= 0 ? montoActual >= m.montoObjetivo : montoActual <= m.montoObjetivo;
+    return {
+      id: m.id,
+      descripcion: m.descripcion,
+      moneda: m.moneda,
+      montoInicial: m.montoInicial,
+      montoObjetivo: m.montoObjetivo,
+      montoActual,
+      progreso,
+      cumplida,
+      diasRestantes: m.fechaObjetivo ? diasEntre(m.fechaObjetivo, hoyISO) : null,
+    };
+  });
 }

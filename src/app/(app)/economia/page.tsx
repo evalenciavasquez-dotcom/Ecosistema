@@ -17,6 +17,7 @@ interface InterpretacionEconomia {
 import {
   computeCajaPorCuenta,
   computePagosPendientes,
+  computeProgresoMetas,
   computeProyeccion,
   computeResumenMensual,
   computeRunway,
@@ -78,9 +79,12 @@ export default function EconomiaPage() {
   const router = useRouter();
   const movimientos = useAppStore((s) => s.movimientos);
   const proyectos = useAppStore((s) => s.proyectos);
+  const metasFinancieras = useAppStore((s) => s.metasFinancieras);
+  const deleteMetaFinanciera = useAppStore((s) => s.deleteMetaFinanciera);
   const decisionesAbiertas = useAppStore((s) => s.decisiones).filter((d) => d.estado === "Abierta");
   const proyectosConAnalisis = proyectos.filter((p) => p.analisisEconomico);
   const [showNew, setShowNew] = useState(false);
+  const [showNewMeta, setShowNewMeta] = useState(false);
   const [editando, setEditando] = useState<MovimientoEconomico | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<"Todos" | MovimientoEstado>("Todos");
   const [filtroTipo, setFiltroTipo] = useState<"Todos" | MovimientoTipo>("Todos");
@@ -118,6 +122,10 @@ export default function EconomiaPage() {
   const splitPersonal = useMemo(() => computeSplitPersonalProyectos(movimientos), [movimientos]);
   const resumenMensual = useMemo(() => computeResumenMensual(movimientos, hoy), [movimientos, hoy]);
   const pagosPendientes = useMemo(() => computePagosPendientes(movimientos, hoy), [movimientos, hoy]);
+  const progresoMetas = useMemo(
+    () => computeProgresoMetas(metasFinancieras, movimientos, hoy),
+    [metasFinancieras, movimientos, hoy]
+  );
 
   const [interpretacion, setInterpretacion] = useState<InterpretacionEconomia | null>(null);
   const [interpretando, setInterpretando] = useState(false);
@@ -179,6 +187,67 @@ export default function EconomiaPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
+      <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">
+            Metas financieras personales
+          </div>
+          <button
+            onClick={() => setShowNewMeta(true)}
+            className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 shrink-0"
+          >
+            + Nueva meta
+          </button>
+        </div>
+
+        {progresoMetas.length === 0 ? (
+          <p className="text-sm text-muted">
+            Define a dónde quieres llegar — salir de un hueco, armar un ahorro — y aquí ves el avance real, aparte
+            del negocio.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {progresoMetas.map((m) => (
+              <div key={m.id} className="rounded-xl bg-surface-2 p-3.5">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-sm font-medium">{m.descripcion}</span>
+                  <button
+                    onClick={() => deleteMetaFinanciera(m.id)}
+                    className="text-accent-red text-xs shrink-0"
+                    aria-label="Eliminar meta"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="h-2 rounded-full bg-overlay/10 overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${m.cumplida ? "bg-accent-green" : "bg-accent-blue"}`}
+                    style={{ width: `${Math.round(m.progreso * 100)}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted mt-1.5">
+                  <span>
+                    {formatMonto(m.montoActual, m.moneda)} de {formatMonto(m.montoObjetivo, m.moneda)}
+                  </span>
+                  <span className={m.cumplida ? "text-accent-green font-medium" : ""}>
+                    {m.cumplida ? "Cumplida" : `${Math.round(m.progreso * 100)}%`}
+                  </span>
+                </div>
+                {m.diasRestantes !== null && !m.cumplida && (
+                  <div className="text-xs text-muted mt-0.5">
+                    {m.diasRestantes < 0
+                      ? `Vencida hace ${Math.abs(m.diasRestantes)} día(s)`
+                      : m.diasRestantes === 0
+                      ? "Vence hoy"
+                      : `${m.diasRestantes} día(s) restantes`}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {(runway.length > 0 || proyeccion.length > 0) && (
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-5">
           <div className="flex items-center justify-between gap-3">
@@ -569,6 +638,94 @@ export default function EconomiaPage() {
           cuentasExistentes={Array.from(new Set(cajaPorCuenta.map((c) => c.cuenta)))}
         />
       )}
+      {showNewMeta && <NuevaMetaModal onClose={() => setShowNewMeta(false)} />}
+    </div>
+  );
+}
+
+function NuevaMetaModal({ onClose }: { onClose: () => void }) {
+  const addMetaFinanciera = useAppStore((s) => s.addMetaFinanciera);
+  const [descripcion, setDescripcion] = useState("");
+  const [moneda, setMoneda] = useState<string>("USD");
+  const [montoObjetivo, setMontoObjetivo] = useState("");
+  const [fechaObjetivo, setFechaObjetivo] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!descripcion.trim() || !montoObjetivo) return;
+    addMetaFinanciera({
+      descripcion: descripcion.trim(),
+      moneda,
+      montoObjetivo: Number(montoObjetivo),
+      fechaObjetivo: fechaObjetivo || null,
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4"
+      >
+        <h3 className="font-semibold">Nueva meta financiera</h3>
+        <div>
+          <label className="block text-xs text-muted mb-1">¿A dónde quieres llegar?</label>
+          <input
+            autoFocus
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="Ej. Saldar la tarjeta de crédito, Ahorro de emergencia"
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-muted mb-1">Monto objetivo</label>
+            <input
+              value={montoObjetivo}
+              onChange={(e) => setMontoObjetivo(e.target.value.replace(/[^0-9.-]/g, ""))}
+              inputMode="decimal"
+              placeholder="0 = deuda en cero"
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-muted mb-1">Moneda</label>
+            <select
+              value={moneda}
+              onChange={(e) => setMoneda(e.target.value)}
+              className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            >
+              {MONEDAS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted mb-1">Fecha objetivo (opcional)</label>
+          <input
+            type="date"
+            value={fechaObjetivo}
+            onChange={(e) => setFechaObjetivo(e.target.value)}
+            className="w-full rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+        </div>
+        <p className="text-xs text-muted">
+          El punto de partida se toma solo, de tu caja personal actual en esa moneda — no tienes que calcular nada.
+        </p>
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="text-sm text-muted">
+            Cancelar
+          </button>
+          <button type="submit" className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2">
+            Crear
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

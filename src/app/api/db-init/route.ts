@@ -7,6 +7,7 @@ const STATEMENTS = [
     id text PRIMARY KEY,
     nombre text NOT NULL,
     objetivo text NOT NULL,
+    ambito text NOT NULL DEFAULT 'negocio',
     estado text NOT NULL,
     prioridad text NOT NULL,
     persona_ids jsonb NOT NULL,
@@ -140,6 +141,15 @@ const STATEMENTS = [
     fecha text NOT NULL,
     minutos integer NOT NULL,
     descripcion text NOT NULL,
+    creado_en text NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS metas_financieras (
+    id text PRIMARY KEY,
+    descripcion text NOT NULL,
+    moneda text NOT NULL,
+    monto_inicial double precision NOT NULL,
+    monto_objetivo double precision NOT NULL,
+    fecha_objetivo text,
     creado_en text NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS strategic_cases (

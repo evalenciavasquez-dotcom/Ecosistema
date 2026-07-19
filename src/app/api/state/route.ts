@@ -8,6 +8,7 @@ import {
   decisiones,
   evidencias,
   historial,
+  metasFinancieras,
   movimientos,
   personas,
   proyectos,
@@ -17,7 +18,7 @@ import {
 import {
   ensureEvidenciaArchivoColumns,
   ensureGoogleSchema,
-  ensureProyectoAnalisisColumn,
+  ensureProyectoColumns,
   ensureStrategicCaseColumns,
 } from "@/lib/db/migrations";
 
@@ -34,7 +35,7 @@ export async function GET() {
     // inicializar), esto lanza y cae en el catch de más abajo, igual que antes.
     await ensureStrategicCaseColumns();
     await ensureEvidenciaArchivoColumns();
-    await ensureProyectoAnalisisColumn();
+    await ensureProyectoColumns();
     await ensureGoogleSchema();
     const [
       proyectosRows,
@@ -60,13 +61,12 @@ export async function GET() {
       db.select().from(strategicCases).orderBy(desc(strategicCases.creadoEn)),
     ]);
 
-    // La tabla de tiempo llegó después del esquema inicial: si aún no existe
-    // en esta base, no debe tumbar todo el estado.
-    const tiempoRows = await db
-      .select()
-      .from(tiempo)
-      .orderBy(desc(tiempo.fecha))
-      .catch(() => []);
+    // Las tablas de tiempo y metas financieras llegaron después del esquema
+    // inicial: si aún no existen en esta base, no deben tumbar todo el estado.
+    const [tiempoRows, metasFinancierasRows] = await Promise.all([
+      db.select().from(tiempo).orderBy(desc(tiempo.fecha)).catch(() => []),
+      db.select().from(metasFinancieras).orderBy(desc(metasFinancieras.creadoEn)).catch(() => []),
+    ]);
 
     return NextResponse.json({
       configured: true,
@@ -81,6 +81,7 @@ export async function GET() {
       historial: historialRows,
       strategicCases: strategicCasesRows,
       tiempo: tiempoRows,
+      metasFinancieras: metasFinancierasRows,
     });
   } catch (err) {
     console.error("Error leyendo estado desde la base de datos", err);

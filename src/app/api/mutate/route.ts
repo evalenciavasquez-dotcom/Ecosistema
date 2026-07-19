@@ -5,7 +5,8 @@ import { agenda, TABLES, type TableName } from "@/lib/db/schema";
 import {
   ensureEvidenciaArchivoColumns,
   ensureGoogleSchema,
-  ensureProyectoAnalisisColumn,
+  ensureMetasFinancierasTable,
+  ensureProyectoColumns,
   ensureStrategicCaseColumns,
   ensureTiempoTable,
 } from "@/lib/db/migrations";
@@ -42,8 +43,9 @@ export async function POST(request: Request) {
     if (table === "tiempo") await ensureTiempoTable();
     if (table === "strategicCases") await ensureStrategicCaseColumns();
     if (table === "evidencias") await ensureEvidenciaArchivoColumns();
-    if (table === "proyectos") await ensureProyectoAnalisisColumn();
+    if (table === "proyectos") await ensureProyectoColumns();
     if (table === "agenda") await ensureGoogleSchema();
+    if (table === "metasFinancieras") await ensureMetasFinancierasTable();
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });
