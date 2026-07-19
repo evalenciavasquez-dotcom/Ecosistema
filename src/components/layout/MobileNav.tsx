@@ -49,7 +49,7 @@ export default function MobileNav() {
             >
               <span
                 className={`flex h-6 w-9 items-center justify-center rounded-md text-[10px] font-bold tracking-wide ${
-                  active ? "bg-accent-blue/20 text-accent-blue" : "bg-white/5"
+                  active ? "bg-accent-blue/20 text-accent-blue" : "bg-overlay/5"
                 }`}
               >
                 {tab.code}
@@ -69,7 +69,7 @@ export default function MobileNav() {
         >
           <span
             className={`flex h-6 w-9 items-center justify-center rounded-md text-[10px] font-bold tracking-wide ${
-              moreActive || sheetOpen ? "bg-accent-blue/20 text-accent-blue" : "bg-white/5"
+              moreActive || sheetOpen ? "bg-accent-blue/20 text-accent-blue" : "bg-overlay/5"
             }`}
           >
             •••
@@ -86,7 +86,7 @@ export default function MobileNav() {
             onClick={(e) => e.stopPropagation()}
             style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-overlay/20" />
             <div className="grid grid-cols-2 gap-2">
               {MORE_ITEMS.map((item) => {
                 const active = pathname.startsWith(item.href);
@@ -101,7 +101,7 @@ export default function MobileNav() {
                   >
                     <span
                       className={`flex h-6 w-8 items-center justify-center rounded-md text-[10px] font-bold tracking-wide ${
-                        active ? "bg-accent-blue/20 text-accent-blue" : "bg-white/5"
+                        active ? "bg-accent-blue/20 text-accent-blue" : "bg-overlay/5"
                       }`}
                     >
                       {item.code}

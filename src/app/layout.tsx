@@ -27,11 +27,26 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0c0e13",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0e13" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
+
+// Aplica el tema guardado ANTES del primer paint, para que no haya un
+// parpadeo del tema equivocado al cargar. No usa React porque un efecto
+// correría después de pintar la página.
+const THEME_INIT_SCRIPT = `
+  try {
+    var t = localStorage.getItem("cco-theme");
+    if (t === "light" || t === "dark") {
+      document.documentElement.setAttribute("data-theme", t);
+    }
+  } catch (e) {}
+`;
 
 export default function RootLayout({
   children,
@@ -41,8 +56,12 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${jbMono.variable} h-full antialiased dark`}
+      className={`${inter.variable} ${jbMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full bg-background text-foreground">
         <PwaSetup />
         {children}
