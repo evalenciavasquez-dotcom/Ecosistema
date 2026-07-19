@@ -5,7 +5,7 @@ import { useAppStore } from "@/lib/store";
 import { proyectoNombre } from "@/lib/selectors";
 import { MovimientoEconomico, MovimientoEstado, MovimientoTipo } from "@/lib/types";
 import { Pill } from "@/components/ui/Pill";
-import { computeProyeccion, computeRunway, computeSplitPersonalProyectos } from "@/lib/finanzas";
+import { computeCajaPorCuenta, computeProyeccion, computeRunway, computeSplitPersonalProyectos } from "@/lib/finanzas";
 import { hoyISO } from "@/lib/tiempo";
 
 const ESTADO_TONE: Record<MovimientoEstado, "green" | "amber" | "red"> = {
@@ -79,18 +79,7 @@ export default function EconomiaPage() {
     brecha[m] = (caja[m] ?? 0) + (ingresosEsperados[m] ?? 0) - (gastosEsperados[m] ?? 0);
   });
 
-  const cajaPorCuenta = useMemo(() => {
-    const porCuenta = new Map<string, { cuenta: string; moneda: string; saldo: number }>();
-    movimientos
-      .filter((m) => m.estado === "confirmado")
-      .forEach((m) => {
-        const key = `${m.cuenta}__${m.moneda}`;
-        const actual = porCuenta.get(key) ?? { cuenta: m.cuenta, moneda: m.moneda, saldo: 0 };
-        actual.saldo += m.tipo === "ingreso" ? m.monto : -m.monto;
-        porCuenta.set(key, actual);
-      });
-    return Array.from(porCuenta.values()).sort((a, b) => b.saldo - a.saldo);
-  }, [movimientos]);
+  const cajaPorCuenta = useMemo(() => computeCajaPorCuenta(movimientos), [movimientos]);
 
   const visibles = movimientos.filter(
     (m) => (filtroEstado === "Todos" || m.estado === filtroEstado) && (filtroTipo === "Todos" || m.tipo === filtroTipo)
