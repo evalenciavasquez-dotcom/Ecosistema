@@ -398,7 +398,7 @@ export default function EconomiaPage() {
                       </div>
                       <div className="h-1.5 rounded-full bg-accent-blue/20 overflow-hidden flex">
                         <div className="h-full bg-accent-blue" style={{ width: `${pctPersonal}%` }} />
-                        <div className="h-full bg-white/20" style={{ width: `${100 - pctPersonal}%` }} />
+                        <div className="h-full bg-overlay/20" style={{ width: `${100 - pctPersonal}%` }} />
                       </div>
                     </div>
                   );

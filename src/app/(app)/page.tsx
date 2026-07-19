@@ -222,7 +222,7 @@ export default function InicioPage() {
                   {proyectoNombre(proyectos, pid)}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="h-1.5 w-24 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-1.5 w-24 rounded-full bg-overlay/10 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-accent-blue"
                       style={{ width: `${Math.max(6, Math.round((min / tiempoHoyTotal) * 100))}%` }}

@@ -12,6 +12,61 @@
   --accent-amber: #f0a63a;
   --accent-red: #ef5555;
   --accent-green: #34c07a;
+  /* Base opaca para realces translúcidos (bg-overlay/5, /10, /20…) que
+     deben leerse como "un poco más claro que la superficie" en oscuro y
+     "un poco más oscuro que la superficie" en claro — blanco/negro puro
+     nunca funciona en los dos temas a la vez. */
+  --overlay: #ffffff;
+}
+
+/* Sigue la preferencia del sistema cuando el usuario no eligió un tema
+   explícito en Configuración (data-theme ausente). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --background: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #edeff2;
+    --border-subtle: #dde1e6;
+    --foreground: #14161a;
+    --muted: #6b7078;
+    --accent-blue: #2f5fd8;
+    --accent-teal: #0f8f82;
+    --accent-amber: #a8660a;
+    --accent-red: #d33d3d;
+    --accent-green: #1f9a63;
+    --overlay: #000000;
+  }
+}
+
+/* Elección explícita del usuario — gana siempre sobre la preferencia del sistema. */
+:root[data-theme="light"] {
+  --background: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #edeff2;
+  --border-subtle: #dde1e6;
+  --foreground: #14161a;
+  --muted: #6b7078;
+  --accent-blue: #2f5fd8;
+  --accent-teal: #0f8f82;
+  --accent-amber: #a8660a;
+  --accent-red: #d33d3d;
+  --accent-green: #1f9a63;
+  --overlay: #000000;
+}
+
+:root[data-theme="dark"] {
+  --background: #0a0a0c;
+  --surface: #131316;
+  --surface-2: #1a1a1f;
+  --border-subtle: #26262c;
+  --foreground: #f4f4f5;
+  --muted: #8b8b93;
+  --accent-blue: #5b8dee;
+  --accent-teal: #2dd4bf;
+  --accent-amber: #f0a63a;
+  --accent-red: #ef5555;
+  --accent-green: #34c07a;
+  --overlay: #ffffff;
 }
 
 @theme inline {
@@ -26,11 +81,18 @@
   --color-accent-amber: var(--accent-amber);
   --color-accent-red: var(--accent-red);
   --color-accent-green: var(--accent-green);
+  --color-overlay: var(--overlay);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-mono-jb);
 }
 
 html {
+  color-scheme: light dark;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
   color-scheme: dark;
 }
 

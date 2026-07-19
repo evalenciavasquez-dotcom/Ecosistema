@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { fetchServerState, initDbSchema, migrateAllToServer } from "@/lib/db/sync";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type DbStatus = "checking" | "no_configurada" | "sin_esquema" | "vacia" | "activa";
 type PushStatus = "checking" | "no_soportado" | "sin_db" | "inactivas" | "activas" | "bloqueadas";
@@ -269,7 +270,7 @@ export default function ConfiguracionPage() {
           <button
             onClick={toggleModoEnfoque}
             className={`relative h-5 w-9 rounded-full transition-colors shrink-0 ${
-              modoEnfoque ? "bg-accent-blue" : "bg-white/10"
+              modoEnfoque ? "bg-accent-blue" : "bg-overlay/10"
             }`}
           >
             <span
@@ -278,6 +279,18 @@ export default function ConfiguracionPage() {
               }`}
             />
           </button>
+        </div>
+      </Section>
+
+      <Section title="Apariencia">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium">Tema</div>
+            <div className="text-xs text-muted mt-0.5 max-w-sm">
+              &ldquo;Sistema&rdquo; sigue el modo claro/oscuro del dispositivo.
+            </div>
+          </div>
+          <ThemeToggle />
         </div>
       </Section>
 

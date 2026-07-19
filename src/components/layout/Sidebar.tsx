@@ -52,7 +52,7 @@ export default function Sidebar() {
             >
               <span
                 className={`flex h-6 w-8 items-center justify-center rounded-md text-[10px] font-bold tracking-wide ${
-                  active ? "bg-accent-blue/20 text-accent-blue" : "bg-white/5 text-muted"
+                  active ? "bg-accent-blue/20 text-accent-blue" : "bg-overlay/5 text-muted"
                 }`}
               >
                 {item.code}
@@ -75,7 +75,7 @@ export default function Sidebar() {
             onClick={toggleModoEnfoque}
             title="Modo enfoque — reduce la salida a 1 alerta + 1 acción"
             className={`relative h-5 w-9 rounded-full transition-colors ${
-              modoEnfoque ? "bg-accent-blue" : "bg-white/10"
+              modoEnfoque ? "bg-accent-blue" : "bg-overlay/10"
             }`}
           >
             <span

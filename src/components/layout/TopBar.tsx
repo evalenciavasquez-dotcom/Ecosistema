@@ -97,7 +97,7 @@ export default function TopBar() {
                   router.push(r.href);
                   setQuery("");
                 }}
-                className="flex w-full items-start gap-2 px-4 py-2.5 text-left text-sm hover:bg-white/5 transition-colors"
+                className="flex w-full items-start gap-2 px-4 py-2.5 text-left text-sm hover:bg-overlay/5 transition-colors"
               >
                 <span className="text-[10px] uppercase tracking-wide text-muted mt-0.5 shrink-0">{r.tipo}</span>
                 <span className="truncate">{r.texto}</span>

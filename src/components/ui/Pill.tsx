@@ -6,8 +6,8 @@ const TONE_CLASSES: Record<PillTone, string> = {
   red: "bg-accent-red/15 text-accent-red",
   blue: "bg-accent-blue/15 text-accent-blue",
   teal: "bg-accent-teal/15 text-accent-teal",
-  gray: "bg-white/10 text-muted",
-  purple: "bg-violet-400/15 text-violet-300",
+  gray: "bg-overlay/10 text-muted",
+  purple: "bg-violet-400/15 text-violet-400",
 };
 
 export function Pill({ tone, children }: { tone: PillTone; children: React.ReactNode }) {
