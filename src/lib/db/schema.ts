@@ -17,6 +17,7 @@ export const proyectos = pgTable("proyectos", {
   id: text("id").primaryKey(),
   nombre: text("nombre").notNull(),
   objetivo: text("objetivo").notNull(),
+  ambito: text("ambito").notNull().default("negocio"),
   estado: text("estado").notNull(),
   prioridad: text("prioridad").notNull(),
   personaIds: jsonb("persona_ids").$type<string[]>().notNull(),
@@ -180,6 +181,16 @@ export const tiempo = pgTable("tiempo", {
   creadoEn: text("creado_en").notNull(),
 });
 
+export const metasFinancieras = pgTable("metas_financieras", {
+  id: text("id").primaryKey(),
+  descripcion: text("descripcion").notNull(),
+  moneda: text("moneda").notNull(),
+  montoInicial: doublePrecision("monto_inicial").notNull(),
+  montoObjetivo: doublePrecision("monto_objetivo").notNull(),
+  fechaObjetivo: text("fecha_objetivo"),
+  creadoEn: text("creado_en").notNull(),
+});
+
 // Conexión OAuth con Google — una sola fila (id fijo "default"), no es
 // parte del modelo de dominio sincronizado con el cliente vía TABLES/mutate.
 // Se maneja directamente desde src/lib/google.ts.
@@ -203,6 +214,7 @@ export const googleConnection = pgTable("google_connection", {
 
 export const TABLES = {
   tiempo,
+  metasFinancieras,
   proyectos,
   personas,
   acciones,

@@ -6,6 +6,7 @@ import {
   EVIDENCE_LABEL,
   NivelRiesgo,
   Prioridad,
+  ProyectoAmbito,
   ProyectoEstado,
 } from "@/lib/types";
 
@@ -35,6 +36,19 @@ const PROYECTO_ESTADO_TONE: Record<ProyectoEstado, PillTone> = {
 
 export function ProyectoEstadoBadge({ estado }: { estado: ProyectoEstado }) {
   return <Pill tone={PROYECTO_ESTADO_TONE[estado]}>{estado}</Pill>;
+}
+
+const AMBITO_TONE: Record<ProyectoAmbito, PillTone> = {
+  personal: "purple",
+  negocio: "blue",
+};
+const AMBITO_LABEL: Record<ProyectoAmbito, string> = {
+  personal: "Personal",
+  negocio: "Negocio",
+};
+
+export function AmbitoBadge({ ambito }: { ambito: ProyectoAmbito }) {
+  return <Pill tone={AMBITO_TONE[ambito]}>{AMBITO_LABEL[ambito]}</Pill>;
 }
 
 const ACCION_ESTADO_TONE: Record<AccionEstado, PillTone> = {

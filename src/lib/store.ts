@@ -32,6 +32,7 @@ import {
   Decision,
   Evidencia,
   HistorialEntry,
+  MetaFinanciera,
   MovimientoEconomico,
   Persona,
   Proyecto,
@@ -40,6 +41,7 @@ import {
 } from "./types";
 import { classifyText } from "./classifier";
 import { genId, pickKeys } from "./id";
+import { computeSplitPersonalProyectos } from "./finanzas";
 import { dbMutate, fetchServerState } from "./db/sync";
 
 interface AppState {
@@ -61,6 +63,7 @@ interface AppState {
   historial: HistorialEntry[];
   strategicCases: StrategicCase[];
   tiempo: RegistroTiempo[];
+  metasFinancieras: MetaFinanciera[];
 
   // Cronómetro de trabajo: uno activo a la vez, local a este dispositivo.
   timerActivo: { proyectoId: string; inicio: string } | null;
@@ -68,6 +71,9 @@ interface AppState {
   stopTimer: (descripcion?: string) => void;
   addRegistroTiempo: (r: Omit<RegistroTiempo, "id" | "creadoEn">) => void;
   deleteRegistroTiempo: (id: string) => void;
+
+  addMetaFinanciera: (meta: { descripcion: string; moneda: string; montoObjetivo: number; fechaObjetivo?: string | null }) => void;
+  deleteMetaFinanciera: (id: string) => void;
 
   addStrategicCase: (strategicCase: StrategicCase) => void;
 
@@ -132,6 +138,7 @@ function seedState() {
     historial: [] as HistorialEntry[],
     strategicCases: [] as StrategicCase[],
     tiempo: [] as RegistroTiempo[],
+    metasFinancieras: [] as MetaFinanciera[],
     timerActivo: null as { proyectoId: string; inicio: string } | null,
   };
 }
@@ -172,6 +179,31 @@ export const useAppStore = create<AppState>()(
       deleteRegistroTiempo: (id) => {
         set((state) => ({ tiempo: state.tiempo.filter((t) => t.id !== id) }));
         dbMutate("tiempo", "delete", id);
+      },
+
+      addMetaFinanciera: (meta) => {
+        // El punto de partida se captura solo, de la caja personal actual en
+        // esa moneda — así Eduardo no tiene que calcular ni escribir nada,
+        // solo decir a dónde quiere llegar.
+        const montoInicial = computeSplitPersonalProyectos(get().movimientos).find(
+          (s) => s.moneda === meta.moneda
+        )?.personal ?? 0;
+        const nueva: MetaFinanciera = {
+          id: genId("meta"),
+          descripcion: meta.descripcion,
+          moneda: meta.moneda,
+          montoInicial,
+          montoObjetivo: meta.montoObjetivo,
+          fechaObjetivo: meta.fechaObjetivo ?? null,
+          creadoEn: new Date().toISOString().slice(0, 10),
+        };
+        set((state) => ({ metasFinancieras: [nueva, ...state.metasFinancieras] }));
+        dbMutate("metasFinancieras", "insert", undefined, nueva);
+        get().logHistorial("meta", nueva.id, `Meta financiera "${meta.descripcion}" creada`);
+      },
+      deleteMetaFinanciera: (id) => {
+        set((state) => ({ metasFinancieras: state.metasFinancieras.filter((m) => m.id !== id) }));
+        dbMutate("metasFinancieras", "delete", id);
       },
 
       addStrategicCase: (strategicCase) => {
@@ -615,6 +647,7 @@ export const useAppStore = create<AppState>()(
           historial: (server.historial ?? []) as HistorialEntry[],
           strategicCases: strategicCasesDeduped,
           tiempo: (server.tiempo ?? []) as RegistroTiempo[],
+          metasFinancieras: (server.metasFinancieras ?? []) as MetaFinanciera[],
         });
       },
     }),

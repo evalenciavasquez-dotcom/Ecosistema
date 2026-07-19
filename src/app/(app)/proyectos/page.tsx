@@ -2,12 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
-import { ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, AccionEstadoBadge } from "@/components/ui/badges";
+import { AmbitoBadge, ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, AccionEstadoBadge } from "@/components/ui/badges";
 import {
   AnalisisEconomicoProyecto,
   Decision,
   MovimientoEconomico,
   Proyecto,
+  ProyectoAmbito,
   ProyectoEstado,
   Prioridad,
 } from "@/lib/types";
@@ -28,11 +29,19 @@ const ESTADOS: ProyectoEstado[] = [
   "Descartado",
 ];
 
+const AMBITO_FILTROS = ["Todos", "personal", "negocio"] as const;
+const AMBITO_FILTRO_LABEL: Record<(typeof AMBITO_FILTROS)[number], string> = {
+  Todos: "Todos",
+  personal: "Personal",
+  negocio: "Negocio",
+};
+
 function ProyectosContent() {
   const proyectos = useAppStore((s) => s.proyectos);
   const openId = useOpenParam();
   const [selectedId, setSelectedId] = useState<string | null>(() => openId);
   const [showNew, setShowNew] = useState(false);
+  const [filtroAmbito, setFiltroAmbito] = useState<(typeof AMBITO_FILTROS)[number]>("Todos");
 
   useEffect(() => {
     if (openId) window.history.replaceState(null, "", "/proyectos");
@@ -44,19 +53,40 @@ function ProyectosContent() {
     return <ProyectoDetail proyecto={selected} onClose={() => setSelectedId(null)} />;
   }
 
+  const visibles = proyectos.filter((p) => filtroAmbito === "Todos" || p.ambito === filtroAmbito);
+
   return (
     <div className="max-w-5xl space-y-5">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {AMBITO_FILTROS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFiltroAmbito(f)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
+                filtroAmbito === f
+                  ? "bg-accent-blue/15 border-accent-blue text-accent-blue"
+                  : "border-border-subtle text-muted hover:text-foreground"
+              }`}
+            >
+              {AMBITO_FILTRO_LABEL[f]}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setShowNew(true)}
-          className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2"
+          className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 shrink-0"
         >
           + Nuevo proyecto
         </button>
       </div>
 
+      {visibles.length === 0 && (
+        <p className="text-sm text-muted">Ningún proyecto en este ámbito todavía.</p>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {proyectos.map((p) => (
+        {visibles.map((p) => (
           <button
             key={p.id}
             onClick={() => setSelectedId(p.id)}
@@ -68,6 +98,7 @@ function ProyectosContent() {
             </div>
             <p className="text-sm text-muted mt-2 line-clamp-2">{p.objetivo}</p>
             <div className="flex items-center gap-2 mt-3">
+              <AmbitoBadge ambito={p.ambito} />
               <PrioridadBadge prioridad={p.prioridad} />
             </div>
           </button>
@@ -91,6 +122,7 @@ function NuevoProyectoModal({ onClose }: { onClose: () => void }) {
   const addProyecto = useAppStore((s) => s.addProyecto);
   const [nombre, setNombre] = useState("");
   const [objetivo, setObjetivo] = useState("");
+  const [ambito, setAmbito] = useState<ProyectoAmbito>("negocio");
   const [estado, setEstado] = useState<ProyectoEstado>("Idea");
   const [prioridad, setPrioridad] = useState<Prioridad>("Media");
 
@@ -100,6 +132,7 @@ function NuevoProyectoModal({ onClose }: { onClose: () => void }) {
     addProyecto({
       nombre: nombre.trim(),
       objetivo,
+      ambito,
       estado,
       prioridad,
       personaIds: [],
@@ -121,6 +154,25 @@ function NuevoProyectoModal({ onClose }: { onClose: () => void }) {
         className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface-2 p-6 space-y-4"
       >
         <h3 className="font-semibold">Nuevo proyecto</h3>
+        <div>
+          <label className="block text-xs text-muted mb-1">Ámbito</label>
+          <div className="flex gap-2">
+            {(["negocio", "personal"] as ProyectoAmbito[]).map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAmbito(a)}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm border transition-colors ${
+                  ambito === a
+                    ? "bg-accent-blue/15 border-accent-blue text-accent-blue"
+                    : "border-border-subtle text-muted hover:text-foreground"
+                }`}
+              >
+                {a === "negocio" ? "Negocio" : "Personal"}
+              </button>
+            ))}
+          </div>
+        </div>
         <div>
           <label className="block text-xs text-muted mb-1">Nombre</label>
           <input
@@ -204,6 +256,7 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
         </div>
         <p className="text-sm text-muted mt-2">{proyecto.objetivo}</p>
         <div className="flex flex-wrap items-center gap-2 mt-3">
+          <AmbitoBadge ambito={proyecto.ambito} />
           <ProyectoEstadoBadge estado={proyecto.estado} />
           <PrioridadBadge prioridad={proyecto.prioridad} />
         </div>
@@ -311,6 +364,22 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
             }`}
           >
             {e}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {(["negocio", "personal"] as ProyectoAmbito[]).map((a) => (
+          <button
+            key={a}
+            onClick={() => updateProyecto(proyecto.id, { ambito: a })}
+            className={`rounded-full px-3 py-1.5 text-xs border transition-colors ${
+              proyecto.ambito === a
+                ? "bg-accent-blue/20 border-accent-blue text-accent-blue"
+                : "border-border-subtle text-muted hover:text-foreground"
+            }`}
+          >
+            {a === "negocio" ? "Negocio" : "Personal"}
           </button>
         ))}
       </div>

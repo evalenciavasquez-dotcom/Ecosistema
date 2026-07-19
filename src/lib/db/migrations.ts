@@ -46,13 +46,32 @@ export async function ensureEvidenciaArchivoColumns() {
   evidenciaArchivoColumnsEnsured = true;
 }
 
-let proyectoAnalisisColumnEnsured = false;
-export async function ensureProyectoAnalisisColumn() {
-  if (proyectoAnalisisColumnEnsured) return;
+let proyectoColumnsEnsured = false;
+export async function ensureProyectoColumns() {
+  if (proyectoColumnsEnsured) return;
   await getDb().execute(
-    sql.raw(`ALTER TABLE proyectos ADD COLUMN IF NOT EXISTS analisis_economico jsonb`)
+    sql.raw(`ALTER TABLE proyectos
+      ADD COLUMN IF NOT EXISTS analisis_economico jsonb,
+      ADD COLUMN IF NOT EXISTS ambito text NOT NULL DEFAULT 'negocio'`)
   );
-  proyectoAnalisisColumnEnsured = true;
+  proyectoColumnsEnsured = true;
+}
+
+let metasFinancierasEnsured = false;
+export async function ensureMetasFinancierasTable() {
+  if (metasFinancierasEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS metas_financieras (
+      id text PRIMARY KEY,
+      descripcion text NOT NULL,
+      moneda text NOT NULL,
+      monto_inicial double precision NOT NULL,
+      monto_objetivo double precision NOT NULL,
+      fecha_objetivo text,
+      creado_en text NOT NULL
+    )`)
+  );
+  metasFinancierasEnsured = true;
 }
 
 let googleSchemaEnsured = false;
