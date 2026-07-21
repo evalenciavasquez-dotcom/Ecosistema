@@ -70,14 +70,21 @@ function headerValue(headers: gmail_v1.Schema$MessagePartHeader[] | undefined, n
   return found?.value ?? "";
 }
 
-// Una etiqueta anidada en Gmail se llama internamente "Padre/Hijo" — se
-// reconoce igual aunque Eduardo la haya puesto dentro de otra carpeta, en
-// vez de crear una nueva etiqueta plana duplicada sin querer.
+// Normaliza el nombre de una etiqueta para reconocerla sin importar si está
+// anidada ("Padre/Hijo" en Gmail), si tiene un número de orden adelante
+// ("01 ACCIÓN") o la capitalización — así se reconoce la organización que
+// Eduardo ya tenía en Gmail en vez de crear etiquetas nuevas duplicadas.
+function normalizeLabelSegment(raw: string): string {
+  const lastSegment = raw.split("/").pop() ?? raw;
+  return lastSegment.replace(/^\d+\s*/, "").trim().toLowerCase();
+}
+
 function findLabel(
   labels: gmail_v1.Schema$Label[] | undefined,
   name: string
 ): gmail_v1.Schema$Label | undefined {
-  return labels?.find((l) => l.name === name || l.name?.endsWith(`/${name}`));
+  const target = normalizeLabelSegment(name);
+  return labels?.find((l) => l.name && normalizeLabelSegment(l.name) === target);
 }
 
 // Resuelve varias etiquetas a la vez con una sola llamada a la API — crea
