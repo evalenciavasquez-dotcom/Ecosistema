@@ -98,6 +98,8 @@ export default function ConfiguracionPage() {
       partes.push(`${body.gmail?.nuevos ?? 0} correo(s) nuevo(s)`);
       const cal = body.calendar ?? {};
       partes.push(`${cal.creados ?? 0} evento(s) nuevo(s), ${cal.actualizados ?? 0} actualizado(s), ${cal.eliminados ?? 0} eliminado(s)`);
+      const tasks = body.tasks ?? {};
+      partes.push(`${tasks.creados ?? 0} tarea(s) nueva(s), ${tasks.actualizados ?? 0} actualizada(s), ${tasks.eliminados ?? 0} eliminada(s)`);
       setSyncMsg(partes.join(" · "));
       const statusRes = await fetch("/api/google/status");
       setGoogleStatus(await statusRes.json());
@@ -565,8 +567,8 @@ export default function ConfiguracionPage() {
               <div>
                 <div className="text-sm font-medium">Sin conectar</div>
                 <p className="text-xs text-muted mt-0.5 max-w-sm">
-                  Conecta tu cuenta para leer correo etiquetado &ldquo;CCO&rdquo; en Gmail y sincronizar tu agenda con
-                  Google Calendar en doble vía.
+                  Conecta tu cuenta para leer correo etiquetado &ldquo;CCO&rdquo; en Gmail, sincronizar tu agenda con
+                  Google Calendar y tus acciones con Google Tasks, en doble vía.
                 </p>
               </div>
               <a
@@ -624,7 +626,9 @@ export default function ConfiguracionPage() {
               </div>
               <p className="text-xs text-muted">
                 La sincronización también corre automáticamente una vez al día. Los eventos que crees en Agenda se
-                envían a Google Calendar al instante; si los borras, también se borran allá.
+                envían a Google Calendar al instante; si los borras, también se borran allá. Lo mismo pasa con las
+                Acciones y Google Tasks: crear, cambiar de estado o borrar una acción se refleja allá, y las tareas
+                que crees o completes en Google Tasks entran a Acciones.
               </p>
             </div>
           )}

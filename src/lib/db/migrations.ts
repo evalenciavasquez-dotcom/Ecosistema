@@ -90,10 +90,12 @@ export async function ensureGoogleSchema() {
     )`)
   );
   await getDb().execute(sql.raw(`ALTER TABLE agenda ADD COLUMN IF NOT EXISTS google_event_id text`));
+  await getDb().execute(sql.raw(`ALTER TABLE acciones ADD COLUMN IF NOT EXISTS google_task_id text`));
   await getDb().execute(
     sql.raw(`ALTER TABLE google_connection
       ADD COLUMN IF NOT EXISTS gmail_processed_label_id text,
-      ADD COLUMN IF NOT EXISTS calendar_sync_token text`)
+      ADD COLUMN IF NOT EXISTS calendar_sync_token text,
+      ADD COLUMN IF NOT EXISTS last_tasks_sync text`)
   );
   googleSchemaEnsured = true;
 }
