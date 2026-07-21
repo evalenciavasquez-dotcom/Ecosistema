@@ -602,7 +602,9 @@ export default function ConfiguracionPage() {
                   Etiqueta &ldquo;CCO&rdquo; lista en Gmail, junto con ACCIÓN, FINANZAS, PROYECTOS, PERSONAL, SISTEMAS
                   y REFERENCIA — el sistema las crea solas la primera vez que hacen falta. Crea filtros en Gmail que
                   apliquen la que corresponda a cada correo que quieras que el sistema revise. Los de ACCIÓN, FINANZAS
-                  y REFERENCIA van directo a esa categoría en la Bandeja; los demás los clasifica la IA.
+                  y REFERENCIA van directo a esa categoría en la Bandeja; los demás los clasifica la IA. El barrido
+                  solo mira correos de las últimas 48 horas — reorganizar correo viejo con estas etiquetas no lo trae
+                  de vuelta.
                 </p>
               )}
               {googleStatus.lastGmailSync && (

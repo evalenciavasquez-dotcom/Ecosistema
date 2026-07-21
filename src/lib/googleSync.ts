@@ -36,6 +36,11 @@ const LABEL_DESTINO_HINT: Partial<Record<string, BandejaDestino>> = {
   REFERENCIA: "evidencia",
 };
 const MAX_MESSAGES_PER_RUN = 30;
+// El barrido solo mira correos recibidos en esta ventana — evita que un
+// reetiquetado masivo del correo viejo (ej. organizar años de correo con
+// estas mismas etiquetas) inunde la Bandeja con miles de "novedades" que en
+// realidad son historia vieja, no algo nuevo que revisar.
+const SWEEP_LOOKBACK_HOURS = 48;
 
 function decodeBase64Url(data: string): string {
   const normalized = data.replace(/-/g, "+").replace(/_/g, "/");
@@ -115,11 +120,12 @@ export interface GmailSyncResult {
   error?: string;
 }
 
-// Barre los correos con cualquiera de las etiquetas vigiladas (CCO y las
-// categorías) que aún no tengan la etiqueta "CCO-Sincronizado", los
-// convierte en ítems de Bandeja (con la misma clasificación por IA que usa
-// la captura manual — salvo que la etiqueta ya diga qué es, en cuyo caso esa
-// pista manda), y marca cada correo como sincronizado para no reprocesarlo.
+// Barre los correos de las últimas 48 horas con cualquiera de las etiquetas
+// vigiladas (CCO y las categorías) que aún no tengan la etiqueta
+// "CCO-Sincronizado", los convierte en ítems de Bandeja (con la misma
+// clasificación por IA que usa la captura manual — salvo que la etiqueta ya
+// diga qué es, en cuyo caso esa pista manda), y marca cada correo como
+// sincronizado para no reprocesarlo.
 export async function syncGmail(): Promise<GmailSyncResult> {
   if (!isDbConfigured() || !isGoogleConfigured()) return { nuevos: 0, revisados: 0 };
   const connection = await getConnection();
@@ -163,13 +169,14 @@ export async function syncGmail(): Promise<GmailSyncResult> {
 
   // Un correo puede tener varias etiquetas vigiladas — se procesa una sola
   // vez, quedándose con la primera etiqueta encontrada como pista.
+  const sinceEpochSeconds = Math.floor((Date.now() - SWEEP_LOOKBACK_HOURS * 3600_000) / 1000);
   const messageLabels = new Map<string, string>();
   for (const [name, labelId] of labelIdsByName) {
     if (messageLabels.size >= MAX_MESSAGES_PER_RUN) break;
     const list = await gmail.users.messages.list({
       userId: "me",
       labelIds: [labelId],
-      q: `-label:${CCO_PROCESSED_LABEL}`,
+      q: `-label:${CCO_PROCESSED_LABEL} after:${sinceEpochSeconds}`,
       maxResults: MAX_MESSAGES_PER_RUN - messageLabels.size,
     });
     for (const m of list.data.messages ?? []) {
@@ -193,6 +200,22 @@ export async function syncGmail(): Promise<GmailSyncResult> {
   for (const [messageId, labelName] of messageLabels) {
     try {
       const full = await gmail.users.messages.get({ userId: "me", id: messageId, format: "full" });
+
+      // Segunda verificación de la ventana de 48 horas, ahora sobre la fecha
+      // real del correo (no solo confiando en el operador "after:" de la
+      // búsqueda) — si por lo que sea aparece algo más viejo, se marca como
+      // sincronizado sin crear un ítem en Bandeja, para no arriesgar que un
+      // reetiquetado masivo de correo antiguo inunde la Bandeja.
+      const internalMs = full.data.internalDate ? Number(full.data.internalDate) : null;
+      if (internalMs !== null && internalMs < sinceEpochSeconds * 1000) {
+        await gmail.users.messages.modify({
+          userId: "me",
+          id: messageId,
+          requestBody: { addLabelIds: [processedLabelId] },
+        });
+        continue;
+      }
+
       const headers = full.data.payload?.headers ?? undefined;
       const from = headerValue(headers, "From");
       const subject = headerValue(headers, "Subject") || "(sin asunto)";
