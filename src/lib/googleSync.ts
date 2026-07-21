@@ -19,11 +19,23 @@ import {
   updateGmailProcessedLabelId,
   updateLastGmailSync,
 } from "./google";
-import type { ClasificacionSugerida } from "./types";
+import type { BandejaDestino, ClasificacionSugerida } from "./types";
 
 const CCO_LABEL = "CCO";
 const CCO_PROCESSED_LABEL = "CCO-Sincronizado";
-const MAX_MESSAGES_PER_RUN = 15;
+// Categorías adicionales que Eduardo puede usar como etiquetas de Gmail —
+// se crean solas en Gmail la primera vez que hacen falta, así que solo hay
+// que crear los filtros allá apuntando a ellas.
+const CATEGORY_LABELS = ["ACCIÓN", "FINANZAS", "PROYECTOS", "PERSONAL", "SISTEMAS", "REFERENCIA"] as const;
+// Cuando la etiqueta ya dice qué es, se usa como pista fuerte para el
+// destino en Bandeja — Eduardo ya lo clasificó al ponerle la etiqueta, no
+// hace falta que la IA lo adivine de nuevo.
+const LABEL_DESTINO_HINT: Partial<Record<string, BandejaDestino>> = {
+  "ACCIÓN": "accion",
+  FINANZAS: "economia",
+  REFERENCIA: "evidencia",
+};
+const MAX_MESSAGES_PER_RUN = 30;
 
 function decodeBase64Url(data: string): string {
   const normalized = data.replace(/-/g, "+").replace(/_/g, "/");
@@ -58,15 +70,36 @@ function headerValue(headers: gmail_v1.Schema$MessagePartHeader[] | undefined, n
   return found?.value ?? "";
 }
 
-async function ensureGmailLabel(gmail: gmail_v1.Gmail, name: string): Promise<string | null> {
+// Una etiqueta anidada en Gmail se llama internamente "Padre/Hijo" — se
+// reconoce igual aunque Eduardo la haya puesto dentro de otra carpeta, en
+// vez de crear una nueva etiqueta plana duplicada sin querer.
+function findLabel(
+  labels: gmail_v1.Schema$Label[] | undefined,
+  name: string
+): gmail_v1.Schema$Label | undefined {
+  return labels?.find((l) => l.name === name || l.name?.endsWith(`/${name}`));
+}
+
+// Resuelve varias etiquetas a la vez con una sola llamada a la API — crea
+// las que falten. Devuelve un mapa nombre → id (omite las que no se
+// pudieron crear).
+async function ensureGmailLabels(gmail: gmail_v1.Gmail, names: readonly string[]): Promise<Map<string, string>> {
   const list = await gmail.users.labels.list({ userId: "me" });
-  const found = list.data.labels?.find((l) => l.name === name);
-  if (found?.id) return found.id;
-  const created = await gmail.users.labels.create({
-    userId: "me",
-    requestBody: { name, labelListVisibility: "labelShow", messageListVisibility: "show" },
-  });
-  return created.data.id ?? null;
+  const existing = list.data.labels ?? [];
+  const result = new Map<string, string>();
+  for (const name of names) {
+    const found = findLabel(existing, name);
+    if (found?.id) {
+      result.set(name, found.id);
+      continue;
+    }
+    const created = await gmail.users.labels.create({
+      userId: "me",
+      requestBody: { name, labelListVisibility: "labelShow", messageListVisibility: "show" },
+    });
+    if (created.data.id) result.set(name, created.data.id);
+  }
+  return result;
 }
 
 export interface GmailSyncResult {
@@ -75,10 +108,11 @@ export interface GmailSyncResult {
   error?: string;
 }
 
-// Barre los correos con la etiqueta "CCO" que aún no tengan la etiqueta
-// "CCO-Sincronizado", los convierte en ítems de Bandeja (con la misma
-// clasificación por IA que usa la captura manual), y marca cada correo como
-// sincronizado para no volver a procesarlo en la siguiente pasada.
+// Barre los correos con cualquiera de las etiquetas vigiladas (CCO y las
+// categorías) que aún no tengan la etiqueta "CCO-Sincronizado", los
+// convierte en ítems de Bandeja (con la misma clasificación por IA que usa
+// la captura manual — salvo que la etiqueta ya diga qué es, en cuyo caso esa
+// pista manda), y marca cada correo como sincronizado para no reprocesarlo.
 export async function syncGmail(): Promise<GmailSyncResult> {
   if (!isDbConfigured() || !isGoogleConfigured()) return { nuevos: 0, revisados: 0 };
   const connection = await getConnection();
@@ -88,29 +122,54 @@ export async function syncGmail(): Promise<GmailSyncResult> {
   if (!client) return { nuevos: 0, revisados: 0 };
   const gmail = google.gmail({ version: "v1", auth: client });
 
-  let labelId = connection.gmailLabelId;
-  if (!labelId) {
-    labelId = await ensureGmailLabel(gmail, CCO_LABEL);
-    if (labelId) await updateGmailLabelId(labelId);
-  }
-  if (!labelId) return { nuevos: 0, revisados: 0, error: "No se pudo preparar la etiqueta CCO en Gmail" };
+  const needCcoLookup = !connection.gmailLabelId;
+  const needProcessedLookup = !connection.gmailProcessedLabelId;
+  const toResolve = [
+    ...(needCcoLookup ? [CCO_LABEL] : []),
+    ...CATEGORY_LABELS,
+    ...(needProcessedLookup ? [CCO_PROCESSED_LABEL] : []),
+  ];
+  const resolved = await ensureGmailLabels(gmail, toResolve);
 
-  let processedLabelId = connection.gmailProcessedLabelId;
-  if (!processedLabelId) {
-    processedLabelId = await ensureGmailLabel(gmail, CCO_PROCESSED_LABEL);
-    if (processedLabelId) await updateGmailProcessedLabelId(processedLabelId);
+  const labelIdsByName = new Map<string, string>();
+  if (connection.gmailLabelId) labelIdsByName.set(CCO_LABEL, connection.gmailLabelId);
+  for (const name of CATEGORY_LABELS) {
+    const id = resolved.get(name);
+    if (id) labelIdsByName.set(name, id);
+  }
+  const ccoId = resolved.get(CCO_LABEL);
+  if (ccoId) {
+    labelIdsByName.set(CCO_LABEL, ccoId);
+    await updateGmailLabelId(ccoId);
+  }
+  if (labelIdsByName.size === 0) {
+    return { nuevos: 0, revisados: 0, error: "No se pudieron preparar las etiquetas en Gmail" };
+  }
+
+  const processedLabelId = connection.gmailProcessedLabelId ?? resolved.get(CCO_PROCESSED_LABEL);
+  if (processedLabelId && processedLabelId !== connection.gmailProcessedLabelId) {
+    await updateGmailProcessedLabelId(processedLabelId);
   }
   if (!processedLabelId) {
     return { nuevos: 0, revisados: 0, error: "No se pudo preparar la etiqueta CCO-Sincronizado en Gmail" };
   }
 
-  const list = await gmail.users.messages.list({
-    userId: "me",
-    q: `label:${CCO_LABEL} -label:${CCO_PROCESSED_LABEL}`,
-    maxResults: MAX_MESSAGES_PER_RUN,
-  });
-  const messages = list.data.messages ?? [];
-  if (messages.length === 0) {
+  // Un correo puede tener varias etiquetas vigiladas — se procesa una sola
+  // vez, quedándose con la primera etiqueta encontrada como pista.
+  const messageLabels = new Map<string, string>();
+  for (const [name, labelId] of labelIdsByName) {
+    if (messageLabels.size >= MAX_MESSAGES_PER_RUN) break;
+    const list = await gmail.users.messages.list({
+      userId: "me",
+      labelIds: [labelId],
+      q: `-label:${CCO_PROCESSED_LABEL}`,
+      maxResults: MAX_MESSAGES_PER_RUN - messageLabels.size,
+    });
+    for (const m of list.data.messages ?? []) {
+      if (m.id && !messageLabels.has(m.id)) messageLabels.set(m.id, name);
+    }
+  }
+  if (messageLabels.size === 0) {
     await updateLastGmailSync(new Date().toISOString());
     return { nuevos: 0, revisados: 0 };
   }
@@ -124,10 +183,9 @@ export async function syncGmail(): Promise<GmailSyncResult> {
   const personasRef = personasRows.map((p) => ({ nombre: p.nombre, proyectoIds: p.proyectoIds }));
 
   let nuevos = 0;
-  for (const msg of messages) {
-    if (!msg.id) continue;
+  for (const [messageId, labelName] of messageLabels) {
     try {
-      const full = await gmail.users.messages.get({ userId: "me", id: msg.id, format: "full" });
+      const full = await gmail.users.messages.get({ userId: "me", id: messageId, format: "full" });
       const headers = full.data.payload?.headers ?? undefined;
       const from = headerValue(headers, "From");
       const subject = headerValue(headers, "Subject") || "(sin asunto)";
@@ -157,6 +215,16 @@ export async function syncGmail(): Promise<GmailSyncResult> {
           razon: "Correo importado de Gmail — la clasificación automática falló, revísalo manualmente.",
         };
       }
+
+      const hint = LABEL_DESTINO_HINT[labelName];
+      if (hint) {
+        clasificacion = {
+          ...clasificacion,
+          destino: hint,
+          confianza: Math.max(clasificacion.confianza, 0.8),
+          razon: `Etiqueta de Gmail: ${labelName}`,
+        };
+      }
       const estado: "Nuevo" | "Necesita confirmación" =
         clasificacion.confianza < 0.6 ? "Necesita confirmación" : "Nuevo";
 
@@ -167,14 +235,14 @@ export async function syncGmail(): Promise<GmailSyncResult> {
         timestamp: new Date().toISOString(),
         entidadTipo: "bandeja",
         entidadId: id,
-        cambio: `Recibido por barrido de Gmail — "${subject}"`,
+        cambio: `Recibido por barrido de Gmail (${labelName}) — "${subject}"`,
         autor: "ia",
       });
       nuevos++;
 
       await gmail.users.messages.modify({
         userId: "me",
-        id: msg.id,
+        id: messageId,
         requestBody: { addLabelIds: [processedLabelId] },
       });
     } catch (err) {
@@ -183,7 +251,7 @@ export async function syncGmail(): Promise<GmailSyncResult> {
   }
 
   await updateLastGmailSync(new Date().toISOString());
-  return { nuevos, revisados: messages.length };
+  return { nuevos, revisados: messageLabels.size };
 }
 
 export interface CalendarSyncResult {
