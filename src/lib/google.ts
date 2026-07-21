@@ -7,13 +7,15 @@ import { ensureGoogleSchema } from "./db/migrations";
 // Alcance mínimo necesario: leer correo (para el barrido de Gmail),
 // gestionar SOLO etiquetas de Gmail (gmail.labels — necesario para crear
 // la etiqueta "CCO" al conectar; no da acceso de escritura al contenido
-// de los correos, gmail.readonly ya cubre eso), y crear/editar/borrar
-// eventos de Calendar (para la sincronización de doble vía) — nunca
-// acceso a la bandeja completa de Calendar ni a otros datos de la cuenta.
+// de los correos, gmail.readonly ya cubre eso), crear/editar/borrar
+// eventos de Calendar (para la sincronización de doble vía), y
+// crear/editar/borrar tareas de Google Tasks (para sincronizar Acciones)
+// — nunca acceso a la bandeja completa de Calendar ni a otros datos de la cuenta.
 const SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.labels",
   "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/tasks",
 ];
 
 const CONNECTION_ID = "default";
@@ -134,4 +136,8 @@ export async function updateCalendarSyncToken(token: string | null): Promise<voi
     .update(googleConnection)
     .set({ calendarSyncToken: token })
     .where(eq(googleConnection.id, CONNECTION_ID));
+}
+
+export async function updateLastTasksSync(isoDate: string): Promise<void> {
+  await getDb().update(googleConnection).set({ lastTasksSync: isoDate }).where(eq(googleConnection.id, CONNECTION_ID));
 }
