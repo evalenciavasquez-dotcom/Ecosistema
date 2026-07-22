@@ -111,6 +111,16 @@ export default function MobileNav() {
                 );
               })}
             </div>
+            <a
+              href="/vincere"
+              onClick={() => setSheetOpen(false)}
+              className="mt-3 flex w-full items-center gap-3 rounded-xl bg-accent-red/15 px-3 py-3 text-sm font-medium text-accent-red"
+            >
+              <span className="flex h-6 w-8 items-center justify-center rounded-md bg-accent-red/20 text-[10px] font-bold tracking-wide">
+                VI
+              </span>
+              VINCERE Intelligence Platform
+            </a>
             <button
               onClick={() => {
                 setSheetOpen(false);

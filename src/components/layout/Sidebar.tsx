@@ -61,6 +61,16 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        <a
+          href="/vincere"
+          className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+        >
+          <span className="flex h-6 w-8 items-center justify-center rounded-md bg-accent-red/20 text-[10px] font-bold tracking-wide text-accent-red">
+            VI
+          </span>
+          VINCERE
+        </a>
       </nav>
 
       <div className="mt-4 border-t border-border-subtle pt-4">

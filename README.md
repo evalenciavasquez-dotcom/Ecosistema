@@ -102,6 +102,36 @@ src/
   proxy.ts                  Gate de autenticación (antes "middleware.ts" en Next < 16)
 ```
 
+## VINCERE Intelligence Platform (`/vincere`)
+
+Además del C.C.O. E.V., el repositorio incluye la **VINCERE Intelligence Platform** (PRD v3.0): una plataforma de dirección estratégica musical tipo Chartmetric, pero donde cada sección corresponde a un motor del sistema VINCERE y, sobre la data, una capa de IA la interpreta con el método propio (qué significa, riesgo, oportunidad, decisión, nivel de evidencia 1-4).
+
+Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vincere`. Es su propia superficie de marca (look editorial oscuro), separada del resto de la app:
+
+- **Shell de plataforma** (P0.1): selector de proyecto + navegación lateral por motores + panel principal.
+- **Las 3 capas por sección** (P0.2): data (paneles/gráficas o campos editables) + interpretación de IA con nivel de evidencia + zona de acción (preguntas abiertas, ajuste de escenarios).
+- **Secciones núcleo** (P0.3): Resumen/Career Momentum · Diagnóstico Maestro · Song Intelligence · Audiencia · Zonas de Calor · Management/Decisiones · KPIs · Triage.
+- **Carga manual de data** por sección (P0.6) — arquitectura lista para APIs después.
+- **Modo comparación** (P0.8): proyecto propio vs. una referencia de mercado (competencia), con lectura ajustada por macro-fase. Arranca con SETTE (proyecto real) y LUNA REBEL (referencia) precargados.
+- **Registro a Notion** (P0.9): botón "Registrar en Notion" — escribe de verdad si `NOTION_TOKEN` + `NOTION_DATABASE_ID` están configuradas, si no avisa sin romper.
+
+La interpretación, las preguntas por sección y el triage llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`. La data de la plataforma se persiste en el `localStorage` del navegador (clave `vincere-storage`), independiente del store del C.C.O.
+
+Estructura:
+
+```
+src/
+  app/
+    vincere/                 Shell de la plataforma (layout + page + vincere.css)
+    api/vincere/
+      interpret/             Lectura VINCERE por sección (IA)
+      ask/                   Preguntas abiertas por sección (IA)
+      triage/                Veredicto de casos nuevos (IA)
+      notion/                Registro a Notion (si está configurado)
+  components/vincere/        Header, Nav, secciones, componentes de las 3 capas
+  lib/vincere/               types, seed-data (SETTE + LUNA REBEL), store, prompt, schema
+```
+
 ## Alcance y limitaciones de este v1
 
 - **Persistencia**: por defecto los datos viven en el `localStorage` del navegador. Si se configura `DATABASE_URL` (Neon en producción), los datos se sincronizan en Postgres y son los mismos en cualquier dispositivo — ver "Base de datos y sincronización entre dispositivos". Hay exportación manual a JSON en Configuración en ambos casos.

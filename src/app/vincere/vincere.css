@@ -1,0 +1,140 @@
+/* Sistema visual propio de VINCERE — superficie de marca distinta al resto de
+   C.C.O. E.V. La plataforma se compromete con un look editorial oscuro (el
+   "instrumento" del PRD), independiente del tema claro/oscuro global. Se aplica
+   solo dentro de .vincere-scope para no contaminar el resto de la app. */
+
+.vincere-scope {
+  --vin-bg: #0d0c0a;
+  --vin-surface: #15130f;
+  --vin-surface-2: #1e1b17;
+  --vin-border: rgba(255, 255, 255, 0.08);
+  --vin-border-strong: rgba(255, 255, 255, 0.14);
+  --vin-text: #f3efe8;
+  --vin-muted: #a39c92;
+  --vin-faint: #6f6a61;
+  --vin-dim: #524d46;
+  --vin-accent: #e0483a;
+
+  background: var(--vin-bg);
+  color: var(--vin-text);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.vincere-scope ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.vincere-scope ::-webkit-scrollbar-thumb {
+  background: var(--vin-border-strong);
+  border-radius: 8px;
+}
+
+.vin-serif {
+  font-family: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
+
+.vin-card {
+  border: 1px solid var(--vin-border);
+  background: var(--vin-surface);
+  border-radius: 4px;
+}
+
+.vin-accent-card {
+  border: 1px solid rgba(224, 72, 58, 0.25);
+  background: var(--vin-surface);
+  border-radius: 4px;
+}
+
+.vin-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vin-accent);
+}
+
+.vin-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vin-muted);
+}
+
+.vin-muted {
+  color: var(--vin-muted);
+}
+.vin-faint {
+  color: var(--vin-faint);
+}
+
+.vin-input {
+  background: var(--vin-surface-2);
+  border: 1px solid var(--vin-border-strong);
+  border-radius: 3px;
+  color: var(--vin-text);
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  width: 100%;
+}
+.vin-input::placeholder {
+  color: var(--vin-faint);
+}
+.vin-input:focus {
+  border-color: rgba(224, 72, 58, 0.55);
+}
+
+.vin-btn-primary {
+  background: var(--vin-accent);
+  color: var(--vin-text);
+  border: none;
+  border-radius: 3px;
+  padding: 10px 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.vin-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.vin-btn-ghost {
+  background: transparent;
+  color: var(--vin-muted);
+  border: 1px solid var(--vin-border-strong);
+  border-radius: 3px;
+  padding: 9px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.vin-btn-ghost:hover {
+  color: var(--vin-text);
+}
+
+.vin-bar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.vin-bar-fill {
+  background: var(--vin-accent);
+  height: 100%;
+}
+
+.vin-select {
+  background: var(--vin-surface-2);
+  border: 1px solid var(--vin-border-strong);
+  border-radius: 3px;
+  color: var(--vin-text);
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+}
+.vin-select option {
+  background: var(--vin-surface-2);
+  color: var(--vin-text);
+}
+
+.vin-range {
+  width: 100%;
+  accent-color: var(--vin-accent);
+}
