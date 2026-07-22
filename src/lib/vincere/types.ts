@@ -71,6 +71,31 @@ export interface VincereDiagnostico {
   prioridad: string;
 }
 
+export type VincerePotencialCancion = "single" | "album" | "relleno" | "incierto";
+
+export const VINCERE_POTENCIAL_LABEL: Record<VincerePotencialCancion, string> = {
+  single: "Potencial single",
+  album: "Tema de álbum",
+  relleno: "Relleno / descartable",
+  incierto: "Potencial incierto",
+};
+
+// Lectura profunda de la canción como obra (letra + tema), no solo sus métricas.
+// Es la capa que un director interpreta y que un dashboard de números no toca.
+export interface VincereCancionAnalisis {
+  tema: string; // De qué habla de verdad, más allá de lo obvio.
+  arcoEmocional: string; // Cómo lleva la emoción de la primera línea al final.
+  gancho: string; // Fuerza del gancho y si engancha rápido — conecta con el skip.
+  audiencia: string; // A qué audiencia le habla y si cuadra con la que ya escucha.
+  fitMarca: string; // Coherencia con la marca/identidad del artista.
+  potencial: string; // Lectura del potencial comercial en texto.
+  clasificacionPotencial: VincerePotencialCancion; // Etiqueta corta para badge.
+  reescrituras: string[]; // Qué reescribiría o afinaría — el verso flojo, el puente que sobra.
+  decision: string; // Qué hacer con la canción: gestión (single, empujar, sacar, feature…).
+  nivel: VincereNivel;
+  generadoEn: string;
+}
+
 export interface VincereCancion {
   id: string;
   nombre: string;
@@ -78,6 +103,9 @@ export interface VincereCancion {
   retencionPct: number;
   skipPct: number;
   playlistAdds: number;
+  // Contenido artístico de la canción — opcional para no romper data ya cargada.
+  letra?: string;
+  analisis?: VincereCancionAnalisis | null;
 }
 
 export interface VincereAudienciaSegmento {

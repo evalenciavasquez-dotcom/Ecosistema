@@ -28,6 +28,39 @@ export const triageResponseSchema = z.object({
   nivel: nivelSchema,
 });
 
+export const songAnalysisResponseSchema = z.object({
+  tema: z
+    .string()
+    .describe("De qué habla la canción de verdad — el tema real y su subtexto, no la lectura obvia de la superficie. 1-2 frases."),
+  arcoEmocional: z
+    .string()
+    .describe("Cómo lleva la emoción de la primera línea al final — la trayectoria, dónde sube y dónde cae. 1-2 frases."),
+  gancho: z
+    .string()
+    .describe("Fuerza del gancho/hook y si engancha rápido en los primeros segundos; conéctalo con el skip rate cuando exista. 1-2 frases."),
+  audiencia: z
+    .string()
+    .describe("A qué audiencia le habla la letra y si cuadra con la que ya escucha al artista (usa la data de audiencia del contexto si está). 1-2 frases."),
+  fitMarca: z
+    .string()
+    .describe("Coherencia con la marca/identidad del artista — ¿suena a este artista o se sale del carril? 1-2 frases."),
+  potencial: z
+    .string()
+    .describe("Lectura del potencial comercial de la canción, justificada — no solo una etiqueta. 1-2 frases."),
+  clasificacionPotencial: z
+    .enum(["single", "album", "relleno", "incierto"])
+    .describe("Clasificación corta del potencial: single (candidata a sencillo), album (buen tema de disco), relleno (descartable), incierto (falta data)"),
+  reescrituras: z
+    .array(z.string())
+    .max(4)
+    .describe("Qué reescribiría o afinaría — el verso flojo, el puente que sobra, el gancho tardío. Máx 4, concretas. Vacío si no aplica."),
+  decision: z
+    .string()
+    .describe("Qué hacer con la canción (gestión de director): próximo single, empujar, sacar de rotación, buscar feature, retrabajar. 1-2 frases accionables."),
+  nivel: nivelSchema,
+});
+
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
 export type AskResponse = z.infer<typeof askResponseSchema>;
 export type TriageResponse = z.infer<typeof triageResponseSchema>;
+export type SongAnalysisResponse = z.infer<typeof songAnalysisResponseSchema>;

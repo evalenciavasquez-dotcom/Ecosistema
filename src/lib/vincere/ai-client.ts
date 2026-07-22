@@ -1,4 +1,4 @@
-import { VincereNivel } from "./types";
+import { VincereCancionAnalisis, VincereCancion, VincereNivel, VincerePotencialCancion } from "./types";
 
 function clampNivel(n: unknown): VincereNivel {
   const v = typeof n === "number" ? Math.round(n) : 2;
@@ -69,6 +69,43 @@ export async function fetchTriage(input: {
     prioridad: r.prioridad ?? "Media",
     motorRecomendado: r.motorRecomendado ?? "",
     nivel: clampNivel(r.nivel),
+  };
+}
+
+const POTENCIAL_VALIDOS: VincerePotencialCancion[] = ["single", "album", "relleno", "incierto"];
+
+// Análisis profundo de la letra de una canción — devuelve el análisis listo para
+// guardar en el store (sin id, con generadoEn puesto por el cliente).
+export async function fetchSongAnalysis(input: {
+  cancion: Pick<VincereCancion, "nombre" | "streams" | "retencionPct" | "skipPct" | "playlistAdds">;
+  letra: string;
+  artista: unknown;
+}): Promise<Omit<VincereCancionAnalisis, "generadoEn"> & { generadoEn: string }> {
+  const res = await fetch("/api/vincere/analyze-song", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const clasificacion = POTENCIAL_VALIDOS.includes(r.clasificacionPotencial)
+    ? (r.clasificacionPotencial as VincerePotencialCancion)
+    : "incierto";
+  return {
+    tema: r.tema ?? "",
+    arcoEmocional: r.arcoEmocional ?? "",
+    gancho: r.gancho ?? "",
+    audiencia: r.audiencia ?? "",
+    fitMarca: r.fitMarca ?? "",
+    potencial: r.potencial ?? "",
+    clasificacionPotencial: clasificacion,
+    reescrituras: Array.isArray(r.reescrituras) ? r.reescrituras.filter((x: unknown) => typeof x === "string") : [],
+    decision: r.decision ?? "",
+    nivel: clampNivel(r.nivel),
+    generadoEn: new Date().toISOString(),
   };
 }
 

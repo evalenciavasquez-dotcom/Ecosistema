@@ -5,6 +5,7 @@ import { SEED_VINCERE_PROYECTOS, SEED_VINCERE_TRIAGE } from "./seed-data";
 import {
   VincereAudienciaSegmento,
   VincereCancion,
+  VincereCancionAnalisis,
   VincereComparacion,
   VincereDecisionEstado,
   VincereDiagnostico,
@@ -67,6 +68,8 @@ interface VincereState {
   addCancion: (proyectoId: string, cancion: Omit<VincereCancion, "id">) => void;
   updateCancion: (proyectoId: string, cancionId: string, patch: Partial<VincereCancion>) => void;
   deleteCancion: (proyectoId: string, cancionId: string) => void;
+  setCancionLetra: (proyectoId: string, cancionId: string, letra: string) => void;
+  setCancionAnalisis: (proyectoId: string, cancionId: string, analisis: VincereCancionAnalisis) => void;
 
   setAudienciaSegmentos: (
     proyectoId: string,
@@ -209,6 +212,20 @@ export const useVincereStore = create<VincereState>()(
           proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
             ...p,
             canciones: p.canciones.filter((c) => c.id !== cancionId),
+          })),
+        })),
+      setCancionLetra: (proyectoId, cancionId, letra) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            canciones: p.canciones.map((c) => (c.id === cancionId ? { ...c, letra } : c)),
+          })),
+        })),
+      setCancionAnalisis: (proyectoId, cancionId, analisis) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            canciones: p.canciones.map((c) => (c.id === cancionId ? { ...c, analisis } : c)),
           })),
         })),
 
