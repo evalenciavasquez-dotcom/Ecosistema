@@ -9,6 +9,9 @@ export async function POST(request: Request) {
   }
 
   const token = await createSessionToken();
+  if (!token) {
+    return NextResponse.json({ ok: false, error: "APP_PASSWORD no está configurada en el servidor" }, { status: 500 });
+  }
   const response = NextResponse.json({ ok: true });
   response.cookies.set(AUTH_COOKIE, token, {
     httpOnly: true,
