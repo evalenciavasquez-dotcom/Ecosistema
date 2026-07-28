@@ -68,6 +68,7 @@ const BANDEJA_ESTADO_TONE: Record<BandejaEstado, PillTone> = {
   Nuevo: "blue",
   "En análisis": "amber",
   "Necesita confirmación": "amber",
+  "Requiere decisión": "red",
   Procesado: "green",
   Descartado: "gray",
 };

@@ -41,7 +41,8 @@ import {
 } from "./types";
 import { classifyText } from "./classifier";
 import { genId, pickKeys } from "./id";
-import { computeSplitPersonalProyectos } from "./finanzas";
+import { computeSplitPersonalProyectos, diasRunwayDeMonto } from "./finanzas";
+import { buildAnalysisContext } from "./selectors";
 import { dbMutate, fetchServerState } from "./db/sync";
 
 interface AppState {
@@ -92,6 +93,15 @@ interface AppState {
   approveBandejaItem: (id: string) => void;
   discardBandejaItem: (id: string) => void;
 
+  // Capa de cuestionamiento en decisiones: umbral de días de runway a partir
+  // del cual el sistema corre el análisis solo, sin preguntar primero.
+  umbralRunwayDecisionDias: number;
+  setUmbralRunwayDecisionDias: (dias: number) => void;
+  escalarBandejaADecision: (id: string, automatico: boolean) => Promise<void>;
+  aceptarAnalisisBandeja: (id: string) => Promise<void>;
+  rechazarAnalisisBandeja: (id: string) => void;
+  ejecutarAnalisisDecision: (decisionId: string) => Promise<void>;
+
   addProyecto: (proyecto: Omit<Proyecto, "id" | "creadoEn">) => string;
   updateProyecto: (id: string, patch: Partial<Proyecto>) => void;
   deleteProyecto: (id: string) => void;
@@ -128,6 +138,7 @@ function seedState() {
   return {
     modoEnfoque: false,
     pendingAssistantQuery: null as string | null,
+    umbralRunwayDecisionDias: 7,
     proyectos: SEED_PROYECTOS,
     personas: SEED_PERSONAS,
     acciones: SEED_ACCIONES,
@@ -150,6 +161,17 @@ export const useAppStore = create<AppState>()(
       ...seedState(),
 
       toggleModoEnfoque: () => set((state) => ({ modoEnfoque: !state.modoEnfoque })),
+
+      setUmbralRunwayDecisionDias: (dias) => {
+        set({ umbralRunwayDecisionDias: dias });
+        if (typeof window !== "undefined") {
+          fetch("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ umbralRunwayDecisionDias: dias }),
+          }).catch(() => {});
+        }
+      },
 
       askAssistant: (query) => set({ pendingAssistantQuery: query }),
       clearAssistantQuery: () => set({ pendingAssistantQuery: null }),
@@ -268,17 +290,49 @@ export const useAppStore = create<AppState>()(
               const actual = get().bandeja.find((b) => b.id === item.id);
               if (!actual || actual.estado !== "En análisis") return;
               const result = body?.result;
-              const estado: BandejaEstado =
-                result && result.confianza < 0.6 ? "Necesita confirmación" : "Nuevo";
-              if (result) {
-                get().reclassifyBandejaItem(item.id, {
-                  destino: result.destino,
-                  proyectoId: result.proyectoId,
-                  confianza: result.confianza,
-                  razon: result.razon,
-                });
-                get().logHistorial("bandeja", item.id, "Clasificación afinada por IA", "ia");
+              if (!result) {
+                get().setBandejaEstado(item.id, "Nuevo");
+                return;
               }
+
+              // Capa de cuestionamiento: cuánto pesa esto en días de runway,
+              // calculado acá (no por la IA) con la caja y el gasto reales.
+              const diasRunwayEstimado = result.monto
+                ? diasRunwayDeMonto(
+                    result.monto,
+                    result.moneda ?? "USD",
+                    get().movimientos,
+                    new Date().toISOString().slice(0, 10)
+                  )
+                : null;
+
+              get().reclassifyBandejaItem(item.id, {
+                destino: result.destino,
+                proyectoId: result.proyectoId,
+                confianza: result.confianza,
+                razon: result.razon,
+                disparadorDecision: result.disparadorDecision ?? "ninguno",
+                disparadorRazon: result.disparadorRazon ?? "",
+                diasRunwayEstimado,
+              });
+              get().logHistorial("bandeja", item.id, "Clasificación afinada por IA", "ia");
+
+              const disparador = result.disparadorDecision;
+              if (disparador && disparador !== "ninguno") {
+                const umbral = get().umbralRunwayDecisionDias;
+                if (diasRunwayEstimado !== null && diasRunwayEstimado > umbral) {
+                  // Pesa lo suficiente como para no depender del estado de
+                  // ánimo del momento — corre el análisis solo, sin preguntar.
+                  get().escalarBandejaADecision(item.id, true).catch((err) => {
+                    console.warn("No se pudo escalar automáticamente a Decisión", err);
+                  });
+                  return;
+                }
+                get().setBandejaEstado(item.id, "Requiere decisión");
+                return;
+              }
+
+              const estado: BandejaEstado = result.confianza < 0.6 ? "Necesita confirmación" : "Nuevo";
               get().setBandejaEstado(item.id, estado);
             })
             .catch(() => {
@@ -412,6 +466,124 @@ export const useAppStore = create<AppState>()(
         }));
         dbMutate("bandeja", "update", id, { estado: "Descartado" });
         get().logHistorial("bandeja", id, "Descartado por el usuario");
+      },
+
+      // Convierte una novedad de la Bandeja en una Decisión y corre el
+      // análisis estratégico completo de una — ya sea porque el sistema lo
+      // decidió solo (pesa más que el umbral de runway) o porque Eduardo
+      // confirmó que sí quiere que se analice antes de registrarse.
+      escalarBandejaADecision: async (id, automatico) => {
+        const item = get().bandeja.find((b) => b.id === id);
+        if (!item) return;
+        const { proyectoId, monto, moneda, razon, disparadorDecision, disparadorRazon, diasRunwayEstimado } =
+          item.clasificacion;
+        const disparador = disparadorDecision ?? "ninguno";
+        const impactoEconomico =
+          diasRunwayEstimado !== null && diasRunwayEstimado !== undefined
+            ? `Esto son ${Math.round(diasRunwayEstimado)} días de runway (${moneda ?? ""} ${monto ?? ""})`.trim()
+            : "";
+
+        const decisionId = get().addDecision({
+          pregunta: item.texto,
+          contexto: [disparadorRazon, razon].filter(Boolean).join(" — "),
+          proyectoId,
+          fechaLimite: "",
+          nivelRiesgo:
+            diasRunwayEstimado != null && diasRunwayEstimado > get().umbralRunwayDecisionDias ? "Alto" : "Medio",
+          evidenceLevel: "reportado",
+          opciones: [],
+          escenarios: [],
+          impactoEconomico,
+          recomendacionSistema: "",
+          decisionFinal: "",
+          condiciones: [],
+          resultadoPosterior: "",
+          estado: "Abierta",
+        });
+
+        const resultadoLabel = automatico
+          ? "Elevado automáticamente a Decisión — analizando"
+          : "Elevado a Decisión — analizando";
+        set((state) => ({
+          bandeja: state.bandeja.map((b) => (b.id === id ? { ...b, estado: "Procesado", resultadoLabel } : b)),
+        }));
+        dbMutate("bandeja", "update", id, { estado: "Procesado", resultadoLabel });
+        get().logHistorial(
+          "bandeja",
+          id,
+          automatico
+            ? `Elevado automáticamente a Decisión (${disparador}) — pesaba ${
+                diasRunwayEstimado != null ? Math.round(diasRunwayEstimado) : "?"
+              } días de runway`
+            : `Elevado a Decisión por confirmación tuya (${disparador})`,
+          "ia"
+        );
+
+        await get().ejecutarAnalisisDecision(decisionId);
+      },
+
+      aceptarAnalisisBandeja: async (id) => {
+        await get().escalarBandejaADecision(id, false);
+      },
+
+      // "No, registrá y ya": sigue el flujo normal de aprobación, pero deja
+      // rastro de que el análisis se ofreció y se rechazó — dato de
+      // aprendizaje, no reproche (ver Bloque 3).
+      rechazarAnalisisBandeja: (id) => {
+        const item = get().bandeja.find((b) => b.id === id);
+        if (!item) return;
+        const { disparadorDecision, diasRunwayEstimado } = item.clasificacion;
+        get().logHistorial(
+          "bandeja",
+          id,
+          `Análisis ofrecido y rechazado (${disparadorDecision ?? "ninguno"})`,
+          "usuario",
+          undefined,
+          {
+            analisis_ofrecido: true,
+            analisis_aceptado: false,
+            disparador_detectado: disparadorDecision ?? "ninguno",
+            monto_dias_runway: diasRunwayEstimado ?? null,
+          }
+        );
+        get().approveBandejaItem(id);
+      },
+
+      // Corre el mismo análisis estratégico que el botón "Analizar con IA"
+      // de Decisiones, pero disparado desde el código en vez de un clic —
+      // para que una Decisión elevada desde la Bandeja no quede esperando.
+      ejecutarAnalisisDecision: async (decisionId) => {
+        const decision = get().decisiones.find((d) => d.id === decisionId);
+        if (!decision) return;
+        try {
+          const ctx = buildAnalysisContext(
+            decision,
+            get().proyectos,
+            get().personas,
+            get().movimientos,
+            get().evidencias,
+            get().historial,
+            get().decisiones
+          );
+          const res = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(ctx),
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok || !data?.result) return;
+          const nuevoCaso: StrategicCase = {
+            id: genId("case"),
+            decisionId,
+            ...data.result,
+            nivelAnalisis: "3",
+            modeloUsado: "claude-sonnet-5",
+            creadoEn: new Date().toISOString(),
+          };
+          get().addStrategicCase(nuevoCaso);
+        } catch (err) {
+          console.warn("No se pudo ejecutar el análisis automático de la decisión", err);
+        }
       },
 
       addProyecto: (proyecto) => {
@@ -636,6 +808,15 @@ export const useAppStore = create<AppState>()(
         }),
 
       hydrateFromServer: async () => {
+        fetch("/api/config")
+          .then((r) => r.json())
+          .then((body) => {
+            if (typeof body?.umbralRunwayDecisionDias === "number") {
+              set({ umbralRunwayDecisionDias: body.umbralRunwayDecisionDias });
+            }
+          })
+          .catch(() => {});
+
         const server = await fetchServerState();
         if (!server || !server.configured) return;
         const hasData =
