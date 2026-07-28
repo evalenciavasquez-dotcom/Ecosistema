@@ -203,9 +203,27 @@ export interface Evidencia {
   archivoNombre?: string | null;
 }
 
-export type BandejaEstado = "Nuevo" | "En análisis" | "Necesita confirmación" | "Procesado" | "Descartado";
+export type BandejaEstado =
+  | "Nuevo"
+  | "En análisis"
+  | "Necesita confirmación"
+  | "Requiere decisión"
+  | "Procesado"
+  | "Descartado";
 
 export type BandejaDestino = "accion" | "decision" | "economia" | "evidencia" | "evento" | "registro";
+
+// Señales de que una novedad merece pensarse como Decisión antes de
+// registrarse tal cual, aunque esté escrita como un gasto o una tarea
+// cualquiera — ver "Capa de cuestionamiento en decisiones".
+export type DisparadorDecision = "plata_saliendo" | "compromiso_sin_papel" | "duda" | "ninguno";
+
+export const DISPARADOR_DECISION_LABEL: Record<DisparadorDecision, string> = {
+  plata_saliendo: "plata saliendo",
+  compromiso_sin_papel: "compromiso sin papel",
+  duda: "duda expresada",
+  ninguno: "ninguno",
+};
 
 export const BANDEJA_DESTINO_LABEL: Record<BandejaDestino, string> = {
   accion: "Acción",
@@ -228,6 +246,12 @@ export interface ClasificacionSugerida {
   tipoMovimiento?: MovimientoTipo | null;
   fechaEvento?: string | null;
   horaEvento?: string | null;
+  // Capa de cuestionamiento en decisiones: qué señal detectó la IA (si
+  // alguna) y por qué. diasRunwayEstimado se calcula en el cliente a partir
+  // del monto detectado y el gasto real — no lo produce la IA.
+  disparadorDecision?: DisparadorDecision | null;
+  disparadorRazon?: string | null;
+  diasRunwayEstimado?: number | null;
 }
 
 export interface BandejaItem {
