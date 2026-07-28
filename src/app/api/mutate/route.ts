@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   try {
     const db = getDb();
     if (table === "tiempo") await ensureTiempoTable();
-    if (table === "strategicCases") await ensureStrategicCaseColumns();
+    if (table === "strategicCases" || table === "decisiones") await ensureStrategicCaseColumns();
     if (table === "evidencias") await ensureEvidenciaArchivoColumns();
     if (table === "proyectos") await ensureProyectoColumns();
     if (table === "agenda" || table === "acciones") await ensureGoogleSchema();

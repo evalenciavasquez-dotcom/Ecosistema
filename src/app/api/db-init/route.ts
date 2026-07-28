@@ -69,7 +69,8 @@ const STATEMENTS = [
     condiciones jsonb NOT NULL,
     resultado_posterior text NOT NULL,
     estado text NOT NULL,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    fecha_decision text
   )`,
   `CREATE TABLE IF NOT EXISTS movimientos (
     id text PRIMARY KEY,
@@ -177,7 +178,12 @@ const STATEMENTS = [
     recomendacion jsonb NOT NULL,
     nivel_analisis text NOT NULL,
     modelo_usado text NOT NULL,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    recomendacion_sistema text,
+    hipotesis_critica text,
+    hipotesis_se_cumplio boolean,
+    costo_dias_runway double precision,
+    checklist_proceso jsonb
   )`,
 ];
 

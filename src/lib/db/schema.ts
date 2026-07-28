@@ -1,6 +1,7 @@
-import { doublePrecision, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 import type {
   AnalisisEconomicoProyecto,
+  ChecklistProceso,
   ClasificacionSugerida,
   Dofa,
   EscenarioEvaluacion,
@@ -85,6 +86,9 @@ export const decisiones = pgTable("decisiones", {
   resultadoPosterior: text("resultado_posterior").notNull(),
   estado: text("estado").notNull(),
   creadoEn: text("creado_en").notNull(),
+  // Cuándo se registró la decisión final (resolverDecision) — usada por el
+  // recordatorio de cierre de ciclo a los 30/60/90 días.
+  fechaDecision: text("fecha_decision"),
 });
 
 export const movimientos = pgTable("movimientos", {
@@ -173,6 +177,15 @@ export const strategicCases = pgTable("strategic_cases", {
   nivelAnalisis: text("nivel_analisis").notNull(),
   modeloUsado: text("modelo_usado").notNull(),
   creadoEn: text("creado_en").notNull(),
+  // --- Aprendizaje: cerrar el ciclo (ver "Capa de cuestionamiento en
+  // decisiones", Bloque 3) — qué recomendó el sistema, si el proceso corrió
+  // como debía, y qué pasó después de verdad. Todos nullable porque se
+  // llenan progresivamente, no al momento de crear el análisis.
+  recomendacionSistema: text("recomendacion_sistema"),
+  hipotesisCritica: text("hipotesis_critica"),
+  hipotesisSeCumplio: boolean("hipotesis_se_cumplio"),
+  costoDiasRunway: doublePrecision("costo_dias_runway"),
+  checklistProceso: jsonb("checklist_proceso").$type<ChecklistProceso>(),
 });
 
 export const tiempo = pgTable("tiempo", {

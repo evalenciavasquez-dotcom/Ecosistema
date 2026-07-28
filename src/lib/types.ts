@@ -159,6 +159,10 @@ export interface Decision {
   resultadoPosterior: string;
   estado: "Abierta" | "Decidida" | "Cerrada";
   creadoEn: string;
+  // Cuándo se registró la decisión final — usada por el recordatorio de
+  // cierre de ciclo a los 30/60/90 días (ver Bloque 3 de la capa de
+  // cuestionamiento en decisiones).
+  fechaDecision?: string | null;
 }
 
 export type MovimientoTipo = "ingreso" | "gasto";
@@ -389,6 +393,18 @@ export interface RecomendacionEjecutiva {
 
 export type NivelAnalisis = "1" | "2" | "3";
 
+// Checklist de PROCESO (no de acierto) — mide si el análisis corrió como
+// debía, no si la recomendación resultó correcta. Ver Bloque 3: no se puede
+// medir si una recomendación estratégica fue "correcta", pero sí que el
+// proceso haya corrido — eso es lo auditable, con meta de ≥95%.
+export interface ChecklistProceso {
+  detectoDisparador: boolean;
+  corrioMetricasAntesDeOpinar: boolean;
+  produjoArgumentoEnContra: boolean;
+  nombroHipotesisCritica: boolean;
+  evaluoCostoDeEsperar: boolean;
+}
+
 export interface StrategicCase {
   id: string;
   decisionId: string;
@@ -412,4 +428,10 @@ export interface StrategicCase {
   nivelAnalisis: NivelAnalisis;
   modeloUsado: string;
   creadoEn: string;
+  // --- Aprendizaje: cerrar el ciclo (Bloque 3) ---
+  recomendacionSistema?: string | null;
+  hipotesisCritica?: string | null;
+  hipotesisSeCumplio?: boolean | null;
+  costoDiasRunway?: number | null;
+  checklistProceso?: ChecklistProceso | null;
 }
