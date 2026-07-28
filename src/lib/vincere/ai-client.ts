@@ -1,4 +1,11 @@
-import { VincereCancionAnalisis, VincereCancion, VincereNivel, VincerePotencialCancion } from "./types";
+import {
+  VincereCancion,
+  VincereCancionAnalisis,
+  VincereInforme,
+  VincereNivel,
+  VincerePotencialCancion,
+  VincerePrioridadPaso,
+} from "./types";
 
 function clampNivel(n: unknown): VincereNivel {
   const v = typeof n === "number" ? Math.round(n) : 2;
@@ -105,6 +112,56 @@ export async function fetchSongAnalysis(input: {
     reescrituras: Array.isArray(r.reescrituras) ? r.reescrituras.filter((x: unknown) => typeof x === "string") : [],
     decision: r.decision ?? "",
     nivel: clampNivel(r.nivel),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
+const PRIORIDADES: VincerePrioridadPaso[] = ["Alta", "Media", "Baja"];
+
+// Informe final del proyecto — el entregable que cruza todos los motores.
+export async function fetchInforme(contexto: unknown): Promise<VincereInforme> {
+  const res = await fetch("/api/vincere/informe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contexto, fecha: new Date().toISOString().slice(0, 10) }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+
+  return {
+    titulo: r.titulo ?? "Informe final",
+    sinopsis: r.sinopsis ?? "",
+    bloques: arr<{ titulo: string; parrafos: unknown; nivel: number }>(r.bloques).map((b) => ({
+      titulo: b.titulo ?? "",
+      parrafos: Array.isArray(b.parrafos) ? b.parrafos.filter((p): p is string => typeof p === "string") : [],
+      nivel: clampNivel(b.nivel),
+    })),
+    riesgos: arr<{ riesgo: string; consecuencia: string; nivel: number }>(r.riesgos).map((x) => ({
+      riesgo: x.riesgo ?? "",
+      consecuencia: x.consecuencia ?? "",
+      nivel: clampNivel(x.nivel),
+    })),
+    oportunidades: arr<{ oportunidad: string; porQue: string; nivel: number }>(r.oportunidades).map((x) => ({
+      oportunidad: x.oportunidad ?? "",
+      porQue: x.porQue ?? "",
+      nivel: clampNivel(x.nivel),
+    })),
+    proximosPasos: arr<{ accion: string; responsable: string; plazo: string; prioridad: string }>(r.proximosPasos).map(
+      (x) => ({
+        accion: x.accion ?? "",
+        responsable: x.responsable ?? "",
+        plazo: x.plazo ?? "",
+        prioridad: PRIORIDADES.includes(x.prioridad as VincerePrioridadPaso)
+          ? (x.prioridad as VincerePrioridadPaso)
+          : "Media",
+      })
+    ),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
     generadoEn: new Date().toISOString(),
   };
 }

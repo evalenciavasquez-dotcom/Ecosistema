@@ -138,3 +138,50 @@
   width: 100%;
   accent-color: var(--vin-accent);
 }
+
+/* Impresión del Informe Final: solo el documento, en claro y sin cromo de la
+   interfaz — "Imprimir / PDF" en el navegador produce un entregable presentable. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .vin-print-area,
+  .vin-print-area * {
+    visibility: visible;
+  }
+  .vin-print-area {
+    /* Redefinir las variables cubre también los estilos en línea que usan
+       var(--vin-*) — de lo contrario el texto claro del tema oscuro sale
+       invisible sobre papel blanco. */
+    --vin-text: #14161a;
+    --vin-muted: #55606b;
+    --vin-faint: #6b7480;
+    --vin-dim: #8a929b;
+    --vin-border: #d8dde3;
+    --vin-surface: #ffffff;
+    --vin-accent: #b23a2f;
+
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: none !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #14161a !important;
+  }
+  .vin-no-print {
+    display: none !important;
+  }
+  /* La caja del veredicto lleva su fondo de acento en línea: se aclara para papel. */
+  .vin-print-area [style*="rgba(224,72,58,0.08)"] {
+    background: #fbf1f0 !important;
+    border-color: #e8c9c5 !important;
+  }
+  .vin-print-area section,
+  .vin-print-area li {
+    break-inside: avoid;
+  }
+  @page {
+    margin: 18mm 16mm;
+  }
+}

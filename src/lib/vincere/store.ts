@@ -10,6 +10,7 @@ import {
   VincereDecisionEstado,
   VincereDiagnostico,
   VincereFase,
+  VincereInforme,
   VincereInsight,
   VincereKpi,
   VincereProyecto,
@@ -91,6 +92,7 @@ interface VincereState {
 
   setInsights: (proyectoId: string, seccion: VincereSeccion, insights: VincereInsight[]) => void;
   addQA: (proyectoId: string, seccion: VincereSeccion, entry: VincereQAEntry) => void;
+  setInforme: (proyectoId: string, informe: VincereInforme) => void;
 
   setComparacionInsights: (idA: string, idB: string, insights: VincereInsight[]) => void;
   addComparacionQA: (idA: string, idB: string, entry: VincereQAEntry) => void;
@@ -320,6 +322,8 @@ export const useVincereStore = create<VincereState>()(
             qaLog: { ...p.qaLog, [seccion]: [...(p.qaLog[seccion] ?? []), entry] },
           })),
         })),
+      setInforme: (proyectoId, informe) =>
+        set((s) => ({ proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, informe })) })),
 
       setComparacionInsights: (idA, idB, insights) =>
         set((s) => {

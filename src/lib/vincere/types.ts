@@ -20,7 +20,8 @@ export type VincereSeccion =
   | "calor"
   | "management"
   | "kpis"
-  | "triage";
+  | "triage"
+  | "informe";
 
 export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   resumen: "Resumen · Momentum",
@@ -31,6 +32,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   management: "Management / Decisiones",
   kpis: "Ejecución / KPIs",
   triage: "Triage",
+  informe: "Informe Final",
 };
 
 export type VincereProyectoTipo = "propio" | "competencia";
@@ -143,6 +145,49 @@ export interface VincereKpi {
   nota: string;
 }
 
+// --- Informe Final: el entregable que emite la plataforma ---
+// No es un resumen de paneles: es la postura del director sobre el proyecto,
+// cruzando todos los motores en un solo documento presentable.
+
+export type VincerePrioridadPaso = "Alta" | "Media" | "Baja";
+
+export interface VincereInformeBloque {
+  titulo: string;
+  parrafos: string[];
+  nivel: VincereNivel;
+}
+
+export interface VincereInformeRiesgo {
+  riesgo: string;
+  consecuencia: string;
+  nivel: VincereNivel;
+}
+
+export interface VincereInformeOportunidad {
+  oportunidad: string;
+  porQue: string;
+  nivel: VincereNivel;
+}
+
+export interface VincereInformePaso {
+  accion: string;
+  responsable: string;
+  plazo: string;
+  prioridad: VincerePrioridadPaso;
+}
+
+export interface VincereInforme {
+  titulo: string;
+  sinopsis: string;
+  bloques: VincereInformeBloque[];
+  riesgos: VincereInformeRiesgo[];
+  oportunidades: VincereInformeOportunidad[];
+  proximosPasos: VincereInformePaso[];
+  veredicto: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
 export interface VincereProyecto {
   id: string;
   nombre: string;
@@ -158,6 +203,7 @@ export interface VincereProyecto {
   kpis: VincereKpi[];
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;
   qaLog: Partial<Record<VincereSeccion, VincereQAEntry[]>>;
+  informe?: VincereInforme | null;
   creadoEn: string;
 }
 

@@ -60,7 +60,64 @@ export const songAnalysisResponseSchema = z.object({
   nivel: nivelSchema,
 });
 
+export const informeResponseSchema = z.object({
+  titulo: z
+    .string()
+    .describe("Título del informe: descriptivo y concreto sobre la situación real del artista, no genérico. Ej. 'Consolidación de SETTE: catálogo concentrado y presupuesto adelantado'"),
+  sinopsis: z
+    .string()
+    .describe("Sinopsis Central: un solo párrafo denso (5-8 frases) que cuenta dónde está la carrera hoy, de qué depende, dónde está la fragilidad y qué se está apostando. Es el corazón del informe — un director debe entender toda la situación leyendo solo esto."),
+  bloques: z
+    .array(
+      z.object({
+        titulo: z.string().describe("Título del bloque temático — nombra la tensión o el asunto real, no la sección de origen"),
+        parrafos: z.array(z.string()).min(1).max(3).describe("1-3 párrafos que desarrollan el bloque cruzando data de varios motores"),
+        nivel: nivelSchema,
+      })
+    )
+    .min(2)
+    .max(5)
+    .describe("Bloques temáticos que CRUZAN secciones (nunca uno por panel): la tensión entre catálogo y audiencia, entre ritmo de gasto y meta, entre plaza fuerte y expansión, etc."),
+  riesgos: z
+    .array(
+      z.object({
+        riesgo: z.string().describe("El riesgo nombrado directo, sin suavizar"),
+        consecuencia: z.string().describe("Qué pasa concretamente si se materializa"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(4)
+    .describe("Riesgos reales derivados de la data, ordenados del más grave al menos. Vacío solo si de verdad no hay ninguno sostenible con la data."),
+  oportunidades: z
+    .array(
+      z.object({
+        oportunidad: z.string().describe("La oportunidad concreta, accionable"),
+        porQue: z.string().describe("Qué dato la respalda"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(4)
+    .describe("Oportunidades que hoy no se están aprovechando, respaldadas por la data"),
+  proximosPasos: z
+    .array(
+      z.object({
+        accion: z.string().describe("Acción concreta y ejecutable, no una intención vaga"),
+        responsable: z.string().describe("Quién la ejecuta — Eduardo (dirección), el artista, el equipo, un tercero nombrado en la data"),
+        plazo: z.string().describe("Plazo concreto: 'esta semana', 'antes del cierre de trimestre', 'próximos 30 días'"),
+        prioridad: z.enum(["Alta", "Media", "Baja"]),
+      })
+    )
+    .min(2)
+    .max(7)
+    .describe("Próximos pasos con responsable y plazo — lo que se mueve al salir de esta lectura"),
+  veredicto: z
+    .string()
+    .describe("La postura del director: qué se hace con este proyecto ahora y por qué. Clara y argumentada, nunca un 'depende' neutral. 2-4 frases."),
+  nivelGlobal: nivelSchema.describe("Nivel de evidencia global del informe, según qué tan completa es la data disponible"),
+});
+
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
+export type InformeResponse = z.infer<typeof informeResponseSchema>;
 export type AskResponse = z.infer<typeof askResponseSchema>;
 export type TriageResponse = z.infer<typeof triageResponseSchema>;
 export type SongAnalysisResponse = z.infer<typeof songAnalysisResponseSchema>;

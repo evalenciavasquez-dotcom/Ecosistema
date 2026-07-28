@@ -77,6 +77,22 @@ export default function VincereNav() {
         </button>
       )}
 
+      {/* El informe no es un motor más: es lo que la plataforma emite al final
+          de trabajar el proyecto, por eso va separado y marcado. */}
+      <button
+        onClick={() => setSeccion("informe")}
+        className="mt-0 shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors md:mt-3"
+        style={{
+          borderLeft: !compareOn && seccion === "informe" ? "2px solid var(--vin-accent)" : "2px solid transparent",
+          background: !compareOn && seccion === "informe" ? "rgba(224,72,58,0.12)" : "transparent",
+          color: !compareOn && seccion === "informe" ? "var(--vin-text)" : "var(--vin-muted)",
+          borderTop: "1px solid var(--vin-border)",
+          paddingTop: "14px",
+        }}
+      >
+        {VINCERE_SECCION_LABEL.informe} ↓
+      </button>
+
       <div
         className="vin-label mt-4 hidden px-3 pb-2.5 pt-4 md:block"
         style={{ borderTop: "1px solid var(--vin-border)" }}
