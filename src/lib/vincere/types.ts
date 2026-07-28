@@ -21,6 +21,7 @@ export type VincereSeccion =
   | "management"
   | "kpis"
   | "triage"
+  | "ingesta"
   | "informe"
   | "manual";
 
@@ -33,6 +34,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   management: "Management / Decisiones",
   kpis: "Ejecución / KPIs",
   triage: "Triage",
+  ingesta: "Cargar data",
   informe: "Informe Final",
   manual: "Documentación",
 };
@@ -147,6 +149,48 @@ export interface VincereKpi {
   nota: string;
 }
 
+// --- Ingesta: cargar data real sin escribirla campo por campo ---
+// La IA lee el archivo o el texto, extrae los números, los reparte al motor
+// que les corresponde y levanta alertas. Nada se escribe sin aprobación.
+
+export type VincereAlertaSeveridad = "critica" | "atencion" | "oportunidad";
+
+export const VINCERE_SEVERIDAD_LABEL: Record<VincereAlertaSeveridad, string> = {
+  critica: "Crítica",
+  atencion: "Atención",
+  oportunidad: "Oportunidad",
+};
+
+export interface VincereAlerta {
+  id: string;
+  texto: string;
+  severidad: VincereAlertaSeveridad;
+  seccion: VincereSeccion | null;
+  nivel: VincereNivel;
+  origen: string; // De qué carga salió, para poder rastrearla.
+  creadoEn: string;
+}
+
+// Propuesta de cambios que devuelve la lectura de un archivo. Cada bloque es
+// opcional: un pantallazo de Spotify llena unos motores y no otros.
+export interface VincereIngestaPropuesta {
+  resumen?: Partial<VincereResumen> | null;
+  diagnostico?: Partial<VincereDiagnostico> | null;
+  canciones?: Omit<VincereCancion, "id">[] | null;
+  audiencia?: Partial<VincereAudiencia> | null;
+  zonasCalor?: Omit<VincereZonaCalor, "id">[] | null;
+  kpis?: Omit<VincereKpi, "id">[] | null;
+}
+
+export interface VincereIngestaResultado {
+  fuente: string; // Qué es el archivo, según lo que la IA reconoció.
+  lectura: string; // Una frase sobre qué contiene.
+  propuesta: VincereIngestaPropuesta;
+  alertas: Omit<VincereAlerta, "id" | "creadoEn" | "origen">[];
+  faltante: string[]; // Qué esperaba encontrar y no estaba.
+  confianza: VincereNivel;
+}
+
 // --- Informe Final: el entregable que emite la plataforma ---
 // No es un resumen de paneles: es la postura del director sobre el proyecto,
 // cruzando todos los motores en un solo documento presentable.
@@ -212,6 +256,7 @@ export interface VincereProyecto {
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;
   qaLog: Partial<Record<VincereSeccion, VincereQAEntry[]>>;
   informe?: VincereInforme | null;
+  alertas?: VincereAlerta[];
   creadoEn: string;
 }
 

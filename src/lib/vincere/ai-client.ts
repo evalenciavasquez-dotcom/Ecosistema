@@ -1,10 +1,14 @@
 import {
+  VincereAlertaSeveridad,
   VincereCancion,
   VincereCancionAnalisis,
   VincereInforme,
+  VincereIngestaPropuesta,
+  VincereIngestaResultado,
   VincereNivel,
   VincerePotencialCancion,
   VincerePrioridadPaso,
+  VincereSeccion,
 } from "./types";
 
 function clampNivel(n: unknown): VincereNivel {
@@ -113,6 +117,93 @@ export async function fetchSongAnalysis(input: {
     decision: r.decision ?? "",
     nivel: clampNivel(r.nivel),
     generadoEn: new Date().toISOString(),
+  };
+}
+
+const SEVERIDADES: VincereAlertaSeveridad[] = ["critica", "atencion", "oportunidad"];
+const SECCIONES_ALERTA: VincereSeccion[] = [
+  "resumen",
+  "diagnostico",
+  "song",
+  "audiencia",
+  "calor",
+  "management",
+  "kpis",
+];
+
+// Limpia los null que devuelve el modelo y descarta bloques vacíos, para que
+// el store no escriba campos en blanco encima de data que ya estaba bien.
+function limpiarObjeto<T extends object>(obj: unknown): Partial<T> | undefined {
+  if (!obj || typeof obj !== "object") return undefined;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    if (v !== null && v !== undefined && v !== "") out[k] = v;
+  }
+  return Object.keys(out).length ? (out as Partial<T>) : undefined;
+}
+
+function lista<T>(v: unknown): T[] | undefined {
+  return Array.isArray(v) && v.length ? (v as T[]) : undefined;
+}
+
+// Lee material crudo (imagen, PDF o texto) y devuelve la propuesta de data ya
+// repartida por motor, más las alertas que levantó.
+export async function fetchIngest(input: {
+  data?: string;
+  mediaType?: string;
+  texto?: string;
+  nota?: string;
+  artista: unknown;
+}): Promise<VincereIngestaResultado> {
+  const res = await fetch("/api/vincere/ingest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const p = r.propuesta ?? {};
+
+  const audiencia = p.audiencia
+    ? {
+        edad: lista<{ label: string; pct: number }>(p.audiencia.edad),
+        plataformas: lista<{ label: string; pct: number }>(p.audiencia.plataformas),
+        paises: lista<{ label: string; pct: number }>(p.audiencia.paises),
+      }
+    : undefined;
+  const audienciaLimpia =
+    audiencia && (audiencia.edad || audiencia.plataformas || audiencia.paises) ? audiencia : undefined;
+
+  const propuesta: VincereIngestaPropuesta = {
+    resumen: limpiarObjeto(p.resumen),
+    diagnostico: limpiarObjeto(p.diagnostico),
+    canciones: lista<Omit<VincereCancion, "id">>(p.canciones),
+    audiencia: audienciaLimpia,
+    zonasCalor: lista<{ ciudad: string; calor: number }>(p.zonasCalor),
+    kpis: lista<{ label: string; actual: number; meta: number; unidad: string; nota: string }>(p.kpis),
+  };
+
+  const alertas = (Array.isArray(r.alertas) ? r.alertas : []).map(
+    (a: { texto?: string; severidad?: string; seccion?: string; nivel?: number }) => ({
+      texto: a.texto ?? "",
+      severidad: SEVERIDADES.includes(a.severidad as VincereAlertaSeveridad)
+        ? (a.severidad as VincereAlertaSeveridad)
+        : "atencion",
+      seccion: SECCIONES_ALERTA.includes(a.seccion as VincereSeccion) ? (a.seccion as VincereSeccion) : null,
+      nivel: clampNivel(a.nivel),
+    })
+  );
+
+  return {
+    fuente: r.fuente ?? "Material sin identificar",
+    lectura: r.lectura ?? "",
+    propuesta,
+    alertas,
+    faltante: Array.isArray(r.faltante) ? r.faltante.filter((x: unknown) => typeof x === "string") : [],
+    confianza: clampNivel(r.confianza),
   };
 }
 

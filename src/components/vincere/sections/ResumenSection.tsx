@@ -6,6 +6,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { formatFollowers, formatStreams, signed } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
 import StreamsChart from "../StreamsChart";
+import AlertasPanel from "../AlertasPanel";
 import { Panel, PanelLabel, StatCard } from "../primitives";
 
 const SCENARIO_DEFS = [
@@ -43,6 +44,8 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
       subtitle={`Estado general de la carrera de ${proyecto.nombre} en este momento.`}
       aiTitle="Lectura VINCERE — Momentum"
     >
+      <AlertasPanel proyecto={proyecto} compacto />
+
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard value={formatStreams(r.streamsMes)} label={`Streams/mes · ${signed(r.streamsCambioPct)}`} />
         <StatCard value={formatFollowers(r.seguidores)} label={`Seguidores · ${signed(r.seguidoresCambioPct)}`} />

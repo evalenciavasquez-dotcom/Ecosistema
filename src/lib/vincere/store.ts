@@ -3,10 +3,12 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { genId } from "../id";
 import { SEED_VINCERE_PROYECTOS, SEED_VINCERE_TRIAGE } from "./seed-data";
 import {
+  VincereAlerta,
   VincereAudienciaSegmento,
   VincereCancion,
   VincereCancionAnalisis,
   VincereComparacion,
+  VincereIngestaPropuesta,
   VincereDecisionEstado,
   VincereDiagnostico,
   VincereFase,
@@ -94,6 +96,11 @@ interface VincereState {
   addQA: (proyectoId: string, seccion: VincereSeccion, entry: VincereQAEntry) => void;
   setInforme: (proyectoId: string, informe: VincereInforme) => void;
   updateInforme: (proyectoId: string, patch: Partial<VincereInforme>) => void;
+
+  aplicarIngesta: (proyectoId: string, propuesta: VincereIngestaPropuesta) => void;
+  addAlertas: (proyectoId: string, alertas: Omit<VincereAlerta, "id" | "creadoEn">[]) => void;
+  descartarAlerta: (proyectoId: string, alertaId: string) => void;
+  descartarTodasLasAlertas: (proyectoId: string) => void;
 
   setComparacionInsights: (idA: string, idB: string, insights: VincereInsight[]) => void;
   addComparacionQA: (idA: string, idB: string, entry: VincereQAEntry) => void;
@@ -339,6 +346,94 @@ export const useVincereStore = create<VincereState>()(
               ? { ...p, informe: { ...p.informe, ...patch, editadoEn: new Date().toISOString() } }
               : p
           ),
+        })),
+
+      // Escribe en los motores lo que Eduardo aprobó de una carga. Los bloques
+      // ausentes o vacíos no tocan nada: un pantallazo de streams no debe
+      // borrar el catálogo ni la audiencia ya cargados.
+      aplicarIngesta: (proyectoId, propuesta) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            const next: VincereProyecto = { ...p };
+
+            if (propuesta.resumen && Object.keys(propuesta.resumen).length > 0) {
+              next.resumen = { ...p.resumen, ...propuesta.resumen };
+            }
+            if (propuesta.diagnostico && Object.keys(propuesta.diagnostico).length > 0) {
+              next.diagnostico = { ...p.diagnostico, ...propuesta.diagnostico };
+            }
+            if (propuesta.canciones?.length) {
+              // Una canción que ya existe se actualiza; las nuevas se agregan.
+              const porNombre = new Map(p.canciones.map((c) => [c.nombre.toLowerCase().trim(), c]));
+              const entrantes = propuesta.canciones.map((c) => {
+                const previa = porNombre.get(c.nombre.toLowerCase().trim());
+                return previa ? { ...previa, ...c, id: previa.id } : { ...c, id: genId("song") };
+              });
+              const nombresEntrantes = new Set(entrantes.map((c) => c.nombre.toLowerCase().trim()));
+              next.canciones = [
+                ...p.canciones.filter((c) => !nombresEntrantes.has(c.nombre.toLowerCase().trim())),
+                ...entrantes,
+              ];
+            }
+            if (propuesta.audiencia) {
+              const a = propuesta.audiencia;
+              next.audiencia = {
+                edad: a.edad?.length ? a.edad : p.audiencia.edad,
+                plataformas: a.plataformas?.length ? a.plataformas : p.audiencia.plataformas,
+                paises: a.paises?.length ? a.paises : p.audiencia.paises,
+              };
+            }
+            if (propuesta.zonasCalor?.length) {
+              const porCiudad = new Map(p.zonasCalor.map((z) => [z.ciudad.toLowerCase().trim(), z]));
+              const entrantes = propuesta.zonasCalor.map((z) => {
+                const previa = porCiudad.get(z.ciudad.toLowerCase().trim());
+                return previa ? { ...previa, ...z, id: previa.id } : { ...z, id: genId("city") };
+              });
+              const ciudadesEntrantes = new Set(entrantes.map((z) => z.ciudad.toLowerCase().trim()));
+              next.zonasCalor = [
+                ...p.zonasCalor.filter((z) => !ciudadesEntrantes.has(z.ciudad.toLowerCase().trim())),
+                ...entrantes,
+              ];
+            }
+            if (propuesta.kpis?.length) {
+              const porLabel = new Map(p.kpis.map((k) => [k.label.toLowerCase().trim(), k]));
+              const entrantes = propuesta.kpis.map((k) => {
+                const previa = porLabel.get(k.label.toLowerCase().trim());
+                return previa ? { ...previa, ...k, id: previa.id } : { ...k, id: genId("kpi") };
+              });
+              const labelsEntrantes = new Set(entrantes.map((k) => k.label.toLowerCase().trim()));
+              next.kpis = [
+                ...p.kpis.filter((k) => !labelsEntrantes.has(k.label.toLowerCase().trim())),
+                ...entrantes,
+              ];
+            }
+
+            return next;
+          }),
+        })),
+
+      addAlertas: (proyectoId, alertas) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            alertas: [
+              ...alertas.map((a) => ({ ...a, id: genId("alt"), creadoEn: new Date().toISOString() })),
+              ...(p.alertas ?? []),
+            ].slice(0, 40),
+          })),
+        })),
+
+      descartarAlerta: (proyectoId, alertaId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            alertas: (p.alertas ?? []).filter((a) => a.id !== alertaId),
+          })),
+        })),
+
+      descartarTodasLasAlertas: (proyectoId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, alertas: [] })),
         })),
 
       setComparacionInsights: (idA, idB, insights) =>

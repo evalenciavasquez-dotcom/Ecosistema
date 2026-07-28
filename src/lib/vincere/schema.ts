@@ -60,6 +60,100 @@ export const songAnalysisResponseSchema = z.object({
   nivel: nivelSchema,
 });
 
+const segmentoSchema = z.object({
+  label: z.string().describe("Etiqueta del segmento tal como aparece en la fuente"),
+  pct: z.number().describe("Porcentaje, número sin el signo"),
+});
+
+export const ingestResponseSchema = z.object({
+  fuente: z
+    .string()
+    .describe("Qué es este material, reconocido por su apariencia. Ej. 'Captura de Spotify for Artists — Audiencia', 'Exportación CSV de canciones', 'Texto pegado con notas de campaña'"),
+  lectura: z.string().describe("Una o dos frases sobre qué contiene el material y de qué periodo parece ser"),
+  confianza: nivelSchema.describe("Qué tan legible y completo era el material en conjunto"),
+  propuesta: z
+    .object({
+      resumen: z
+        .object({
+          streamsMes: z.number().nullable().describe("Streams mensuales, número entero sin separadores"),
+          streamsCambioPct: z.number().nullable().describe("Variación porcentual de streams; negativa si cayó"),
+          seguidores: z.number().nullable(),
+          seguidoresCambioPct: z.number().nullable(),
+          momentumIndex: z.number().nullable().describe("Solo si la fuente lo trae explícito; nunca lo calcules tú"),
+          serie: z
+            .array(z.object({ mes: z.string().describe("Mes abreviado, ej. 'Jul'"), valor: z.number().describe("Streams en MILES") }))
+            .nullable()
+            .describe("Serie histórica de streams si la gráfica o la tabla la muestra"),
+        })
+        .nullable()
+        .describe("Métricas generales de carrera. null si el material no trae nada de esto"),
+      diagnostico: z
+        .object({
+          faseActual: z.string().nullable(),
+          fortalezaNucleo: z.string().nullable(),
+          riesgoPrincipal: z.string().nullable(),
+          prioridad: z.string().nullable(),
+        })
+        .nullable()
+        .describe("Solo si el material es un texto de criterio (notas, informe de un tercero), no lo inventes desde números"),
+      canciones: z
+        .array(
+          z.object({
+            nombre: z.string(),
+            streams: z.number(),
+            retencionPct: z.number().describe("0 si la fuente no lo trae"),
+            skipPct: z.number().describe("0 si la fuente no lo trae"),
+            playlistAdds: z.number().describe("0 si la fuente no lo trae"),
+          })
+        )
+        .nullable()
+        .describe("Catálogo detectado, una entrada por canción"),
+      audiencia: z
+        .object({
+          edad: z.array(segmentoSchema).nullable(),
+          plataformas: z.array(segmentoSchema).nullable(),
+          paises: z.array(segmentoSchema).nullable(),
+        })
+        .nullable(),
+      zonasCalor: z
+        .array(z.object({ ciudad: z.string(), calor: z.number().describe("Intensidad 0-100") }))
+        .nullable()
+        .describe("Ciudades con intensidad de escucha. Si la fuente da oyentes absolutos, normaliza a 0-100 tomando la ciudad mayor como 100"),
+      kpis: z
+        .array(
+          z.object({
+            label: z.string(),
+            actual: z.number(),
+            meta: z.number().describe("Si la fuente no declara meta, repite el valor actual"),
+            unidad: z.string().describe("'M', '%' o cadena vacía"),
+            nota: z.string().describe("Contexto corto; cadena vacía si no hay"),
+          })
+        )
+        .nullable(),
+    })
+    .describe("Los datos extraídos, repartidos al motor al que pertenecen. Cada bloque va en null si el material no lo contiene"),
+  alertas: z
+    .array(
+      z.object({
+        texto: z.string().describe("Qué viste y por qué importa, en una o dos frases de director"),
+        severidad: z
+          .enum(["critica", "atencion", "oportunidad"])
+          .describe("critica: amenaza el momentum o la caja. atencion: hay que mirarlo. oportunidad: algo que no se está aprovechando"),
+        seccion: z
+          .enum(["resumen", "diagnostico", "song", "audiencia", "calor", "management", "kpis"])
+          .nullable()
+          .describe("Motor al que pertenece la alerta"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(5)
+    .describe("Lo que salta a la vista en este material y merece atención. Vacío si no hay nada destacable — no inventes alarmas"),
+  faltante: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué no se pudo leer o quedó ambiguo, para que Eduardo lo complete a mano"),
+});
+
 export const informeResponseSchema = z.object({
   titulo: z
     .string()
@@ -118,6 +212,7 @@ export const informeResponseSchema = z.object({
 
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
 export type InformeResponse = z.infer<typeof informeResponseSchema>;
+export type IngestResponse = z.infer<typeof ingestResponseSchema>;
 export type AskResponse = z.infer<typeof askResponseSchema>;
 export type TriageResponse = z.infer<typeof triageResponseSchema>;
 export type SongAnalysisResponse = z.infer<typeof songAnalysisResponseSchema>;

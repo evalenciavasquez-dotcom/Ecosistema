@@ -118,6 +118,7 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 - **Informe Final**: la plataforma emite el entregable del proyecto — sinopsis central, veredicto, bloques que cruzan motores entre sí, riesgos, oportunidades y próximos pasos con responsable y plazo. Se descarga a Markdown, se imprime a PDF (hay estilos de impresión en claro) y se archiva en Notion.
 
 - **Gestión de proyectos**: botón "+ Proyecto" en la barra superior — crear proyectos propios o referencias de mercado, renombrarlos, cambiarles la fase y eliminarlos.
+- **Ingesta de data ("Cargar data")**: se suelta una captura (Spotify for Artists, Instagram, YouTube Studio), un PDF, o se pega un CSV/texto. La IA lo lee, extrae los números y los reparte al motor que les corresponde, levantando alertas por severidad (crítica / atención / oportunidad). La propuesta se revisa bloque por bloque y solo se escribe lo aprobado; los bloques que la fuente no contiene van en `null` y nunca sobrescriben data existente.
 
 **La documentación vive dentro de la plataforma**, en la sección "Documentación" (`src/lib/vincere/manual.ts` es su fuente única), con dos documentos imprimibles:
 
@@ -138,6 +139,7 @@ src/
       interpret/             Lectura VINCERE por sección (IA)
       ask/                   Preguntas abiertas por sección (IA)
       triage/                Veredicto de casos nuevos (IA)
+      ingest/                Lee capturas, PDF o texto y extrae la data por motor (IA)
       analyze-song/          Lectura profunda de la letra de una canción (IA)
       informe/               Informe final del proyecto, cruzando motores (IA)
       notion/                Registro a Notion (si está configurado)

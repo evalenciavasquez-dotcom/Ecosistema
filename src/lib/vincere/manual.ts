@@ -76,10 +76,12 @@ export const GUIA_CICLO: ManualPaso[] = [
   {
     numero: 1,
     titulo: "Cargar la data del proyecto",
-    descripcion: "Entra motor por motor y mete lo que tengas. No hace falta tenerlo todo.",
+    descripcion: "La vía rápida es Ingesta: sueltas el material y la IA lo reparte. A mano solo lo que falte.",
     detalle: [
-      "Cada sección tiene sus campos: streams y seguidores en Resumen, catálogo en Song Intelligence, porcentajes en Audiencia, ciudades en Zonas de Calor, metas en KPIs.",
-      "Un motor sin data no se rompe: te dice qué falta para activarse. Prefiere cargar cuatro motores bien a ocho a medias.",
+      "En «Cargar data» sueltas una captura (Spotify for Artists, Instagram, YouTube Studio), un PDF, o pegas un CSV o un texto. La IA lo lee, extrae los números y los reparte al motor que les corresponde.",
+      "Antes de escribir nada te muestra qué entendió, motor por motor. Desmarcas lo que leyó mal y aplicas solo lo bueno — nada entra sin tu aprobación.",
+      "Lo que no pudo leer queda anotado para que lo completes a mano en su sección.",
+      "Cada sección sigue siendo editable directamente: «Editar data» para ajustar un número suelto sin volver a cargar nada.",
       "En Song Intelligence, además de las métricas, pega la letra de cada canción — es lo que permite leerla como obra y no como fila de números.",
     ],
   },
@@ -127,6 +129,16 @@ export const GUIA_CICLO: ManualPaso[] = [
 ];
 
 export const GUIA_TAREAS: ManualTarea[] = [
+  {
+    tarea: "Cargar data desde una captura o un archivo",
+    pasos: [
+      "Cargar data → suelta la imagen o el PDF en la zona, o pega el texto abajo.",
+      "Opcional: escribe una nota que oriente la lectura («esto es del último trimestre»).",
+      "«Leer y extraer». La IA devuelve qué entendió, repartido por motor.",
+      "Revisa cada bloque y desmarca el que no sirva. Lo que no pudo leer aparece listado aparte.",
+      "«Aplicar». La data entra a sus secciones y las alertas quedan guardadas.",
+    ],
+  },
   {
     tarea: "Crear un proyecto nuevo",
     pasos: [
@@ -284,6 +296,11 @@ export const SISTEMA_ARQUITECTURA: ManualBloque = {
 
 export const SISTEMA_MOTORES: ManualMotor[] = [
   {
+    motor: "Cargar data (Ingesta)",
+    cuandoUsarlo: "La puerta de entrada de información al sistema: capturas, PDF, CSV o texto pegado.",
+    queCargar: "El material crudo. La IA extrae, reparte por motor y levanta alertas; tú apruebas antes de que se escriba.",
+  },
+  {
     motor: "Resumen · Momentum",
     cuandoUsarlo: "Para saber dónde está la carrera hoy y hacia dónde va el trimestre.",
     queCargar: "Streams del mes y su variación, seguidores, Momentum Index, serie de los últimos meses.",
@@ -377,6 +394,14 @@ export const SISTEMA_IA: ManualBloque = {
     {
       termino: "El análisis de letra cruza con las métricas",
       texto: "Al leer una canción no juzga la letra en el vacío: la contrasta con su retención y su skip, y con la audiencia y la marca del artista.",
+    },
+    {
+      termino: "En la ingesta extrae, no completa",
+      texto: "Al leer un archivo solo registra lo que ve. Lo ausente queda en null y se anota como faltante; el sistema nunca escribe encima de data buena con campos vacíos, ni rellena con conocimiento del artista.",
+    },
+    {
+      termino: "Propone, no escribe",
+      texto: "Ninguna extracción entra sola. La propuesta se revisa bloque por bloque y se aplica solo lo aprobado.",
     },
   ],
 };
