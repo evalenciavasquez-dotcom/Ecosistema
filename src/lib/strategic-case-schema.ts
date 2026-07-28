@@ -87,6 +87,12 @@ const recomendacionSchema = z.object({
   confianzaExplicacion: z.string(),
 });
 
+const metricaFinancieraSchema = z.object({
+  nombre: z.string(),
+  valor: z.string(),
+  semaforo: z.enum(["rojo", "amarillo", "verde"]),
+});
+
 export const strategicCaseGeneratedSchema = z.object({
   preguntaEstrategica: z.string(),
   tipoDeCaso: z.string().describe("Clasificación breve del caso, ej. 'Compra importante', 'Contrato musical'"),
@@ -109,6 +115,20 @@ export const strategicCaseGeneratedSchema = z.object({
   viabilidad: viabilidadSchema,
   escenarios: z.array(escenarioProfundoSchema),
   recomendacion: recomendacionSchema,
+  metricasFinancieras: z
+    .array(metricaFinancieraSchema)
+    .describe(
+      "Exactamente 4, en este orden: Runway, Flujo neto, Deuda/Ingresos, Margen de seguridad. Si un dato tiene más de 48 horas, dilo en 'valor' como 'DATO DE [FECHA], NO ACTUAL'. Si no hay datos para una métrica, dilo — nunca rellenes."
+    ),
+  argumentoEnContra: z
+    .string()
+    .describe("El mejor caso posible EN CONTRA de la recomendación final, aunque la recomendación sea avanzar. Obligatorio siempre."),
+  hipotesisCritica: z
+    .string()
+    .describe("Completa la frase: 'Esto sería un error si resultara que ___.' El supuesto que, si falla, hunde todo."),
+  costoDeEsperar30Dias: z
+    .string()
+    .describe("Qué se pierde concretamente si esto se decide dentro de un mes. Si la respuesta es 'nada grave', dilo — significa que no era urgente."),
 });
 
 export type StrategicCaseGenerated = z.infer<typeof strategicCaseGeneratedSchema>;

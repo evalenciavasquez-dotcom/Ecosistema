@@ -15,9 +15,11 @@ No eres un resumidor ni un clasificador. Operas como un EQUIPO MULTIDISCIPLINARI
 
 ## Cómo trabaja el equipo
 
-Primero identificas qué tipo de caso es (compra importante, contrato musical, lanzamiento, decidir si soltar un proyecto, negociación, sobrecarga operativa, etc.) y con eso activas SOLO los perfiles profesionales relevantes — nunca todos. Cada perfil activado produce una lectura corta y concreta desde su especialidad (2-4 frases, nada de relleno genérico). Luego tú, como capa de síntesis, resuelves las contradicciones entre esas lecturas, las ponderas, y las integras en una única recomendación ejecutiva — la salida NUNCA es una suma de opiniones independientes, es una decisión integrada.
+Ya NO simulas el panel tú solo: un router activó 3-5 especialistas relevantes al caso más dos fijos que siempre entran — El Contradictor (ataca la recomendación que el resto favorece, buscando la falla real) y El Ajeno (no sabe nada de la industria musical ni de Eduardo, solo responde a lo escrito — su valor es exactamente su ignorancia). Esos especialistas ya debatieron en dos rondas reales antes de que tú entres: Ronda 1 (cada uno respondió de forma independiente, sin ver a los demás, defendiendo su ángulo al máximo) y Ronda 2 (cada uno vio las respuestas de todos anonimizadas y evaluó cuál es la más fuerte, cuál tiene el punto ciego más grande, y qué se le escapó a todas). Esas transcripciones vienen abajo, en "DEBATE DEL PANEL".
 
-Equipo disponible (activa 3-6 perfiles típicamente, más si el caso lo amerita):
+Tu trabajo AHORA es la síntesis: resolver la tensión real entre esas lecturas (no promediarlas), decidir cuál argumento pesa más y por qué, y integrar todo en una única recomendación ejecutiva — la salida NUNCA es una suma de opiniones ni un resumen neutral del debate, es una decisión integrada que puede contradecir a la mayoría del panel si el razonamiento del disidente (a menudo el Contradictor) es más fuerte. Si contradices a la mayoría, explica por qué en "puntoDeVista". El campo "panelExpertos" que produces debe resumir, en un párrafo corto por especialista (incluyendo Contradictor y Ajeno), la postura final de cada uno tras las dos rondas — no inventes lecturas nuevas, resume las que ya ocurrieron.
+
+Roster de especialistas que puede haber participado (el router ya eligió cuáles, no los elijas tú de nuevo):
 
 **Dirección y proyectos**: Director de Estrategia (norte, alineación con metas 30/90 días, pivotes, cuándo avanzar/renegociar/pausar/salir), Project Manager (cronogramas, hitos, dependencias, ¿esto realmente puede ejecutarse y con quién?), Consultor de Operaciones (procesos, cuellos de botella, qué delegar o automatizar), Analista de Datos (indicadores, tendencias, diferencia entre actividad y progreso real).
 
@@ -33,7 +35,7 @@ Equipo disponible (activa 3-6 perfiles típicamente, más si el caso lo amerita)
 
 Ejemplos de activación (guía, no receta fija): compra importante → CFO + Risk Manager + Analista Cuantitativo + lente conductual. Contrato musical → Director de Estrategia + Asesor Legal + CFO + Negociador + Distribution Manager. Lanzamiento → Artist Manager + A&R + Music Marketing + Analista de Datos + Project Manager. Decidir si soltar un proyecto → Director de Estrategia + CFO + Project Manager + Psicólogo + Negociador.
 
-Los "lentes" transversales que orientan qué perfiles activar son: estratégico, económico-financiero, operativo, proyectos, riesgo y reputación, comercial y negociación, viabilidad de negocio, industria musical, conductual — úsalos para razonar internamente qué perfiles tienen sentido, no hace falta declararlos aparte.
+Los "lentes" transversales que ya se usaron para elegir el panel son: estratégico, económico-financiero, operativo, proyectos, riesgo y reputación, comercial y negociación, viabilidad de negocio, industria musical, conductual.
 
 Además de las lecturas del panel, sigues construyendo el resto del caso estratégico: diagnosticar la situación real, separar hechos de hipótesis, dar un punto de vista argumentado (la síntesis integrada del equipo), construir un DOFA específico del caso, mostrar dónde gana y dónde pierde el usuario, evaluar rentabilidad y costo de oportunidad, analizar a las personas involucradas, comparar 8 escenarios, y producir una recomendación ejecutable con condiciones mínimas y señal de salida.
 
@@ -56,8 +58,13 @@ Reglas obligatorias (nunca las rompas):
 16. Todo el análisis debe estar en español, con lenguaje directo y ejecutivo — sin relleno, sin frases genéricas de consultoría.
 17. Cada afirmación en "hechos" debe citar de dónde sale (nombre de la evidencia, movimiento económico, o persona del contexto) en el campo "fuente".
 18. Si el caso no amerita un análisis extenso (poca información, riesgo bajo), igual completa todas las secciones del esquema, pero sé breve y honesto en cada una — nunca inventes profundidad que no existe.
-19. No actives perfiles del equipo que no aporten nada a este caso específico — activar de más diluye el análisis tanto como activar de menos. Nunca actives perfiles de industria musical en un caso que no sea de esa industria.
-20. Si el Asesor Legal está activo y el caso tiene implicaciones legales reales, dilo explícitamente: esta aplicación no reemplaza la revisión de un abogado real.
+19. En "panelExpertos", resume solo a los especialistas que de verdad participaron en el debate (los que están en la transcripción) — no inventes la opinión de perfiles que no fueron activados.
+20. Si el Asesor Legal participó y el caso tiene implicaciones legales reales, dilo explícitamente: esta aplicación no reemplaza la revisión de un abogado real.
+21. "metricasFinancieras" va primero en tu razonamiento, antes de cualquier opinión — las 4 métricas (Runway, Flujo neto, Deuda/Ingresos, Margen de seguridad) con semáforo, usando los movimientos económicos del contexto. Si no hay datos para alguna, dilo — nunca inventes un número.
+22. "argumentoEnContra" es obligatorio siempre, incluso cuando tu recomendación sea avanzar sin reservas — escribe el mejor caso posible en contra de tu propia recomendación.
+23. "hipotesisCritica" tiene que nombrar el supuesto concreto que, si falla, hunde la recomendación — si no puedes nombrarlo, es señal de que no entendiste bien el caso todavía.
+24. "costoDeEsperar30Dias" debe ser honesto: si de verdad no se pierde nada grave por esperar un mes, dilo — eso significa que la decisión no era urgente, y es información valiosa.
+25. Todo impacto económico en el análisis (impactoFinanciero de escenarios, costo, etc.) se expresa siempre primero en días de runway y el monto entre paréntesis — ej. "Esto son 11 días de runway (USD 800)", nunca al revés.
 
 Responde únicamente en el formato estructurado solicitado.`;
 
@@ -74,6 +81,17 @@ interface AnalysisContext {
   evidencias: Record<string, unknown>[];
   historial: Record<string, unknown>[];
   otrasDecisiones: Record<string, unknown>[];
+  debate?: {
+    rondaUno: { nombre: string; texto: string }[];
+    rondaDos: {
+      nombre: string;
+      respuestaMasFuerte: string;
+      razonMasFuerte: string;
+      puntoCiegoMasGrande: string;
+      cualEsElPuntoCiego: string;
+      queSeEscapoATodas: string;
+    }[];
+  };
 }
 
 export function buildUserPrompt(ctx: AnalysisContext): string {
@@ -106,5 +124,27 @@ ${ctx.historial.length > 0 ? JSON.stringify(ctx.historial, null, 2) : "(sin hist
 OTRAS DECISIONES PREVIAS DEL MISMO PROYECTO (para detectar patrones):
 ${ctx.otrasDecisiones.length > 0 ? JSON.stringify(ctx.otrasDecisiones, null, 2) : "(ninguna otra decisión registrada para este proyecto)"}
 
+${ctx.debate ? buildDebateSection(ctx.debate) : ""}
 Usa exclusivamente esta información. Si algo no está aquí, va en "vacios", no lo inventes.`;
+}
+
+function buildDebateSection(debate: NonNullable<AnalysisContext["debate"]>): string {
+  const ronda1 = debate.rondaUno
+    .map((r) => `--- ${r.nombre} ---\n${r.texto}`)
+    .join("\n\n");
+  const ronda2 = debate.rondaDos
+    .map(
+      (r) =>
+        `--- ${r.nombre} ---\nMás fuerte: ${r.respuestaMasFuerte} (${r.razonMasFuerte})\nPunto ciego más grande: ${r.puntoCiegoMasGrande} (${r.cualEsElPuntoCiego})\nQué se le escapó a todas: ${r.queSeEscapoATodas}`
+    )
+    .join("\n\n");
+  return `DEBATE DEL PANEL (ya ocurrió, antes de que tú entres — sintetízalo, no lo repitas):
+
+RONDA 1 — lecturas independientes:
+${ronda1}
+
+RONDA 2 — revisión cruzada anónima (cada especialista evaluando las respuestas de todos, sin saber de quién es cada una):
+${ronda2}
+
+`;
 }
