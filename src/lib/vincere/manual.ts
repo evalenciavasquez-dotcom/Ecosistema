@@ -57,12 +57,15 @@ export const MANUAL_CICLO: ManualPaso[] = [
   },
   {
     numero: 4,
-    titulo: "Emitir el Informe Final",
-    descripcion: "El entregable: la postura consolidada que se presenta y se archiva.",
+    titulo: "Emitir el Informe Final y trabajarlo",
+    descripcion: "La IA entrega el borrador; el documento se termina aquí, con tu criterio encima.",
     detalle: [
       "Cruza todos los motores entre sí — no repite los paneles. Sale con sinopsis, veredicto, riesgos, oportunidades y próximos pasos con responsable y plazo.",
       "Se alimenta de lo que ya trabajaste: mientras más lecturas y preguntas tengas hechas, más sólido sale. En frío sale correcto pero flaco, y él mismo baja su nivel de evidencia.",
-      "Se descarga (para Word o Notion) o se imprime a PDF con formato de documento.",
+      "«Editar informe» abre el documento: corriges cualquier texto, añades o quitas bloques, riesgos, oportunidades y pasos, y ajustas los niveles de evidencia. Se guarda solo.",
+      "Los próximos pasos se marcan como cumplidos desde el propio informe — es tu bitácora de ejecución, no una foto fija.",
+      "Cuando esté como lo quieres: se descarga (para Word o Notion) o se imprime a PDF con formato de documento.",
+      "Ojo: «Volver a emitir» pide un borrador nuevo y descarta lo que hayas editado.",
     ],
   },
   {
@@ -124,8 +127,8 @@ export const MANUAL_MOTORES: ManualMotor[] = [
   },
   {
     motor: "Informe Final",
-    cuandoUsarlo: "Al cerrar un ciclo de trabajo, antes de una reunión o de una demo.",
-    queCargar: "Nada: se alimenta de todo lo demás.",
+    cuandoUsarlo: "Al cerrar un ciclo de trabajo, antes de una reunión o de una demo. Es también donde se sigue la ejecución: los pasos se marcan ahí.",
+    queCargar: "Nada: se alimenta de todo lo demás. Después se edita a mano dentro de la plataforma.",
   },
 ];
 

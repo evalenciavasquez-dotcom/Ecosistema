@@ -176,6 +176,9 @@ export interface VincereInformePaso {
   responsable: string;
   plazo: string;
   prioridad: VincerePrioridadPaso;
+  // El informe es un documento de trabajo: los pasos se van marcando aquí.
+  // Opcional para no romper informes emitidos antes de esta capacidad.
+  hecho?: boolean;
 }
 
 export interface VincereInforme {
@@ -188,6 +191,9 @@ export interface VincereInforme {
   veredicto: string;
   nivelGlobal: VincereNivel;
   generadoEn: string;
+  // Marca de que Eduardo intervino el documento después de emitirlo — el
+  // informe deja de ser solo la salida de la IA y pasa a llevar su criterio.
+  editadoEn?: string | null;
 }
 
 export interface VincereProyecto {

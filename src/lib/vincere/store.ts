@@ -93,6 +93,7 @@ interface VincereState {
   setInsights: (proyectoId: string, seccion: VincereSeccion, insights: VincereInsight[]) => void;
   addQA: (proyectoId: string, seccion: VincereSeccion, entry: VincereQAEntry) => void;
   setInforme: (proyectoId: string, informe: VincereInforme) => void;
+  updateInforme: (proyectoId: string, patch: Partial<VincereInforme>) => void;
 
   setComparacionInsights: (idA: string, idB: string, insights: VincereInsight[]) => void;
   addComparacionQA: (idA: string, idB: string, entry: VincereQAEntry) => void;
@@ -324,6 +325,16 @@ export const useVincereStore = create<VincereState>()(
         })),
       setInforme: (proyectoId, informe) =>
         set((s) => ({ proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, informe })) })),
+      // Edición del informe dentro de la plataforma: se trabaja sobre el
+      // documento en vez de tener que regenerarlo entero para corregir algo.
+      updateInforme: (proyectoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) =>
+            p.informe
+              ? { ...p, informe: { ...p.informe, ...patch, editadoEn: new Date().toISOString() } }
+              : p
+          ),
+        })),
 
       setComparacionInsights: (idA, idB, insights) =>
         set((s) => {

@@ -13,7 +13,16 @@ export function informeToMarkdown(informe: VincereInforme, proyecto: VincereProy
 
   lines.push(`# ${informe.titulo}`, "");
   lines.push(`**${proyecto.nombre}** · ${proyecto.genero} · Fase: ${proyecto.fase}`);
-  lines.push(`Informe emitido el ${fecha} · Nivel de evidencia global: ${informe.nivelGlobal}/4`, "");
+  lines.push(`Informe emitido el ${fecha} · Nivel de evidencia global: ${informe.nivelGlobal}/4`);
+  if (informe.editadoEn) {
+    const editado = new Date(informe.editadoEn).toLocaleDateString("es", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    lines.push(`Trabajado en la plataforma · última edición ${editado}`);
+  }
+  lines.push("");
   lines.push("---", "");
 
   lines.push("## Sinopsis Central", "", informe.sinopsis, "");
@@ -46,7 +55,7 @@ export function informeToMarkdown(informe: VincereInforme, proyecto: VincereProy
   if (informe.proximosPasos.length) {
     lines.push("## Próximos Pasos", "");
     informe.proximosPasos.forEach((p) => {
-      lines.push(`- [ ] **${p.accion}** — ${p.responsable} · ${p.plazo} · Prioridad ${p.prioridad}`);
+      lines.push(`- [${p.hecho ? "x" : " "}] **${p.accion}** — ${p.responsable} · ${p.plazo} · Prioridad ${p.prioridad}`);
     });
     lines.push("");
   }

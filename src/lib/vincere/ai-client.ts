@@ -158,11 +158,13 @@ export async function fetchInforme(contexto: unknown): Promise<VincereInforme> {
         prioridad: PRIORIDADES.includes(x.prioridad as VincerePrioridadPaso)
           ? (x.prioridad as VincerePrioridadPaso)
           : "Media",
+        hecho: false,
       })
     ),
     veredicto: r.veredicto ?? "",
     nivelGlobal: clampNivel(r.nivelGlobal),
     generadoEn: new Date().toISOString(),
+    editadoEn: null,
   };
 }
 
