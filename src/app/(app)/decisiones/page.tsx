@@ -119,11 +119,31 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
   const strategicCases = useAppStore((s) => s.strategicCases);
   const addStrategicCase = useAppStore((s) => s.addStrategicCase);
   const resolverDecision = useAppStore((s) => s.resolverDecision);
+  const updateDecision = useAppStore((s) => s.updateDecision);
+  const updateStrategicCase = useAppStore((s) => s.updateStrategicCase);
   const [respuesta, setRespuesta] = useState(decision.decisionFinal);
   const [analizando, setAnalizando] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState("");
 
   const strategicCase = strategicCases.find((c) => c.decisionId === decision.id) ?? null;
+
+  const [resultado, setResultado] = useState(decision.resultadoPosterior);
+  const [hipotesisSeCumplio, setHipotesisSeCumplio] = useState<boolean | null>(
+    strategicCase?.hipotesisSeCumplio ?? null
+  );
+  const [costoDiasRunway, setCostoDiasRunway] = useState(
+    strategicCase?.costoDiasRunway != null ? String(strategicCase.costoDiasRunway) : ""
+  );
+
+  function handleGuardarResultado() {
+    updateDecision(decision.id, { resultadoPosterior: resultado });
+    if (strategicCase) {
+      updateStrategicCase(decision.id, {
+        hipotesisSeCumplio,
+        costoDiasRunway: costoDiasRunway.trim() ? Number(costoDiasRunway) : null,
+      });
+    }
+  }
 
   async function handleAnalyze() {
     setAnalizando(true);
@@ -271,6 +291,73 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
           <p className="text-xs text-accent-green">Decisión registrada — estado: {decision.estado}</p>
         )}
       </div>
+
+      {decision.estado !== "Abierta" && (
+        <div className="rounded-xl border border-border-subtle bg-surface p-4 space-y-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted">Resultado</div>
+          <p className="text-xs text-muted">
+            Cerrar el ciclo es lo que hace que el sistema aprenda — qué pasó de verdad con lo que decidiste.
+          </p>
+          {strategicCase?.hipotesisCritica && (
+            <div className="text-xs rounded-lg bg-surface-2 px-3 py-2">
+              <span className="text-muted">La hipótesis crítica era: </span>
+              {strategicCase.hipotesisCritica}
+              <span className="text-muted"> ¿se cumplió?</span>
+            </div>
+          )}
+          {strategicCase && (
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  { v: true, label: "Sí se cumplió" },
+                  { v: false, label: "No se cumplió" },
+                  { v: null, label: "Aún no sé" },
+                ] as const
+              ).map(({ v, label }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setHipotesisSeCumplio(v)}
+                  className={`rounded-full px-3 py-1 text-xs border transition-colors ${
+                    hipotesisSeCumplio === v
+                      ? "bg-accent-blue/20 border-accent-blue text-accent-blue"
+                      : "border-border-subtle text-muted hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          <textarea
+            value={resultado}
+            onChange={(e) => setResultado(e.target.value)}
+            rows={2}
+            placeholder="¿Qué pasó de verdad? (revisa a los 30/60/90 días)"
+            className="w-full resize-none rounded-lg bg-surface-2 border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+          {strategicCase && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted">Costo real medido, en días de runway:</span>
+              <input
+                type="number"
+                value={costoDiasRunway}
+                onChange={(e) => setCostoDiasRunway(e.target.value)}
+                placeholder="—"
+                className="w-24 rounded-lg bg-surface-2 border border-border-subtle px-2 py-1 text-xs outline-none focus:border-accent-blue"
+              />
+            </div>
+          )}
+          <div className="flex justify-end">
+            <button
+              onClick={handleGuardarResultado}
+              className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2"
+            >
+              Guardar resultado
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   AgendaEvento,
   BandejaEstado,
   BandejaItem,
+  ChecklistProceso,
   ClasificacionSugerida,
   Decision,
   Evidencia,
@@ -100,7 +101,8 @@ interface AppState {
   escalarBandejaADecision: (id: string, automatico: boolean) => Promise<void>;
   aceptarAnalisisBandeja: (id: string) => Promise<void>;
   rechazarAnalisisBandeja: (id: string) => void;
-  ejecutarAnalisisDecision: (decisionId: string) => Promise<void>;
+  ejecutarAnalisisDecision: (decisionId: string, detectoDisparador?: boolean) => Promise<void>;
+  updateStrategicCase: (decisionId: string, patch: Partial<StrategicCase>) => void;
 
   addProyecto: (proyecto: Omit<Proyecto, "id" | "creadoEn">) => string;
   updateProyecto: (id: string, patch: Partial<Proyecto>) => void;
@@ -519,7 +521,7 @@ export const useAppStore = create<AppState>()(
           "ia"
         );
 
-        await get().ejecutarAnalisisDecision(decisionId);
+        await get().ejecutarAnalisisDecision(decisionId, true);
       },
 
       aceptarAnalisisBandeja: async (id) => {
@@ -552,7 +554,11 @@ export const useAppStore = create<AppState>()(
       // Corre el mismo análisis estratégico que el botón "Analizar con IA"
       // de Decisiones, pero disparado desde el código en vez de un clic —
       // para que una Decisión elevada desde la Bandeja no quede esperando.
-      ejecutarAnalisisDecision: async (decisionId) => {
+      // detectoDisparador viene de si esta Decisión se originó por la capa
+      // de cuestionamiento (Bloque 1) — es el único ítem del checklist de
+      // proceso que ya se puede medir; los otros cuatro (Bloque 2) quedan en
+      // false hasta que el motor de análisis los produzca de verdad.
+      ejecutarAnalisisDecision: async (decisionId, detectoDisparador = false) => {
         const decision = get().decisiones.find((d) => d.id === decisionId);
         if (!decision) return;
         try {
@@ -572,6 +578,13 @@ export const useAppStore = create<AppState>()(
           });
           const data = await res.json().catch(() => null);
           if (!res.ok || !data?.result) return;
+          const checklistProceso: ChecklistProceso = {
+            detectoDisparador,
+            corrioMetricasAntesDeOpinar: false,
+            produjoArgumentoEnContra: false,
+            nombroHipotesisCritica: false,
+            evaluoCostoDeEsperar: false,
+          };
           const nuevoCaso: StrategicCase = {
             id: genId("case"),
             decisionId,
@@ -579,11 +592,25 @@ export const useAppStore = create<AppState>()(
             nivelAnalisis: "3",
             modeloUsado: "claude-sonnet-5",
             creadoEn: new Date().toISOString(),
+            recomendacionSistema: data.result?.recomendacion?.decision ?? null,
+            checklistProceso,
           };
           get().addStrategicCase(nuevoCaso);
         } catch (err) {
           console.warn("No se pudo ejecutar el análisis automático de la decisión", err);
         }
+      },
+
+      updateStrategicCase: (decisionId, patch) => {
+        const anterior = get().strategicCases.find((c) => c.decisionId === decisionId);
+        if (!anterior) return;
+        set((state) => ({
+          strategicCases: state.strategicCases.map((c) =>
+            c.decisionId === decisionId ? { ...c, ...patch } : c
+          ),
+        }));
+        dbMutate("strategicCases", "update", anterior.id, patch);
+        get().logHistorial("decision", decisionId, "Resultado del caso estratégico actualizado", "usuario");
       },
 
       addProyecto: (proyecto) => {
@@ -679,19 +706,20 @@ export const useAppStore = create<AppState>()(
       },
       resolverDecision: (id, decisionFinal) => {
         const anterior = get().decisiones.find((d) => d.id === id);
+        const fechaDecision = new Date().toISOString().slice(0, 10);
         set((state) => ({
           decisiones: state.decisiones.map((d) =>
-            d.id === id ? { ...d, decisionFinal, estado: "Decidida" } : d
+            d.id === id ? { ...d, decisionFinal, estado: "Decidida", fechaDecision } : d
           ),
         }));
-        dbMutate("decisiones", "update", id, { decisionFinal, estado: "Decidida" });
+        dbMutate("decisiones", "update", id, { decisionFinal, estado: "Decidida", fechaDecision });
         get().logHistorial(
           "decision",
           id,
           `Decisión final registrada: "${decisionFinal}"`,
           "usuario",
           anterior ? { decisionFinal: anterior.decisionFinal, estado: anterior.estado } : undefined,
-          { decisionFinal, estado: "Decidida" }
+          { decisionFinal, estado: "Decidida", fechaDecision }
         );
       },
 

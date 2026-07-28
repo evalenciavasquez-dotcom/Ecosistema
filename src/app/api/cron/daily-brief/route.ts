@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, isDbConfigured } from "@/lib/db/client";
-import { acciones, agenda, decisiones, movimientos, personas } from "@/lib/db/schema";
+import { acciones, agenda, decisiones, movimientos, personas, strategicCases } from "@/lib/db/schema";
+import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
 import { sendPushToAll } from "@/lib/db/push";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
 import { getConnection, isGoogleConfigured } from "@/lib/google";
@@ -59,13 +60,16 @@ export async function GET(request: Request) {
       }
     }
 
-    const [accionesRows, decisionesRows, personasRows, agendaRows, movimientosRows] = await Promise.all([
-      db.select().from(acciones),
-      db.select().from(decisiones),
-      db.select().from(personas),
-      db.select().from(agenda),
-      db.select().from(movimientos),
-    ]);
+    await ensureStrategicCaseColumns();
+    const [accionesRows, decisionesRows, personasRows, agendaRows, movimientosRows, strategicCasesRows] =
+      await Promise.all([
+        db.select().from(acciones),
+        db.select().from(decisiones),
+        db.select().from(personas),
+        db.select().from(agenda),
+        db.select().from(movimientos),
+        db.select().from(strategicCases),
+      ]);
 
     const abiertas = accionesRows.filter((a) => a.estado === "Pendiente" || a.estado === "En curso");
     const vencidas = abiertas.filter((a) => a.fecha && a.fecha < hoy);
@@ -94,6 +98,24 @@ export async function GET(request: Request) {
       const dias = diasHasta(d.fechaLimite, hoy);
       urgente = urgente || dias <= 1;
       lineas.push(`Decisión "${d.pregunta}" vence ${dias === 0 ? "HOY" : `en ${dias} día(s)`}`);
+    }
+
+    // Cerrar el ciclo (Bloque 3): si decidiste algo hace exactamente 30, 60 o
+    // 90 días y nunca registraste qué pasó, una sola pregunta al día — sin
+    // esto los campos de resultado quedan vacíos para siempre.
+    const paraCierre = decisionesRows.filter((d) => {
+      if (!d.fechaDecision || d.resultadoPosterior) return false;
+      const diasDesde = -diasHasta(d.fechaDecision, hoy);
+      return diasDesde === 30 || diasDesde === 60 || diasDesde === 90;
+    });
+    if (paraCierre.length > 0) {
+      const d = paraCierre[0];
+      const diasDesde = -diasHasta(d.fechaDecision as string, hoy);
+      const caso = strategicCasesRows.find((c) => c.decisionId === d.id);
+      lineas.push(
+        `Hace ${diasDesde} días decidiste "${d.pregunta}". ¿Qué pasó?` +
+          (caso?.hipotesisCritica ? ` La hipótesis crítica era: ${caso.hipotesisCritica}. ¿Se cumplió?` : "")
+      );
     }
 
     const esperando = personasRows.filter((p) => (p.diasSinResponder ?? 0) >= 5);
