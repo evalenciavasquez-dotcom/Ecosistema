@@ -19,15 +19,15 @@ function diasHasta(fechaISO: string, hoy: string): number {
 }
 
 export async function GET(request: Request) {
-  // Si Eduardo define CRON_SECRET en Vercel, se exige; sin definirla, el
-  // endpoint solo permite el user-agent del cron de Vercel o una sesión válida
-  // (la protección del proxy ya cubrió el caso de sesión).
+  // Esta ruta queda fuera del proxy de sesión (para que el cron de Vercel
+  // pueda llamarla sin cookie) — por eso CRON_SECRET es obligatoria: sin
+  // ella, cualquiera en internet podría disparar el barrido de Google y leer
+  // el resumen del día. Vercel manda automáticamente el header Authorization
+  // con este valor cuando la variable está configurada.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+  const auth = request.headers.get("authorization");
+  if (!secret || auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   if (!isDbConfigured()) {

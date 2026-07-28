@@ -12,7 +12,8 @@ export async function GET() {
   try {
     const raw = await getConfigValue(UMBRAL_KEY);
     const dias = raw ? Number(raw) : UMBRAL_DEFAULT;
-    return NextResponse.json({ umbralRunwayDecisionDias: Number.isFinite(dias) ? dias : UMBRAL_DEFAULT });
+    const valido = Number.isFinite(dias) && dias > 0 && dias <= 365;
+    return NextResponse.json({ umbralRunwayDecisionDias: valido ? dias : UMBRAL_DEFAULT });
   } catch (err) {
     console.error("Error leyendo configuración", err);
     return NextResponse.json({ umbralRunwayDecisionDias: UMBRAL_DEFAULT });
@@ -25,7 +26,9 @@ export async function POST(request: Request) {
   }
   const body = await request.json().catch(() => null);
   const dias = Number(body?.umbralRunwayDecisionDias);
-  if (!Number.isFinite(dias) || dias <= 0) {
+  // Un umbral absurdamente alto equivale a desactivar en silencio el
+  // auto-disparo del Bloque 1 — mejor topar a un año que dejarlo pasar.
+  if (!Number.isFinite(dias) || dias <= 0 || dias > 365) {
     return NextResponse.json({ error: "Valor inválido" }, { status: 400 });
   }
   try {
