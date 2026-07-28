@@ -113,6 +113,11 @@ interface VincereState {
   deleteTriageCaso: (id: string) => void;
 
   resetToSeed: () => void;
+  hidratarDesdeServidor: (estado: {
+    proyectos: VincereProyecto[];
+    triageCasos: VincereTriageCaso[];
+    comparaciones: Record<string, VincereComparacion>;
+  }) => void;
 }
 
 function mapProyecto(
@@ -471,6 +476,27 @@ export const useVincereStore = create<VincereState>()(
           triageCasos: s.triageCasos.map((c) => (c.id === id ? { ...c, ...veredicto } : c)),
         })),
       deleteTriageCaso: (id) => set((s) => ({ triageCasos: s.triageCasos.filter((c) => c.id !== id) })),
+
+      // La base manda cuando tiene contenido: es la copia compartida entre
+      // dispositivos. Se conserva la sección abierta para no sacar a Eduardo
+      // de donde estaba trabajando cuando termina de cargar.
+      hidratarDesdeServidor: (estado) =>
+        set((s) => {
+          const propio = estado.proyectos.find((p) => p.id === s.selectedProyectoId)
+            ? s.selectedProyectoId
+            : (estado.proyectos.find((p) => p.tipo === "propio")?.id ?? estado.proyectos[0]?.id ?? "");
+          const referencia = estado.proyectos.find((p) => p.id === s.compareProyectoId)
+            ? s.compareProyectoId
+            : (estado.proyectos.find((p) => p.tipo === "competencia")?.id ?? null);
+          return {
+            proyectos: estado.proyectos,
+            triageCasos: estado.triageCasos,
+            comparaciones: estado.comparaciones,
+            selectedProyectoId: propio,
+            compareProyectoId: referencia,
+            compareOn: false,
+          };
+        }),
 
       resetToSeed: () =>
         set({

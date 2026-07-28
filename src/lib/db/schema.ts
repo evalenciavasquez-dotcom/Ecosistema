@@ -218,6 +218,27 @@ export const googleConnection = pgTable("google_connection", {
   connectedAt: text("connected_at").notNull(),
 });
 
+// VINCERE guarda el proyecto como documento completo (canciones, audiencia,
+// lecturas de IA, informe, alertas). Normalizarlo en una decena de tablas
+// añadiría fragilidad sin ganar nada: siempre se lee y se escribe entero.
+// Las columnas sueltas existen para poder listar sin abrir el jsonb.
+export const vincereProyectos = pgTable("vincere_proyectos", {
+  id: text("id").primaryKey(),
+  nombre: text("nombre").notNull(),
+  tipo: text("tipo").notNull(),
+  actualizadoEn: text("actualizado_en").notNull(),
+  doc: jsonb("doc").$type<Record<string, unknown>>().notNull(),
+});
+
+// Estado de VINCERE que no pertenece a un proyecto: casos de triage y las
+// lecturas comparativas. Una sola fila, id fijo "default".
+export const vincereEstado = pgTable("vincere_estado", {
+  id: text("id").primaryKey(),
+  triageCasos: jsonb("triage_casos").$type<unknown[]>().notNull(),
+  comparaciones: jsonb("comparaciones").$type<Record<string, unknown>>().notNull(),
+  actualizadoEn: text("actualizado_en").notNull(),
+});
+
 export const TABLES = {
   tiempo,
   metasFinancieras,

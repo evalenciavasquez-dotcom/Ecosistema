@@ -6,6 +6,37 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 import { registerNotion } from "@/lib/vincere/ai-client";
 import ProyectoManager from "./ProyectoManager";
+import { useVincereSync } from "./VincereHydration";
+
+const SYNC_TEXTO: Record<string, { label: string; color: string; title: string }> = {
+  sincronizado: {
+    label: "Guardado",
+    color: "#5cc98e",
+    title: "La data se está guardando en la base: la misma información en cualquier dispositivo",
+  },
+  local: {
+    label: "Solo este dispositivo",
+    color: "#e0a83a",
+    title: "Sin base de datos configurada: la data vive en el navegador de este dispositivo",
+  },
+  error: {
+    label: "Sin guardar",
+    color: "#e0483a",
+    title: "No se pudo guardar en la base. La copia del navegador sigue intacta y se reintenta al próximo cambio",
+  },
+  desconocido: { label: "Conectando…", color: "#6f6a61", title: "Comprobando dónde se guarda la data" },
+};
+
+function SyncIndicator() {
+  const estado = useVincereSync();
+  const info = SYNC_TEXTO[estado] ?? SYNC_TEXTO.desconocido;
+  return (
+    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: info.color }} title={info.title}>
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: info.color }} />
+      {info.label}
+    </span>
+  );
+}
 
 export default function VincereHeader() {
   const proyectos = useVincereStore((s) => s.proyectos);
@@ -45,9 +76,10 @@ export default function VincereHeader() {
       className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 md:px-10"
       style={{ borderBottom: "1px solid var(--vin-border)" }}
     >
-      <div className="flex items-baseline gap-3.5">
+      <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
         <span className="vin-serif text-[22px] tracking-tight">VINCERE</span>
         <span className="vin-faint text-[11px] uppercase tracking-[0.14em]">Intelligence Platform</span>
+        <SyncIndicator />
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">

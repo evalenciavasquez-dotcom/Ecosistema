@@ -127,7 +127,11 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 
 No se duplican aquí para que no se desincronicen.
 
-La interpretación, las preguntas por sección, el triage, el análisis de letra y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`. La data de la plataforma se persiste en el `localStorage` del navegador (clave `vincere-storage`), independiente del store del C.C.O. — hoy no se sincroniza a Postgres, así que es por dispositivo.
+La interpretación, las preguntas por sección, el triage, el análisis de letra, la ingesta y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`.
+
+**Persistencia.** Con `DATABASE_URL` configurada, VINCERE sincroniza con Postgres igual que el C.C.O.: al abrir lee `/api/vincere/state` y, si la base tiene contenido, esa versión reemplaza la copia local; desde ahí una suscripción al store detecta qué proyectos cambiaron (por identidad de referencia) y los envía a `/api/vincere/sync` con debounce. La primera conexión sube lo que ya hubiera en el navegador. El `localStorage` (clave `vincere-storage`) se conserva como caché de pintado inmediato y respaldo si la red falla; sin `DATABASE_URL` es lo único que hay y el encabezado lo indica ("Solo este dispositivo").
+
+El proyecto se guarda como documento completo en `vincere_proyectos.doc` (jsonb) en vez de normalizado: siempre se lee y se escribe entero, y normalizar la decena de estructuras anidadas añadiría fragilidad sin ganancia. Las tablas se crean bajo demanda (`ensureVincereSchema`), así que una base ya desplegada no requiere pasos manuales.
 
 Estructura:
 
@@ -139,6 +143,8 @@ src/
       interpret/             Lectura VINCERE por sección (IA)
       ask/                   Preguntas abiertas por sección (IA)
       triage/                Veredicto de casos nuevos (IA)
+      state/                 GET: estado de VINCERE desde Postgres
+      sync/                  POST: guarda proyectos cambiados y estado
       ingest/                Lee capturas, PDF o texto y extrae la data por motor (IA)
       analyze-song/          Lectura profunda de la letra de una canción (IA)
       informe/               Informe final del proyecto, cruzando motores (IA)

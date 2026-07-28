@@ -224,7 +224,11 @@ export const GUIA_PROBLEMAS: ManualBloque = {
     },
     {
       termino: "Abrí en otro dispositivo y no está mi data",
-      texto: "Es lo esperado hoy: la información vive en el navegador donde la cargaste. Descarga el informe o archívalo en Notion para llevarlo.",
+      texto: "Mira el indicador del encabezado. Si dice «Solo este dispositivo», falta configurar DATABASE_URL en el servidor y la data no viaja. Si dice «Guardado», recarga: se lee de la base al abrir.",
+    },
+    {
+      termino: "El indicador dice «Sin guardar»",
+      texto: "No se pudo escribir en la base. Lo que hiciste sigue en el navegador y se reintenta con el próximo cambio — no lo has perdido. Si persiste, revisa DATABASE_URL.",
     },
     {
       termino: "«Notion no está configurado»",
@@ -418,8 +422,16 @@ export const SISTEMA_DATOS: ManualBloque = {
   titulo: "Dónde vive la información",
   puntos: [
     {
-      termino: "En el navegador de este dispositivo",
-      texto: "Toda la data de VINCERE (proyectos, canciones, lecturas, informes) se guarda localmente en el navegador donde la cargaste. No se sincroniza entre dispositivos.",
+      termino: "En la base de datos, si está configurada",
+      texto: "Con DATABASE_URL puesta, cada cambio se guarda solo en Postgres y la misma información aparece en cualquier dispositivo donde entres. El indicador del encabezado dice «Guardado» cuando es así.",
+    },
+    {
+      termino: "En el navegador, siempre",
+      texto: "El navegador conserva una copia local que se usa para pintar al instante y como respaldo si la red falla. Sin base configurada, el indicador dice «Solo este dispositivo» y esa copia es lo único que hay.",
+    },
+    {
+      termino: "El servidor manda cuando tiene contenido",
+      texto: "Al abrir, se lee la base y lo que esté ahí reemplaza la copia local. La primera vez que se configura la base, lo que ya había en el navegador se sube completo en vez de perderse.",
     },
     {
       termino: "Separada del C.C.O. E.V.",
