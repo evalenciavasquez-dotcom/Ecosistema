@@ -93,6 +93,18 @@ export default function VincereNav() {
         {VINCERE_SECCION_LABEL.informe} ↓
       </button>
 
+      <button
+        onClick={() => setSeccion("manual")}
+        className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors"
+        style={{
+          borderLeft: !compareOn && seccion === "manual" ? "2px solid var(--vin-accent)" : "2px solid transparent",
+          background: !compareOn && seccion === "manual" ? "rgba(224,72,58,0.12)" : "transparent",
+          color: !compareOn && seccion === "manual" ? "var(--vin-text)" : "var(--vin-muted)",
+        }}
+      >
+        {VINCERE_SECCION_LABEL.manual}
+      </button>
+
       <div
         className="vin-label mt-4 hidden px-3 pb-2.5 pt-4 md:block"
         style={{ borderTop: "1px solid var(--vin-border)" }}

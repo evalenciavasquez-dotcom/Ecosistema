@@ -21,7 +21,8 @@ export type VincereSeccion =
   | "management"
   | "kpis"
   | "triage"
-  | "informe";
+  | "informe"
+  | "manual";
 
 export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   resumen: "Resumen · Momentum",
@@ -33,6 +34,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   kpis: "Ejecución / KPIs",
   triage: "Triage",
   informe: "Informe Final",
+  manual: "Cómo se opera",
 };
 
 export type VincereProyectoTipo = "propio" | "competencia";

@@ -114,8 +114,12 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 - **Carga manual de data** por sección (P0.6) — arquitectura lista para APIs después.
 - **Modo comparación** (P0.8): proyecto propio vs. una referencia de mercado (competencia), con lectura ajustada por macro-fase. Arranca con SETTE (proyecto real) y LUNA REBEL (referencia) precargados.
 - **Registro a Notion** (P0.9): botón "Registrar en Notion" — escribe de verdad si `NOTION_TOKEN` + `NOTION_DATABASE_ID` están configuradas, si no avisa sin romper.
+- **Análisis de letra por canción**: dentro de Song Intelligence se pega la letra y la IA lee la canción como obra (tema real, arco emocional, gancho, audiencia, fit de marca, potencial, qué reescribir y la decisión de gestión), cruzándola con las métricas de esa canción.
+- **Informe Final**: la plataforma emite el entregable del proyecto — sinopsis central, veredicto, bloques que cruzan motores entre sí, riesgos, oportunidades y próximos pasos con responsable y plazo. Se descarga a Markdown, se imprime a PDF (hay estilos de impresión en claro) y se archiva en Notion.
 
-La interpretación, las preguntas por sección y el triage llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`. La data de la plataforma se persiste en el `localStorage` del navegador (clave `vincere-storage`), independiente del store del C.C.O.
+**El manual de operación vive dentro de la plataforma**, en la sección "Cómo se opera" (`src/lib/vincere/manual.ts` es su fuente única). Ahí está el ciclo de trabajo, cuándo usar cada motor, cómo leer los niveles de evidencia, la cadencia sugerida y los límites conocidos — no se duplica aquí para que no se desincronice.
+
+La interpretación, las preguntas por sección, el triage, el análisis de letra y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`. La data de la plataforma se persiste en el `localStorage` del navegador (clave `vincere-storage`), independiente del store del C.C.O. — hoy no se sincroniza a Postgres, así que es por dispositivo.
 
 Estructura:
 
@@ -127,9 +131,13 @@ src/
       interpret/             Lectura VINCERE por sección (IA)
       ask/                   Preguntas abiertas por sección (IA)
       triage/                Veredicto de casos nuevos (IA)
+      analyze-song/          Lectura profunda de la letra de una canción (IA)
+      informe/               Informe final del proyecto, cruzando motores (IA)
       notion/                Registro a Notion (si está configurado)
   components/vincere/        Header, Nav, secciones, componentes de las 3 capas
-  lib/vincere/               types, seed-data (SETTE + LUNA REBEL), store, prompt, schema
+  lib/vincere/               types, seed-data (SETTE + LUNA REBEL), store, prompt,
+                             schema, context, manual (contenido de "Cómo se opera"),
+                             informe-export (Markdown + descarga)
 ```
 
 ## Alcance y limitaciones de este v1

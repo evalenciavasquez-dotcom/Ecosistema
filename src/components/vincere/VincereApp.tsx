@@ -12,6 +12,7 @@ import ManagementSection from "./sections/ManagementSection";
 import KpisSection from "./sections/KpisSection";
 import TriageSection from "./sections/TriageSection";
 import InformeSection from "./sections/InformeSection";
+import ManualSection from "./sections/ManualSection";
 import ComparacionSection from "./sections/ComparacionSection";
 
 export default function VincereApp() {
@@ -85,6 +86,8 @@ function SectionRouter({
       return <TriageSection />;
     case "informe":
       return <InformeSection proyecto={proyecto} />;
+    case "manual":
+      return <ManualSection />;
     default:
       return <ResumenSection proyecto={proyecto} />;
   }
