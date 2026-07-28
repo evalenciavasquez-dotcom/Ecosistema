@@ -50,7 +50,8 @@ const STATEMENTS = [
     dependencias text NOT NULL,
     impacto_financiero text NOT NULL,
     evidencia_cierre text NOT NULL,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    google_task_id text
   )`,
   `CREATE TABLE IF NOT EXISTS decisiones (
     id text PRIMARY KEY,
@@ -123,6 +124,7 @@ const STATEMENTS = [
     gmail_processed_label_id text,
     last_gmail_sync text,
     calendar_sync_token text,
+    last_tasks_sync text,
     connected_at text NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS historial (

@@ -63,6 +63,9 @@ export const acciones = pgTable("acciones", {
   impactoFinanciero: text("impacto_financiero").notNull(),
   evidenciaCierre: text("evidencia_cierre").notNull(),
   creadoEn: text("creado_en").notNull(),
+  // Vincula esta acción con su tarea gemela en Google Tasks, para la
+  // sincronización de doble vía — evita crear duplicados en cada pasada.
+  googleTaskId: text("google_task_id"),
 });
 
 export const decisiones = pgTable("decisiones", {
@@ -209,6 +212,9 @@ export const googleConnection = pgTable("google_connection", {
   // permite traer solo lo que cambió desde la última pasada, incluyendo
   // eliminaciones, en vez de releer todo el calendario cada vez.
   calendarSyncToken: text("calendar_sync_token"),
+  // Marca de tiempo de la última pasada de Google Tasks — se usa como
+  // "updatedMin" para traer solo tareas que cambiaron desde entonces.
+  lastTasksSync: text("last_tasks_sync"),
   connectedAt: text("connected_at").notNull(),
 });
 

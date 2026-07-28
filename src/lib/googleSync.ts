@@ -1,7 +1,8 @@
-import { google, type calendar_v3, type gmail_v1 } from "googleapis";
+import { google, type calendar_v3, type gmail_v1, type tasks_v1 } from "googleapis";
 import { eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "./db/client";
 import {
+  acciones,
   agenda,
   bandeja,
   historial,
@@ -18,8 +19,9 @@ import {
   updateGmailLabelId,
   updateGmailProcessedLabelId,
   updateLastGmailSync,
+  updateLastTasksSync,
 } from "./google";
-import type { BandejaDestino, ClasificacionSugerida } from "./types";
+import type { AccionEstado, BandejaDestino, ClasificacionSugerida } from "./types";
 
 const CCO_LABEL = "CCO";
 const CCO_PROCESSED_LABEL = "CCO-Sincronizado";
@@ -490,14 +492,215 @@ export async function pushAgendaEventoEliminado(googleEventId: string): Promise<
   }
 }
 
+export interface TasksSyncResult {
+  creados: number;
+  actualizados: number;
+  eliminados: number;
+  error?: string;
+}
+
+// Google Tasks no da estados intermedios como "Bloqueada" o "Esperando
+// tercero" — solo pendiente/completada. Al traer de Google, cualquier
+// pendiente entra como "Pendiente"; el resto de estados se maneja siempre
+// desde la app.
+function taskStatusToAccionEstado(status: string | null | undefined): AccionEstado {
+  return status === "completed" ? "Completada" : "Pendiente";
+}
+
+function accionEstadoToTaskStatus(estado: AccionEstado): "needsAction" | "completed" {
+  return estado === "Completada" || estado === "Cancelada" ? "completed" : "needsAction";
+}
+
+function dueToFecha(due: string | null | undefined): string {
+  return due ? due.slice(0, 10) : new Date().toISOString().slice(0, 10);
+}
+
+function fechaToDue(fecha: string): string {
+  return `${fecha}T00:00:00.000Z`;
+}
+
+// Trae a la tabla acciones las tareas nuevas, editadas o eliminadas en
+// Google Tasks desde la última pasada (usando "updatedMin", ya que la API de
+// Tasks no ofrece syncToken como Calendar). Las tareas que ya vinieron de la
+// app (creadas por pushAccionCreada) se emparejan por googleTaskId, así que
+// no se duplican en cada pasada.
+export async function syncTasksPull(): Promise<TasksSyncResult> {
+  if (!isDbConfigured() || !isGoogleConfigured()) return { creados: 0, actualizados: 0, eliminados: 0 };
+  const connection = await getConnection();
+  if (!connection) return { creados: 0, actualizados: 0, eliminados: 0 };
+  const client = await getAuthorizedClient();
+  if (!client) return { creados: 0, actualizados: 0, eliminados: 0 };
+
+  const tasksApi = google.tasks({ version: "v1", auth: client });
+  const db = getDb();
+
+  const updatedMin = connection.lastTasksSync ?? new Date(Date.now() - 7 * 86400000).toISOString();
+
+  const items: tasks_v1.Schema$Task[] = [];
+  let pageToken: string | undefined;
+  do {
+    const res = await tasksApi.tasks.list({
+      tasklist: "@default",
+      showCompleted: true,
+      showHidden: true,
+      showDeleted: true,
+      updatedMin,
+      maxResults: 100,
+      pageToken,
+    });
+    items.push(...(res.data.items ?? []));
+    pageToken = res.data.nextPageToken ?? undefined;
+  } while (pageToken);
+
+  let creados = 0;
+  let actualizados = 0;
+  let eliminados = 0;
+
+  for (const task of items) {
+    if (!task.id) continue;
+    const existingRows = await db.select().from(acciones).where(eq(acciones.googleTaskId, task.id));
+    const existing = existingRows[0];
+
+    if (task.deleted) {
+      if (existing) {
+        await db.delete(acciones).where(eq(acciones.id, existing.id));
+        await db.insert(historial).values({
+          id: genId("hist"),
+          timestamp: new Date().toISOString(),
+          entidadTipo: "accion",
+          entidadId: existing.id,
+          cambio: `Acción "${existing.titulo}" eliminada desde Google Tasks`,
+          autor: "ia",
+        });
+        eliminados++;
+      }
+      continue;
+    }
+
+    const titulo = task.title || "(Sin título)";
+    const estado = taskStatusToAccionEstado(task.status);
+    const fecha = dueToFecha(task.due);
+
+    if (existing) {
+      if (existing.titulo !== titulo || existing.estado !== estado || existing.fecha !== fecha) {
+        await db.update(acciones).set({ titulo, estado, fecha }).where(eq(acciones.id, existing.id));
+        actualizados++;
+      }
+    } else {
+      const id = genId("acc");
+      await db.insert(acciones).values({
+        id,
+        titulo,
+        resultadoEsperado: task.notes ?? "",
+        proyectoId: null,
+        responsable: "Eduardo",
+        prioridad: "P2",
+        estado,
+        fecha,
+        duracionEstimada: "",
+        dependencias: "",
+        impactoFinanciero: "",
+        evidenciaCierre: "",
+        creadoEn: new Date().toISOString().slice(0, 10),
+        googleTaskId: task.id,
+      });
+      await db.insert(historial).values({
+        id: genId("hist"),
+        timestamp: new Date().toISOString(),
+        entidadTipo: "accion",
+        entidadId: id,
+        cambio: `Acción "${titulo}" importada desde Google Tasks`,
+        autor: "ia",
+      });
+      creados++;
+    }
+  }
+
+  await updateLastTasksSync(new Date().toISOString());
+  return { creados, actualizados, eliminados };
+}
+
+// Crea la tarea en Google Tasks para una acción recién creada en la app, y
+// guarda su googleTaskId para poder editarla/borrarla después.
+export async function pushAccionCreada(
+  id: string,
+  accion: { titulo: string; resultadoEsperado?: string; estado: AccionEstado; fecha?: string }
+): Promise<void> {
+  if (!isDbConfigured() || !isGoogleConfigured()) return;
+  const connection = await getConnection();
+  if (!connection) return;
+  const client = await getAuthorizedClient();
+  if (!client) return;
+  const tasksApi = google.tasks({ version: "v1", auth: client });
+
+  const created = await tasksApi.tasks.insert({
+    tasklist: "@default",
+    requestBody: {
+      title: accion.titulo,
+      notes: accion.resultadoEsperado || undefined,
+      status: accionEstadoToTaskStatus(accion.estado),
+      due: accion.fecha ? fechaToDue(accion.fecha) : undefined,
+    },
+  });
+  if (created.data.id) {
+    await getDb().update(acciones).set({ googleTaskId: created.data.id }).where(eq(acciones.id, id));
+  }
+}
+
+// Refleja en Google Tasks los cambios hechos en la app a una acción ya
+// vinculada.
+export async function pushAccionActualizada(
+  googleTaskId: string,
+  accion: { titulo?: string; resultadoEsperado?: string; estado?: AccionEstado; fecha?: string }
+): Promise<void> {
+  if (!isDbConfigured() || !isGoogleConfigured()) return;
+  const connection = await getConnection();
+  if (!connection) return;
+  const client = await getAuthorizedClient();
+  if (!client) return;
+  const tasksApi = google.tasks({ version: "v1", auth: client });
+
+  const requestBody: tasks_v1.Schema$Task = {};
+  if (accion.titulo !== undefined) requestBody.title = accion.titulo;
+  if (accion.resultadoEsperado !== undefined) requestBody.notes = accion.resultadoEsperado || undefined;
+  if (accion.estado !== undefined) requestBody.status = accionEstadoToTaskStatus(accion.estado);
+  if (accion.fecha !== undefined) requestBody.due = fechaToDue(accion.fecha);
+
+  try {
+    await tasksApi.tasks.patch({ tasklist: "@default", task: googleTaskId, requestBody });
+  } catch (err) {
+    const status = (err as { code?: number }).code;
+    if (status !== 404) throw err;
+  }
+}
+
+// Borra en Google Tasks la tarea vinculada a una acción que se acaba de
+// eliminar en la app.
+export async function pushAccionEliminada(googleTaskId: string): Promise<void> {
+  if (!isDbConfigured() || !isGoogleConfigured()) return;
+  const connection = await getConnection();
+  if (!connection) return;
+  const client = await getAuthorizedClient();
+  if (!client) return;
+  const tasksApi = google.tasks({ version: "v1", auth: client });
+
+  try {
+    await tasksApi.tasks.delete({ tasklist: "@default", task: googleTaskId });
+  } catch (err) {
+    const status = (err as { code?: number }).code;
+    if (status !== 404) throw err;
+  }
+}
+
 export interface GoogleSyncSummary {
   gmail: GmailSyncResult;
   calendar: CalendarSyncResult;
+  tasks: TasksSyncResult;
 }
 
-// Orquesta el barrido de Gmail y la sincronización de Calendar. Cada mitad
-// falla de forma independiente — un problema con Gmail no debe bloquear la
-// sincronización del calendario, y viceversa.
+// Orquesta el barrido de Gmail y las sincronizaciones de Calendar y Tasks.
+// Cada parte falla de forma independiente — un problema con una no debe
+// bloquear a las demás.
 export async function runGoogleSync(): Promise<GoogleSyncSummary> {
   let gmail: GmailSyncResult;
   try {
@@ -515,5 +718,13 @@ export async function runGoogleSync(): Promise<GoogleSyncSummary> {
     calendar = { creados: 0, actualizados: 0, eliminados: 0, error: "Error en la sincronización de Google Calendar" };
   }
 
-  return { gmail, calendar };
+  let tasks: TasksSyncResult;
+  try {
+    tasks = await syncTasksPull();
+  } catch (err) {
+    console.error("Error en la sincronización de Google Tasks", err);
+    tasks = { creados: 0, actualizados: 0, eliminados: 0, error: "Error en la sincronización de Google Tasks" };
+  }
+
+  return { gmail, calendar, tasks };
 }
