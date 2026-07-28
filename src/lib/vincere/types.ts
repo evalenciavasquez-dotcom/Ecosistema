@@ -34,7 +34,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   kpis: "Ejecución / KPIs",
   triage: "Triage",
   informe: "Informe Final",
-  manual: "Cómo se opera",
+  manual: "Documentación",
 };
 
 export type VincereProyectoTipo = "propio" | "competencia";

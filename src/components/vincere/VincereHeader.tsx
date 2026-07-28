@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
 import { VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 import { registerNotion } from "@/lib/vincere/ai-client";
+import ProyectoManager from "./ProyectoManager";
 
 export default function VincereHeader() {
   const proyectos = useVincereStore((s) => s.proyectos);
@@ -17,6 +18,7 @@ export default function VincereHeader() {
   const showToast = useVincereStore((s) => s.showToast);
 
   const [registering, setRegistering] = useState(false);
+  const [gestionAbierta, setGestionAbierta] = useState(false);
 
   const propios = proyectos.filter((p) => p.tipo === "propio");
   const selected = proyectos.find((p) => p.id === selectedId);
@@ -62,6 +64,10 @@ export default function VincereHeader() {
           ))}
         </select>
 
+        <button onClick={() => setGestionAbierta(true)} className="vin-btn-ghost" title="Crear, renombrar o eliminar proyectos">
+          + Proyecto
+        </button>
+
         <button
           onClick={toggleCompare}
           className={compareOn ? "vin-btn-primary" : "vin-btn-ghost"}
@@ -79,6 +85,8 @@ export default function VincereHeader() {
           ← C.C.O.
         </Link>
       </div>
+
+      {gestionAbierta && <ProyectoManager onClose={() => setGestionAbierta(false)} />}
     </header>
   );
 }

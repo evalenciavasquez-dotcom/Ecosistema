@@ -178,9 +178,14 @@ export const useVincereStore = create<VincereState>()(
       deleteProyecto: (id) =>
         set((s) => {
           const proyectos = s.proyectos.filter((p) => p.id !== id);
-          const selectedProyectoId = s.selectedProyectoId === id ? (proyectos[0]?.id ?? "") : s.selectedProyectoId;
+          // Al borrar el proyecto abierto se cae en otro propio: el selector
+          // del encabezado solo lista propios, así que quedarse en una
+          // referencia lo dejaría en blanco.
+          const siguiente = proyectos.find((p) => p.tipo === "propio") ?? proyectos[0];
+          const selectedProyectoId = s.selectedProyectoId === id ? (siguiente?.id ?? "") : s.selectedProyectoId;
           const compareProyectoId = s.compareProyectoId === id ? null : s.compareProyectoId;
-          return { proyectos, selectedProyectoId, compareProyectoId };
+          const compareOn = s.compareProyectoId === id ? false : s.compareOn;
+          return { proyectos, selectedProyectoId, compareProyectoId, compareOn };
         }),
 
       updateResumen: (proyectoId, patch) =>

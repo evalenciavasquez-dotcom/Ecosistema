@@ -1,7 +1,11 @@
-// Manual de operación de VINCERE — fuente única.
-// Vive dentro de la plataforma (sección "Cómo se opera") en vez de en un
-// archivo del repositorio, para que esté donde Eduardo trabaja, también en el
-// celular. El README apunta aquí en vez de duplicar el contenido.
+// Documentación de VINCERE — fuente única de la sección "Documentación".
+// Vive dentro de la plataforma en vez de en archivos del repositorio, para
+// estar donde Eduardo trabaja (también en el celular). El README apunta aquí.
+//
+// Son dos documentos con propósitos distintos:
+//   · Guía del Usuario  — cómo se trabaja: primeros pasos, el ciclo, tareas.
+//   · Manual del Sistema — qué es y cómo funciona por dentro: motores, capa
+//     de IA, niveles de evidencia, dónde vive la información, alcance.
 
 export interface ManualPaso {
   numero: number;
@@ -16,16 +20,59 @@ export interface ManualMotor {
   queCargar: string;
 }
 
+export interface ManualPunto {
+  termino: string;
+  texto: string;
+}
+
 export interface ManualBloque {
   titulo: string;
   parrafos?: string[];
-  puntos?: { termino: string; texto: string }[];
+  puntos?: ManualPunto[];
 }
 
-export const MANUAL_INTRO =
-  "VINCERE no es un tablero que se mira: es donde se dirige. La data la cargas tú; el valor está en la capa que la interpreta con tu método y en el informe que emite al final. Este manual es el ritmo de trabajo, no una lista de botones.";
+export interface ManualTarea {
+  tarea: string;
+  pasos: string[];
+}
 
-export const MANUAL_CICLO: ManualPaso[] = [
+// ---------------------------------------------------------------------------
+// GUÍA DEL USUARIO
+// ---------------------------------------------------------------------------
+
+export const GUIA_INTRO =
+  "VINCERE no es un tablero que se mira: es donde se dirige. La data la cargas tú; el valor está en la capa que la interpreta con tu método y en el informe que emite al final. Esta guía es el ritmo de trabajo, no una lista de botones.";
+
+export const GUIA_PRIMEROS_PASOS: ManualBloque = {
+  titulo: "Primeros pasos",
+  parrafos: [
+    "Los primeros quince minutos, en orden. La plataforma abre con SETTE y LUNA REBEL cargados con cifras de muestra para que veas todo funcionando — no son datos reales.",
+  ],
+  puntos: [
+    {
+      termino: "1. Crea tu proyecto",
+      texto: "Botón «+ Proyecto» arriba. Nombre del artista, género y fase de carrera. Elige «Proyecto propio» si lo diriges tú.",
+    },
+    {
+      termino: "2. Carga un motor, no diez",
+      texto: "Empieza por Resumen · Momentum con los números que ya tengas a mano. Un motor con data real vale más que ocho vacíos.",
+    },
+    {
+      termino: "3. Genera tu primera lectura",
+      texto: "En esa misma sección, «Generar lectura VINCERE». Ahí ves si la interpretación suena a tu criterio o hay que presionarla.",
+    },
+    {
+      termino: "4. Presiónala con una pregunta",
+      texto: "Usa la zona de preguntas de la sección. Si la respuesta no te convence, eso también es información — dímelo y ajustamos el método.",
+    },
+    {
+      termino: "5. Cuando tengas 3 o 4 motores, emite el informe",
+      texto: "Ahí es donde la plataforma muestra lo que ninguna otra hace: cruzar todo y tomar postura.",
+    },
+  ],
+};
+
+export const GUIA_CICLO: ManualPaso[] = [
   {
     numero: 1,
     titulo: "Cargar la data del proyecto",
@@ -79,7 +126,163 @@ export const MANUAL_CICLO: ManualPaso[] = [
   },
 ];
 
-export const MANUAL_MOTORES: ManualMotor[] = [
+export const GUIA_TAREAS: ManualTarea[] = [
+  {
+    tarea: "Crear un proyecto nuevo",
+    pasos: [
+      "Botón «+ Proyecto» en la barra superior.",
+      "Escribe nombre y género, elige la fase de carrera.",
+      "Tipo «Proyecto propio» si lo diriges; «Referencia de mercado» si es competencia para comparar.",
+      "Crear proyecto. Queda seleccionado y listo para cargarle data.",
+    ],
+  },
+  {
+    tarea: "Cargar una canción con su letra",
+    pasos: [
+      "Song Intelligence → «+ Agregar canción».",
+      "Nombre y métricas (streams, retención, skip, playlist adds).",
+      "Haz clic en la canción de la lista para abrir su panel.",
+      "Pega la letra en el campo de texto y pulsa «Analizar canción con VINCERE».",
+    ],
+  },
+  {
+    tarea: "Comparar con la competencia",
+    pasos: [
+      "Crea el artista de referencia con «+ Proyecto», tipo «Referencia de mercado».",
+      "Cárgale al menos sus números de Resumen · Momentum.",
+      "Pulsa «Comparar con …» en la barra superior.",
+      "Genera la lectura comparativa: la IA ajusta por fase de carrera y marca la data de referencia con nivel más bajo.",
+    ],
+  },
+  {
+    tarea: "Emitir y trabajar el informe",
+    pasos: [
+      "Informe Final → «Emitir informe final». Tarda más que una lectura de sección: razona sobre todo el proyecto junto.",
+      "Léelo entero antes de tocarlo.",
+      "«Editar informe» y corrige lo que no corresponda a tu criterio. Se guarda solo.",
+      "Marca los próximos pasos conforme los cumples.",
+      "«Imprimir / PDF» para presentarlo, o «Descargar» para llevarlo a Word o Notion.",
+    ],
+  },
+  {
+    tarea: "Evaluar un caso nuevo que llegó",
+    pasos: [
+      "Triage → escribe nombre, género, fase percibida y una descripción libre del caso.",
+      "«Analizar caso». Devuelve prioridad, motor de entrada recomendado y la razón.",
+      "Si entra al sistema, créalo como proyecto y empieza por el motor que recomendó.",
+    ],
+  },
+];
+
+export const GUIA_EVIDENCIA: ManualBloque = {
+  titulo: "Cómo leer los niveles de evidencia",
+  parrafos: [
+    "Cada afirmación de la IA lleva un nivel de 1 a 4. No es decoración: es el freno que evita que una interpretación se te presente como un hecho. Úsalo para decidir cuánto peso le das.",
+  ],
+  puntos: [
+    { termino: "Nivel 4 — Alta evidencia", texto: "Data completa y consistente. Se puede decidir sobre esto." },
+    { termino: "Nivel 3 — Evidencia sólida", texto: "La lectura se sostiene, pero falta un pedazo. Decide, con la reserva anotada." },
+    {
+      termino: "Nivel 2 — Evidencia parcial",
+      texto: "Fuente incompleta o no verificada (típico de data pública de competencia). Sirve para calibrar posición, no para decisiones de precisión como presupuesto o timing.",
+    },
+    {
+      termino: "Nivel 1 — Especulativo",
+      texto: "Es criterio, no dato. Úsalo como hipótesis a validar, nunca como base de una decisión con dinero encima.",
+    },
+  ],
+};
+
+export const GUIA_CADENCIA: ManualBloque = {
+  titulo: "Cadencia sugerida",
+  puntos: [
+    { termino: "Cuando llega data nueva", texto: "Actualiza la sección y vuelve a generar su lectura. Toma dos minutos." },
+    { termino: "Cada semana", texto: "Revisa KPIs y Management: si el ritmo de gasto o una decisión pendiente se movió, ahí se ve primero. Marca en el informe los pasos que ya cumpliste." },
+    { termino: "Cada mes o al cerrar un hito", texto: "Emite el Informe Final y archívalo. Ese es el histórico que después muestra la evolución." },
+    { termino: "Antes de una reunión o demo", texto: "Emite informe fresco, edítalo a tu criterio e imprímelo a PDF. Es el documento que se presenta." },
+  ],
+};
+
+export const GUIA_PROBLEMAS: ManualBloque = {
+  titulo: "Si algo no funciona",
+  puntos: [
+    {
+      termino: "«ANTHROPIC_API_KEY no está configurada»",
+      texto: "El servidor no tiene la llave de la IA. Se configura en las variables de entorno del despliegue; sin ella, la data y la edición funcionan, pero no la interpretación.",
+    },
+    {
+      termino: "Abrí en otro dispositivo y no está mi data",
+      texto: "Es lo esperado hoy: la información vive en el navegador donde la cargaste. Descarga el informe o archívalo en Notion para llevarlo.",
+    },
+    {
+      termino: "«Notion no está configurado»",
+      texto: "Faltan sus dos variables en el servidor. La descarga a archivo funciona igual y no depende de eso.",
+    },
+    {
+      termino: "El informe salió flaco o genérico",
+      texto: "Casi siempre es falta de insumo: pocos motores con data o pocas lecturas generadas. Carga más, genera lecturas por sección y vuelve a emitirlo.",
+    },
+    {
+      termino: "Perdí lo que había editado en el informe",
+      texto: "«Volver a emitir» descarta la edición y pide un borrador nuevo. Si vas a regenerar, descarga antes la versión trabajada.",
+    },
+  ],
+};
+
+export const GUIA_REGLA_ORO =
+  "La IA interpreta; tú diriges. Si una lectura no te suena, presiónala con una pregunta abierta en vez de aceptarla — el criterio final es tuyo, y ese es justamente el que ninguna otra plataforma tiene.";
+
+// ---------------------------------------------------------------------------
+// MANUAL DEL SISTEMA
+// ---------------------------------------------------------------------------
+
+export const SISTEMA_INTRO =
+  "VINCERE Intelligence Platform es el instrumento donde el método VINCERE de dirección estratégica musical opera sobre data real. Este manual explica qué es el sistema, de qué partes se compone y cómo funciona por dentro — para entenderlo, para operarlo con criterio y para poder explicarlo a un tercero.";
+
+export const SISTEMA_QUE_ES: ManualBloque = {
+  titulo: "Qué es y qué no es",
+  puntos: [
+    {
+      termino: "Es una plataforma de interpretación",
+      texto: "Paneles navegables con data, y encima una capa que la lee con el método VINCERE: qué significa, por qué pasa, qué riesgo crece, qué decisión conviene.",
+    },
+    {
+      termino: "No es un proveedor de data",
+      texto: "No compite en cobertura con Chartmetric ni pretende tener toda la data del planeta. La ventaja es el criterio, no el volumen.",
+    },
+    {
+      termino: "No es un producto para clientes",
+      texto: "Es herramienta interna de un solo operador. Un tercero puede verla en pantalla; no la opera.",
+    },
+    {
+      termino: "No decide por ti",
+      texto: "Diagnostica, compara y recomienda con una postura clara. La decisión y su ejecución son del director.",
+    },
+  ],
+};
+
+export const SISTEMA_ARQUITECTURA: ManualBloque = {
+  titulo: "Las tres capas de cada sección",
+  parrafos: [
+    "Todas las secciones están construidas igual, y esa repetición es deliberada: se aprende una vez y sirve para todas.",
+  ],
+  puntos: [
+    {
+      termino: "Capa data",
+      texto: "Los números y hechos del motor. En las secciones numéricas se ve como paneles y gráficas; en las de criterio, como campos de texto estructurados. Todo editable a mano.",
+    },
+    {
+      termino: "Capa interpretación",
+      texto: "La lectura VINCERE sobre esa data, con nivel de evidencia por afirmación. Es lo que un dashboard convencional no tiene.",
+    },
+    {
+      termino: "Capa acción",
+      texto: "Preguntas abiertas con la data como contexto, ajuste de escenarios donde aplica, y el registro a Notion.",
+    },
+  ],
+};
+
+export const SISTEMA_MOTORES: ManualMotor[] = [
   {
     motor: "Resumen · Momentum",
     cuandoUsarlo: "Para saber dónde está la carrera hoy y hacia dónde va el trimestre.",
@@ -132,63 +335,107 @@ export const MANUAL_MOTORES: ManualMotor[] = [
   },
 ];
 
-export const MANUAL_EVIDENCIA: ManualBloque = {
-  titulo: "Cómo leer los niveles de evidencia",
+export const SISTEMA_MOTORES_PENDIENTES = [
+  "Marca",
+  "A&R y Colaboraciones",
+  "Finanzas y Presupuesto",
+  "Shows y Touring",
+  "Monetización",
+  "Valoración de Carrera",
+  "Legal y Derechos",
+  "Relaciones de Industria",
+  "Playbook",
+  "Plan Stress-Test",
+];
+
+export const SISTEMA_IA: ManualBloque = {
+  titulo: "Cómo funciona la capa de IA",
   parrafos: [
-    "Cada afirmación de la IA lleva un nivel de 1 a 4. No es decoración: es el freno que evita que una interpretación se te presente como un hecho. Úsalo para decidir cuánto peso le das.",
+    "Toda la interpretación la produce Claude (Sonnet 5) siguiendo un prompt propio que codifica el método VINCERE. No es un chat genérico conectado a la plataforma: el modelo recibe reglas estrictas y devuelve una estructura fija que la aplicación sabe leer.",
   ],
   puntos: [
-    { termino: "Nivel 4 — Alta evidencia", texto: "Data completa y consistente. Se puede decidir sobre esto." },
-    { termino: "Nivel 3 — Evidencia sólida", texto: "La lectura se sostiene, pero falta un pedazo. Decide, con la reserva anotada." },
     {
-      termino: "Nivel 2 — Evidencia parcial",
-      texto: "Fuente incompleta o no verificada (típico de data pública de competencia). Sirve para calibrar posición, no para decisiones de precisión como presupuesto o timing.",
+      termino: "Recibe solo la data de su alcance",
+      texto: "La lectura de una sección recibe únicamente la data de esa sección, para que interprete específico. El informe final es la excepción: recibe el proyecto entero, y por eso puede cruzar motores.",
     },
     {
-      termino: "Nivel 1 — Especulativo",
-      texto: "Es criterio, no dato. Úsalo como hipótesis a validar, nunca como base de una decisión con dinero encima.",
+      termino: "Tiene prohibido inventar",
+      texto: "Las reglas del sistema le impiden crear cifras, canciones, ciudades o fechas que no estén en el contexto. Si falta información, debe decirlo y bajar el nivel de evidencia en vez de rellenar.",
+    },
+    {
+      termino: "Ajusta por fase de carrera",
+      texto: "Nunca evalúa a un artista emergente con la vara de uno consolidado. En comparaciones, esto es lo que evita conclusiones falsas.",
+    },
+    {
+      termino: "Declara su confianza",
+      texto: "Cada afirmación sale con nivel 1-4. Es obligatorio en el formato de salida, así que no puede omitirlo.",
+    },
+    {
+      termino: "Interpretar, no repetir",
+      texto: "Tiene instrucción explícita de no repetir el dato que ya está en pantalla. Si una lectura solo parafrasea el panel, es una lectura fallida.",
+    },
+    {
+      termino: "El análisis de letra cruza con las métricas",
+      texto: "Al leer una canción no juzga la letra en el vacío: la contrasta con su retención y su skip, y con la audiencia y la marca del artista.",
     },
   ],
 };
 
-export const MANUAL_CADENCIA: ManualBloque = {
-  titulo: "Cadencia sugerida",
-  puntos: [
-    { termino: "Cuando llega data nueva", texto: "Actualiza la sección y vuelve a generar su lectura. Toma dos minutos." },
-    { termino: "Cada semana", texto: "Revisa KPIs y Management: si el ritmo de gasto o una decisión pendiente se movió, ahí se ve primero." },
-    { termino: "Cada mes o al cerrar un hito", texto: "Emite el Informe Final y archívalo. Ese es el histórico que después muestra la evolución." },
-    { termino: "Antes de una reunión o demo", texto: "Emite informe fresco e imprímelo a PDF. Es el documento que se presenta." },
+export const SISTEMA_EVIDENCIA: ManualBloque = {
+  titulo: "Por qué existen los niveles de evidencia",
+  parrafos: [
+    "Es la pieza que separa este sistema de un generador de texto convincente. Una interpretación segura y una especulación se ven exactamente igual escritas; el nivel obliga a distinguirlas y deja el juicio final del lado del director.",
+    "Los niveles no son solo de la IA: en el informe se pueden corregir a mano. Si tu criterio dice que una lectura es más floja de lo que declaró el modelo, se baja — y el documento queda con esa reserva registrada.",
   ],
 };
 
-export const MANUAL_LIMITES: ManualBloque = {
-  titulo: "Límites que debes conocer",
-  parrafos: [
-    "Nada de esto rompe la plataforma, pero saberlo evita sorpresas.",
-  ],
+export const SISTEMA_DATOS: ManualBloque = {
+  titulo: "Dónde vive la información",
   puntos: [
     {
-      termino: "La data vive en este navegador",
-      texto: "Lo que cargas se guarda en el dispositivo donde lo cargaste. Si abres en el celular no verás lo del computador. Por eso el informe se descarga y se archiva en Notion.",
+      termino: "En el navegador de este dispositivo",
+      texto: "Toda la data de VINCERE (proyectos, canciones, lecturas, informes) se guarda localmente en el navegador donde la cargaste. No se sincroniza entre dispositivos.",
     },
     {
-      termino: "La IA necesita la API key configurada",
-      texto: "Sin ANTHROPIC_API_KEY en el servidor, los botones de interpretación avisan con un mensaje en vez de responder.",
+      termino: "Separada del C.C.O. E.V.",
+      texto: "VINCERE tiene su propio almacenamiento, independiente del resto de la aplicación. Vaciar uno no afecta al otro.",
     },
     {
-      termino: "Notion es opcional",
-      texto: "Sin sus variables configuradas, «Archivar» te lo dice y no escribe nada. La descarga a archivo funciona siempre.",
+      termino: "Notion como archivo histórico",
+      texto: "La plataforma es donde se trabaja; Notion guarda el registro. El informe se archiva completo con un botón, si sus credenciales están configuradas.",
     },
     {
-      termino: "La data entra a mano",
-      texto: "Todavía no hay conexión con Spotify, YouTube ni Google Trends. La arquitectura está lista para eso, pero hoy se pega manualmente.",
+      termino: "El informe descargado es tu copia portátil",
+      texto: "Se baja en formato Markdown: se abre en cualquier editor, se pega en Word o en Notion sin perder la estructura.",
+    },
+  ],
+};
+
+export const SISTEMA_ALCANCE: ManualBloque = {
+  titulo: "Alcance y límites de esta versión",
+  puntos: [
+    {
+      termino: "Un solo usuario",
+      texto: "No hay cuentas, roles ni permisos. El acceso se protege con la contraseña de la aplicación.",
+    },
+    {
+      termino: "Data manual",
+      texto: "No hay conexión con Spotify, YouTube, Meta ni Google Trends. La arquitectura está preparada para conectarlas después sin rehacer las secciones.",
+    },
+    {
+      termino: "Sin análisis técnico de audio",
+      texto: "La lectura de canción trabaja sobre la letra y las métricas. El análisis del máster (MIR) es fase posterior.",
+    },
+    {
+      termino: "Diez motores más pendientes",
+      texto: "Marca, A&R, Finanzas, Shows, Monetización, Valoración, Legal, Relaciones, Playbook y Plan Stress-Test se activan uno a uno según la necesidad real de los proyectos.",
     },
     {
       termino: "Los datos de ejemplo no son reales",
-      texto: "SETTE y LUNA REBEL arrancan con cifras de muestra para que veas la plataforma funcionando. Reemplázalas por las tuyas antes de decidir nada con ellas.",
+      texto: "SETTE y LUNA REBEL arrancan con cifras de muestra para que la plataforma se vea funcionando. Reemplázalas por las tuyas antes de decidir nada con ellas.",
     },
   ],
 };
 
-export const MANUAL_REGLA_ORO =
-  "La IA interpreta; tú diriges. Si una lectura no te suena, presiónala con una pregunta abierta en vez de aceptarla — el criterio final es tuyo, y ese es justamente el que ninguna otra plataforma tiene.";
+export const SISTEMA_FOSO =
+  "Cualquiera puede suscribirse mañana a una plataforma de data musical. Lo que no se puede comprar es el método: los motores, las reglas de interpretación, el playbook que se acumula con cada análisis y el criterio de quien dirige. Esta plataforma es donde ese método deja de vivir en conversaciones y pasa a operar como instrumento — proyecto tras proyecto, informe tras informe.";

@@ -117,7 +117,14 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 - **Análisis de letra por canción**: dentro de Song Intelligence se pega la letra y la IA lee la canción como obra (tema real, arco emocional, gancho, audiencia, fit de marca, potencial, qué reescribir y la decisión de gestión), cruzándola con las métricas de esa canción.
 - **Informe Final**: la plataforma emite el entregable del proyecto — sinopsis central, veredicto, bloques que cruzan motores entre sí, riesgos, oportunidades y próximos pasos con responsable y plazo. Se descarga a Markdown, se imprime a PDF (hay estilos de impresión en claro) y se archiva en Notion.
 
-**El manual de operación vive dentro de la plataforma**, en la sección "Cómo se opera" (`src/lib/vincere/manual.ts` es su fuente única). Ahí está el ciclo de trabajo, cuándo usar cada motor, cómo leer los niveles de evidencia, la cadencia sugerida y los límites conocidos — no se duplica aquí para que no se desincronice.
+- **Gestión de proyectos**: botón "+ Proyecto" en la barra superior — crear proyectos propios o referencias de mercado, renombrarlos, cambiarles la fase y eliminarlos.
+
+**La documentación vive dentro de la plataforma**, en la sección "Documentación" (`src/lib/vincere/manual.ts` es su fuente única), con dos documentos imprimibles:
+
+- **Guía del Usuario** — primeros pasos, el ciclo de trabajo completo, tareas paso a paso, cadencia sugerida y qué hacer cuando algo falla.
+- **Manual del Sistema** — qué es VINCERE y qué no, las tres capas, los motores activos y los pendientes, cómo funciona la capa de IA, por qué existen los niveles de evidencia, dónde vive la información y el alcance real de esta versión.
+
+No se duplican aquí para que no se desincronicen.
 
 La interpretación, las preguntas por sección, el triage, el análisis de letra y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`. La data de la plataforma se persiste en el `localStorage` del navegador (clave `vincere-storage`), independiente del store del C.C.O. — hoy no se sincroniza a Postgres, así que es por dispositivo.
 
