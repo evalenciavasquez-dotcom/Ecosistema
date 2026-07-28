@@ -8,6 +8,7 @@ import type {
   EscenarioProfundo,
   GananciaPerdida,
   HechoOHipotesis,
+  MetricaFinanciera,
   RecomendacionEjecutiva,
   Rentabilidad,
   StakeholderAnalysis,
@@ -186,6 +187,10 @@ export const strategicCases = pgTable("strategic_cases", {
   hipotesisSeCumplio: boolean("hipotesis_se_cumplio"),
   costoDiasRunway: doublePrecision("costo_dias_runway"),
   checklistProceso: jsonb("checklist_proceso").$type<ChecklistProceso>(),
+  // --- Debate real del panel (Bloque 2) ---
+  metricasFinancieras: jsonb("metricas_financieras").$type<MetricaFinanciera[]>(),
+  argumentoEnContra: text("argumento_en_contra"),
+  costoDeEsperar30Dias: text("costo_de_esperar_30_dias"),
 });
 
 export const tiempo = pgTable("tiempo", {

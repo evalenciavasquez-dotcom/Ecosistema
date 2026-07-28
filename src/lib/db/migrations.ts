@@ -34,7 +34,10 @@ export async function ensureStrategicCaseColumns() {
       ADD COLUMN IF NOT EXISTS hipotesis_critica text,
       ADD COLUMN IF NOT EXISTS hipotesis_se_cumplio boolean,
       ADD COLUMN IF NOT EXISTS costo_dias_runway double precision,
-      ADD COLUMN IF NOT EXISTS checklist_proceso jsonb`)
+      ADD COLUMN IF NOT EXISTS checklist_proceso jsonb,
+      ADD COLUMN IF NOT EXISTS metricas_financieras jsonb,
+      ADD COLUMN IF NOT EXISTS argumento_en_contra text,
+      ADD COLUMN IF NOT EXISTS costo_de_esperar_30_dias text`)
   );
   await getDb().execute(sql.raw(`ALTER TABLE decisiones ADD COLUMN IF NOT EXISTS fecha_decision text`));
   strategicCaseColumnsEnsured = true;

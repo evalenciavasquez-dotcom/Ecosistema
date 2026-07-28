@@ -14,7 +14,6 @@ import {
   StrategicCase,
 } from "@/lib/types";
 import { buildAnalysisContext, proyectoNombre } from "@/lib/selectors";
-import { genId } from "@/lib/id";
 import { useOpenParam } from "@/lib/useOpenParam";
 
 const ESCENARIO_ORDEN: EscenarioTipo[] = [
@@ -117,7 +116,7 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
   const historial = useAppStore((s) => s.historial);
   const decisiones = useAppStore((s) => s.decisiones);
   const strategicCases = useAppStore((s) => s.strategicCases);
-  const addStrategicCase = useAppStore((s) => s.addStrategicCase);
+  const crearCasoDesdeAnalisis = useAppStore((s) => s.crearCasoDesdeAnalisis);
   const resolverDecision = useAppStore((s) => s.resolverDecision);
   const updateDecision = useAppStore((s) => s.updateDecision);
   const updateStrategicCase = useAppStore((s) => s.updateStrategicCase);
@@ -160,15 +159,7 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
         setErrorAnalisis(data.error || "No se pudo generar el análisis.");
         return;
       }
-      const nuevoCaso: StrategicCase = {
-        id: genId("case"),
-        decisionId: decision.id,
-        ...data.result,
-        nivelAnalisis: "3",
-        modeloUsado: "claude-sonnet-5",
-        creadoEn: new Date().toISOString(),
-      };
-      addStrategicCase(nuevoCaso);
+      crearCasoDesdeAnalisis(decision.id, data.result, false);
     } catch {
       setErrorAnalisis("Error de conexión al generar el análisis.");
     } finally {
@@ -444,6 +435,28 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
         </div>
       )}
 
+      {c.metricasFinancieras && c.metricasFinancieras.length > 0 && (
+        <Section title="Chequeo financiero — antes de cualquier opinión">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {c.metricasFinancieras.map((m, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-3 ${
+                  m.semaforo === "verde"
+                    ? "border-accent-green/40 bg-accent-green/5"
+                    : m.semaforo === "amarillo"
+                      ? "border-accent-amber/40 bg-accent-amber/5"
+                      : "border-accent-red/40 bg-accent-red/5"
+                }`}
+              >
+                <div className="text-[11px] uppercase tracking-wide text-muted">{m.nombre}</div>
+                <div className="text-sm font-medium mt-1">{m.valor}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
       <Section title="Resumen ejecutivo">
         {c.tipoDeCaso && (
           <div className="mb-2 text-xs text-muted">
@@ -628,6 +641,31 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
           })}
         </div>
       </Section>
+
+      {(c.argumentoEnContra || c.hipotesisCritica || c.costoDeEsperar30Dias) && (
+        <Section title="Antes de decidir">
+          {c.argumentoEnContra && (
+            <div className="rounded-xl border border-accent-red/40 bg-accent-red/5 p-4 mb-3">
+              <div className="text-[11px] uppercase tracking-wide text-accent-red mb-1">
+                El mejor argumento en contra
+              </div>
+              <p className="text-sm">{c.argumentoEnContra}</p>
+            </div>
+          )}
+          {c.hipotesisCritica && (
+            <div className="rounded-xl border border-accent-amber/40 bg-accent-amber/5 p-4 mb-3">
+              <div className="text-[11px] uppercase tracking-wide text-accent-amber mb-1">Hipótesis crítica</div>
+              <p className="text-sm">{c.hipotesisCritica}</p>
+            </div>
+          )}
+          {c.costoDeEsperar30Dias && (
+            <div className="rounded-xl border border-border-subtle bg-surface p-4">
+              <div className="text-[11px] uppercase tracking-wide text-muted mb-1">Costo de esperar 30 días</div>
+              <p className="text-sm">{c.costoDeEsperar30Dias}</p>
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section title="Recomendación ejecutiva">
         <div className="rounded-xl border border-accent-blue/50 bg-accent-blue/10 p-4 space-y-3">

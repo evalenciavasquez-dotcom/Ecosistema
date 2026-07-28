@@ -391,6 +391,12 @@ export interface RecomendacionEjecutiva {
   confianzaExplicacion: string;
 }
 
+export interface MetricaFinanciera {
+  nombre: string;
+  valor: string;
+  semaforo: "rojo" | "amarillo" | "verde";
+}
+
 export type NivelAnalisis = "1" | "2" | "3";
 
 // Checklist de PROCESO (no de acierto) — mide si el análisis corrió como
@@ -434,4 +440,8 @@ export interface StrategicCase {
   hipotesisSeCumplio?: boolean | null;
   costoDiasRunway?: number | null;
   checklistProceso?: ChecklistProceso | null;
+  // --- Debate real del panel (Bloque 2) ---
+  metricasFinancieras?: MetricaFinanciera[] | null;
+  argumentoEnContra?: string | null;
+  costoDeEsperar30Dias?: string | null;
 }

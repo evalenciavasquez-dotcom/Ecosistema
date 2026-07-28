@@ -183,7 +183,10 @@ const STATEMENTS = [
     hipotesis_critica text,
     hipotesis_se_cumplio boolean,
     costo_dias_runway double precision,
-    checklist_proceso jsonb
+    checklist_proceso jsonb,
+    metricas_financieras jsonb,
+    argumento_en_contra text,
+    costo_de_esperar_30_dias text
   )`,
 ];
 

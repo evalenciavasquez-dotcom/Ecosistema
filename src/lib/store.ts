@@ -102,6 +102,8 @@ interface AppState {
   aceptarAnalisisBandeja: (id: string) => Promise<void>;
   rechazarAnalisisBandeja: (id: string) => void;
   ejecutarAnalisisDecision: (decisionId: string, detectoDisparador?: boolean) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  crearCasoDesdeAnalisis: (decisionId: string, result: any, detectoDisparador?: boolean) => void;
   updateStrategicCase: (decisionId: string, patch: Partial<StrategicCase>) => void;
 
   addProyecto: (proyecto: Omit<Proyecto, "id" | "creadoEn">) => string;
@@ -578,27 +580,37 @@ export const useAppStore = create<AppState>()(
           });
           const data = await res.json().catch(() => null);
           if (!res.ok || !data?.result) return;
-          const checklistProceso: ChecklistProceso = {
-            detectoDisparador,
-            corrioMetricasAntesDeOpinar: false,
-            produjoArgumentoEnContra: false,
-            nombroHipotesisCritica: false,
-            evaluoCostoDeEsperar: false,
-          };
-          const nuevoCaso: StrategicCase = {
-            id: genId("case"),
-            decisionId,
-            ...data.result,
-            nivelAnalisis: "3",
-            modeloUsado: "claude-sonnet-5",
-            creadoEn: new Date().toISOString(),
-            recomendacionSistema: data.result?.recomendacion?.decision ?? null,
-            checklistProceso,
-          };
-          get().addStrategicCase(nuevoCaso);
+          get().crearCasoDesdeAnalisis(decisionId, data.result, detectoDisparador);
         } catch (err) {
           console.warn("No se pudo ejecutar el análisis automático de la decisión", err);
         }
+      },
+
+      // Arma el StrategicCase a partir de lo que devolvió /api/analyze —
+      // compartido entre el disparo automático (arriba) y el botón manual
+      // "Analizar con IA" de Decisiones, para no duplicar el mapeo de
+      // campos en dos lugares. Los 4 ítems del checklist de proceso que
+      // dependen del motor de análisis (Bloque 2) ya son obligatorios en el
+      // esquema de salida — si la llamada tuvo éxito, corrieron de verdad.
+      crearCasoDesdeAnalisis: (decisionId, result, detectoDisparador = false) => {
+        const checklistProceso: ChecklistProceso = {
+          detectoDisparador,
+          corrioMetricasAntesDeOpinar: true,
+          produjoArgumentoEnContra: true,
+          nombroHipotesisCritica: true,
+          evaluoCostoDeEsperar: true,
+        };
+        const nuevoCaso: StrategicCase = {
+          id: genId("case"),
+          decisionId,
+          ...result,
+          nivelAnalisis: "3",
+          modeloUsado: "claude-sonnet-5",
+          creadoEn: new Date().toISOString(),
+          recomendacionSistema: result?.recomendacion?.decision ?? null,
+          checklistProceso,
+        };
+        get().addStrategicCase(nuevoCaso);
       },
 
       updateStrategicCase: (decisionId, patch) => {
