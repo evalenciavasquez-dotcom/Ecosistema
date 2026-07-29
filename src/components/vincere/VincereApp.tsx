@@ -12,6 +12,7 @@ import ManagementSection from "./sections/ManagementSection";
 import KpisSection from "./sections/KpisSection";
 import TriageSection from "./sections/TriageSection";
 import IngestaSection from "./sections/IngestaSection";
+import StressTestSection from "./sections/StressTestSection";
 import InformeSection from "./sections/InformeSection";
 import ManualSection from "./sections/ManualSection";
 import ComparacionSection from "./sections/ComparacionSection";
@@ -87,6 +88,8 @@ function SectionRouter({
       return <TriageSection />;
     case "ingesta":
       return <IngestaSection proyecto={proyecto} />;
+    case "stress":
+      return <StressTestSection proyecto={proyecto} />;
     case "informe":
       return <InformeSection proyecto={proyecto} />;
     case "manual":

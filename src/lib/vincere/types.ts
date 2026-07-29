@@ -22,6 +22,7 @@ export type VincereSeccion =
   | "kpis"
   | "triage"
   | "ingesta"
+  | "stress"
   | "informe"
   | "manual";
 
@@ -35,6 +36,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   kpis: "Ejecución / KPIs",
   triage: "Triage",
   ingesta: "Cargar data",
+  stress: "Plan Stress-Test",
   informe: "Informe Final",
   manual: "Documentación",
 };
@@ -191,6 +193,54 @@ export interface VincereIngestaResultado {
   confianza: VincereNivel;
 }
 
+// --- Plan Stress-Test ---
+// Se pega el plan de un tercero (un manager, un sello, un promotor) y el
+// sistema lo somete a prueba contra la realidad de ESTE artista: qué lo hace
+// funcionar, qué lo rompe, y qué habría que exigir antes de aceptarlo.
+
+export type VincereVariableTipo = "ganadora" | "perdedora" | "incierta";
+export type VincereImpacto = "alto" | "medio" | "bajo";
+
+export const VINCERE_VARIABLE_LABEL: Record<VincereVariableTipo, string> = {
+  ganadora: "Ganadora",
+  perdedora: "Perdedora",
+  incierta: "Incierta",
+};
+
+export interface VincereVariablePlan {
+  variable: string;
+  lectura: string;
+  tipo: VincereVariableTipo;
+  impacto: VincereImpacto;
+  nivel: VincereNivel;
+}
+
+export const VINCERE_ESCENARIOS_PLAN = ["Pierde", "Break-even", "Probable", "Gana", "Expansión"] as const;
+export type VincereEscenarioNombre = (typeof VINCERE_ESCENARIOS_PLAN)[number];
+
+export interface VincereEscenarioPlan {
+  nombre: VincereEscenarioNombre;
+  queOcurre: string;
+  quePasaSiSeDa: string; // Impacto concreto en la carrera.
+  probabilidad: string; // Lectura de qué tan plausible es, con su razón.
+  nivel: VincereNivel;
+}
+
+export interface VincereStressTest {
+  id: string;
+  titulo: string;
+  fuente: string; // De quién viene el plan.
+  resumenPlan: string;
+  supuestos: string[]; // Lo que el plan da por hecho sin decirlo.
+  variables: VincereVariablePlan[];
+  escenarios: VincereEscenarioPlan[];
+  puntoDeQuiebre: string; // Qué tiene que fallar para que se caiga entero.
+  condiciones: string[]; // Qué exigir antes de aceptar.
+  veredicto: string;
+  nivelGlobal: VincereNivel;
+  creadoEn: string;
+}
+
 // --- Histórico: que el sistema acumule en vez de sobrescribir ---
 // Cada vez que entra data nueva se guarda una foto de los indicadores. Sin
 // esto la plataforma solo sabe cómo está la carrera hoy, nunca cómo llegó
@@ -277,6 +327,7 @@ export interface VincereProyecto {
   informesArchivados?: VincereInforme[];
   alertas?: VincereAlerta[];
   historial?: VincereSnapshot[];
+  stressTests?: VincereStressTest[];
   creadoEn: string;
 }
 

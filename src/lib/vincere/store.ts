@@ -21,6 +21,7 @@ import {
   VincereResumen,
   VincereSeccion,
   VincereSnapshot,
+  VincereStressTest,
   VincereTriageCaso,
   VincereZonaCalor,
 } from "./types";
@@ -97,6 +98,9 @@ interface VincereState {
   addQA: (proyectoId: string, seccion: VincereSeccion, entry: VincereQAEntry) => void;
   setInforme: (proyectoId: string, informe: VincereInforme) => void;
   updateInforme: (proyectoId: string, patch: Partial<VincereInforme>) => void;
+
+  addStressTest: (proyectoId: string, test: VincereStressTest) => void;
+  eliminarStressTest: (proyectoId: string, testId: string) => void;
 
   capturarSnapshot: (proyectoId: string, etiqueta: string) => void;
   eliminarSnapshot: (proyectoId: string, snapshotId: string) => void;
@@ -346,6 +350,23 @@ export const useVincereStore = create<VincereState>()(
             qaLog: { ...p.qaLog, [seccion]: [...(p.qaLog[seccion] ?? []), entry] },
           })),
         })),
+      // Los planes evaluados se acumulan: sirven de registro de qué se ofreció
+      // y con qué criterio se aceptó o se rechazó.
+      addStressTest: (proyectoId, test) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            stressTests: [test, ...(p.stressTests ?? [])].slice(0, 20),
+          })),
+        })),
+      eliminarStressTest: (proyectoId, testId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            stressTests: (p.stressTests ?? []).filter((t) => t.id !== testId),
+          })),
+        })),
+
       // Guarda una foto de los indicadores. Se descarta la del mismo día para
       // que cargar tres veces en una tarde no llene el histórico de ruido:
       // interesa la evolución, no cada pulsación.

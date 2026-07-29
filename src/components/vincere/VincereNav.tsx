@@ -13,6 +13,7 @@ const CORE_SECTIONS: VincereSeccion[] = [
   "management",
   "kpis",
   "triage",
+  "stress",
 ];
 
 // Secciones P1 del PRD — se activan una a una en fases posteriores.
@@ -26,7 +27,6 @@ const PROXIMAMENTE = [
   "Legal y Derechos",
   "Relaciones de Industria",
   "Playbook",
-  "Plan Stress-Test",
 ];
 
 export default function VincereNav() {

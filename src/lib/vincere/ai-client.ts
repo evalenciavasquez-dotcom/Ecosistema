@@ -9,6 +9,8 @@ import {
   VincerePotencialCancion,
   VincerePrioridadPaso,
   VincereSeccion,
+  VincereStressTest,
+  VINCERE_ESCENARIOS_PLAN,
 } from "./types";
 
 function clampNivel(n: unknown): VincereNivel {
@@ -256,6 +258,70 @@ export async function fetchInforme(contexto: unknown): Promise<VincereInforme> {
     nivelGlobal: clampNivel(r.nivelGlobal),
     generadoEn: new Date().toISOString(),
     editadoEn: null,
+  };
+}
+
+const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
+const IMPACTOS = ["alto", "medio", "bajo"] as const;
+
+// Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchStressTest(input: {
+  data?: string;
+  mediaType?: string;
+  texto?: string;
+  nota?: string;
+  artista: unknown;
+}): Promise<Omit<VincereStressTest, "id">> {
+  const res = await fetch("/api/vincere/stress-test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  const escenariosRaw = Array.isArray(r.escenarios) ? r.escenarios : [];
+  // Se fuerza el orden canónico: los cinco escenarios siempre se leen igual.
+  const escenarios = VINCERE_ESCENARIOS_PLAN.map((nombre) => {
+    const e = escenariosRaw.find((x: { nombre?: string }) => x?.nombre === nombre) ?? {};
+    return {
+      nombre,
+      queOcurre: e.queOcurre ?? "",
+      quePasaSiSeDa: e.quePasaSiSeDa ?? "",
+      probabilidad: e.probabilidad ?? "",
+      nivel: clampNivel(e.nivel),
+    };
+  });
+
+  return {
+    titulo: r.titulo ?? "Plan sin título",
+    fuente: r.fuente ?? "No identificado",
+    resumenPlan: r.resumenPlan ?? "",
+    supuestos: textos(r.supuestos),
+    variables: (Array.isArray(r.variables) ? r.variables : []).map(
+      (v: { variable?: string; lectura?: string; tipo?: string; impacto?: string; nivel?: number }) => ({
+        variable: v.variable ?? "",
+        lectura: v.lectura ?? "",
+        tipo: TIPOS_VARIABLE.includes(v.tipo as (typeof TIPOS_VARIABLE)[number])
+          ? (v.tipo as (typeof TIPOS_VARIABLE)[number])
+          : "incierta",
+        impacto: IMPACTOS.includes(v.impacto as (typeof IMPACTOS)[number])
+          ? (v.impacto as (typeof IMPACTOS)[number])
+          : "medio",
+        nivel: clampNivel(v.nivel),
+      })
+    ),
+    escenarios,
+    puntoDeQuiebre: r.puntoDeQuiebre ?? "",
+    condiciones: textos(r.condiciones),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    creadoEn: new Date().toISOString(),
   };
 }
 

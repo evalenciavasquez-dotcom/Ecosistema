@@ -178,6 +178,16 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Someter a prueba un plan que te propusieron",
+    pasos: [
+      "Plan Stress-Test → suelta el PDF o la captura de la propuesta, o pégala como texto.",
+      "Opcional: escribe qué te preocupa («me inquieta el anticipo»). La evaluación lo tiene en cuenta.",
+      "«Evaluar plan». Tarda: cruza la propuesta con la fase, el catálogo, la audiencia y los KPIs del artista.",
+      "Lee primero el veredicto y los supuestos ocultos — ahí suele estar lo que el plan no te dijo.",
+      "Las condiciones son tu lista para la negociación: qué exigir antes de aceptar.",
+    ],
+  },
+  {
     tarea: "Evaluar un caso nuevo que llegó",
     pasos: [
       "Triage → escribe nombre, género, fase percibida y una descripción libre del caso.",
@@ -346,6 +356,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     queCargar: "Nombre, género, fase percibida y una descripción libre del caso.",
   },
   {
+    motor: "Plan Stress-Test",
+    cuandoUsarlo: "Cuando llega una propuesta de un tercero: contrato de sello, oferta de booking, plan de lanzamiento, gira. Antes de responder.",
+    queCargar: "El plan tal como te llegó — PDF, captura o texto pegado. Se juzga contra la realidad de este artista, no en abstracto.",
+  },
+  {
     motor: "Comparación",
     cuandoUsarlo: "Para medir contra el mercado o decidir entre dos proyectos.",
     queCargar: "Nada extra: usa la data ya cargada de ambos. Ajusta la lectura por fase de carrera.",
@@ -367,7 +382,6 @@ export const SISTEMA_MOTORES_PENDIENTES = [
   "Legal y Derechos",
   "Relaciones de Industria",
   "Playbook",
-  "Plan Stress-Test",
 ];
 
 export const SISTEMA_IA: ManualBloque = {
@@ -482,8 +496,8 @@ export const SISTEMA_ALCANCE: ManualBloque = {
       texto: "La lectura de canción trabaja sobre la letra y las métricas. El análisis del máster (MIR) es fase posterior.",
     },
     {
-      termino: "Diez motores más pendientes",
-      texto: "Marca, A&R, Finanzas, Shows, Monetización, Valoración, Legal, Relaciones, Playbook y Plan Stress-Test se activan uno a uno según la necesidad real de los proyectos.",
+      termino: "Nueve motores más pendientes",
+      texto: "Marca, A&R, Finanzas, Shows, Monetización, Valoración, Legal, Relaciones y Playbook se activan uno a uno según la necesidad real de los proyectos.",
     },
     {
       termino: "Los datos de ejemplo no son reales",

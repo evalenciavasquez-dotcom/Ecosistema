@@ -210,9 +210,58 @@ export const informeResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Nivel de evidencia global del informe, según qué tan completa es la data disponible"),
 });
 
+export const stressTestResponseSchema = z.object({
+  titulo: z.string().describe("Nombre corto del plan evaluado, sacado del propio material"),
+  fuente: z.string().describe("De quién viene el plan según el material: un manager, un sello, un promotor, un socio. 'No identificado' si no se dice"),
+  resumenPlan: z.string().describe("Qué propone el plan, en dos o tres frases. Sin juicio todavía — primero hay que entenderlo bien"),
+  supuestos: z
+    .array(z.string())
+    .max(5)
+    .describe("Lo que el plan da por hecho SIN decirlo y de lo que depende que funcione. Es la parte más valiosa del análisis: los planes se caen por sus supuestos ocultos, no por lo que declaran"),
+  variables: z
+    .array(
+      z.object({
+        variable: z.string().describe("La variable concreta del plan"),
+        lectura: z.string().describe("Por qué esta variable juega a favor o en contra, contra la realidad de ESTE artista"),
+        tipo: z
+          .enum(["ganadora", "perdedora", "incierta"])
+          .describe("ganadora: empuja el plan. perdedora: lo compromete. incierta: no hay data para saberlo"),
+        impacto: z.enum(["alto", "medio", "bajo"]).describe("Cuánto mueve el resultado final"),
+        nivel: nivelSchema,
+      })
+    )
+    .min(3)
+    .max(8)
+    .describe("Las variables que deciden si este plan funciona. Ordénalas por impacto, de mayor a menor"),
+  escenarios: z
+    .array(
+      z.object({
+        nombre: z.enum(["Pierde", "Break-even", "Probable", "Gana", "Expansión"]),
+        queOcurre: z.string().describe("Qué pasa en este escenario, concreto"),
+        quePasaSiSeDa: z.string().describe("Impacto real en la carrera del artista si se materializa"),
+        probabilidad: z.string().describe("Qué tan plausible es y por qué, según la data del artista — no un porcentaje inventado"),
+        nivel: nivelSchema,
+      })
+    )
+    .length(5)
+    .describe("Los cinco escenarios, siempre en este orden: Pierde, Break-even, Probable, Gana, Expansión"),
+  puntoDeQuiebre: z
+    .string()
+    .describe("Qué tiene que fallar para que el plan entero se caiga. Una sola cosa, la más frágil de todas"),
+  condiciones: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué habría que exigir, negociar o dejar por escrito ANTES de aceptar. Concretas y negociables, no deseos"),
+  veredicto: z
+    .string()
+    .describe("La postura del director: aceptar, aceptar condicionado, renegociar, pilotear o rechazar — y por qué. Clara y argumentada, nunca un 'depende'"),
+  nivelGlobal: nivelSchema.describe("Qué tan completo estaba el plan y cuánta data del artista respalda esta evaluación"),
+});
+
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
 export type InformeResponse = z.infer<typeof informeResponseSchema>;
 export type IngestResponse = z.infer<typeof ingestResponseSchema>;
+export type StressTestResponse = z.infer<typeof stressTestResponseSchema>;
 export type AskResponse = z.infer<typeof askResponseSchema>;
 export type TriageResponse = z.infer<typeof triageResponseSchema>;
 export type SongAnalysisResponse = z.infer<typeof songAnalysisResponseSchema>;

@@ -115,6 +115,7 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 - **Modo comparación** (P0.8): proyecto propio vs. una referencia de mercado (competencia), con lectura ajustada por macro-fase. Arranca con SETTE (proyecto real) y LUNA REBEL (referencia) precargados.
 - **Registro a Notion** (P0.9): botón "Registrar en Notion" — escribe de verdad si `NOTION_TOKEN` + `NOTION_DATABASE_ID` están configuradas, si no avisa sin romper.
 - **Análisis de letra por canción**: dentro de Song Intelligence se pega la letra y la IA lee la canción como obra (tema real, arco emocional, gancho, audiencia, fit de marca, potencial, qué reescribir y la decisión de gestión), cruzándola con las métricas de esa canción.
+- **Plan Stress-Test** (P1.3): se carga el plan de un tercero (PDF, captura o texto) y el sistema lo somete a prueba **contra la realidad de ese artista** — no en abstracto: el mismo plan puede servirle a un consolidado y arruinar a un emergente. Devuelve los supuestos que el plan da por hecho sin decirlo, las variables ganadoras/perdedoras ordenadas por impacto, los cinco escenarios (Pierde · Break-even · Probable · Gana · Expansión), el punto de quiebre (la pieza única que si falla tumba todo) y las condiciones concretas a exigir antes de aceptar. Los planes evaluados se acumulan como registro de qué se ofreció y con qué criterio se decidió.
 - **Histórico**: cada carga de data guarda una foto de los indicadores (streams, seguidores, Momentum Index, tamaño del catálogo) con fecha y origen — una por día, para que la evolución no se llene de ruido. El panel de Evolución en Resumen muestra la trayectoria por métrica con su delta, y el histórico entra en el contexto de la IA, que tiene instrucción de leer la evolución antes que el valor de hoy. Emitir un informe nuevo archiva el anterior (con lo editado a mano) en vez de destruirlo, y el informe siguiente recibe el previo para contrastar qué recomendó y qué pasos se cumplieron.
 - **Informe Final**: la plataforma emite el entregable del proyecto — sinopsis central, veredicto, bloques que cruzan motores entre sí, riesgos, oportunidades y próximos pasos con responsable y plazo. Se descarga a Markdown, se imprime a PDF (hay estilos de impresión en claro) y se archiva en Notion.
 
@@ -147,6 +148,7 @@ src/
       state/                 GET: estado de VINCERE desde Postgres
       sync/                  POST: guarda proyectos cambiados y estado
       ingest/                Lee capturas, PDF o texto y extrae la data por motor (IA)
+      stress-test/           Somete el plan de un tercero a prueba (IA)
       analyze-song/          Lectura profunda de la letra de una canción (IA)
       informe/               Informe final del proyecto, cruzando motores (IA)
       notion/                Registro a Notion (si está configurado)
