@@ -114,7 +114,8 @@ export const GUIA_CICLO: ManualPaso[] = [
       "«Editar informe» abre el documento: corriges cualquier texto, añades o quitas bloques, riesgos, oportunidades y pasos, y ajustas los niveles de evidencia. Se guarda solo.",
       "Los próximos pasos se marcan como cumplidos desde el propio informe — es tu bitácora de ejecución, no una foto fija.",
       "Cuando esté como lo quieres: se descarga (para Word o Notion) o se imprime a PDF con formato de documento.",
-      "Ojo: «Volver a emitir» pide un borrador nuevo y descarta lo que hayas editado.",
+      "«Volver a emitir» genera un borrador nuevo y archiva el anterior con todo lo que hubieras editado — queda en «Informes anteriores» y se puede recuperar.",
+      "Del segundo informe en adelante la IA compara contra el anterior: qué recomendó, qué pasos cumpliste y si los resultados le dan la razón.",
     ],
   },
   {
@@ -136,7 +137,7 @@ export const GUIA_TAREAS: ManualTarea[] = [
       "Opcional: escribe una nota que oriente la lectura («esto es del último trimestre»).",
       "«Leer y extraer». La IA devuelve qué entendió, repartido por motor.",
       "Revisa cada bloque y desmarca el que no sirva. Lo que no pudo leer aparece listado aparte.",
-      "«Aplicar». La data entra a sus secciones y las alertas quedan guardadas.",
+      "«Aplicar». La data entra a sus secciones, las alertas quedan guardadas y se archiva una foto de los indicadores para el histórico.",
     ],
   },
   {
@@ -407,6 +408,23 @@ export const SISTEMA_IA: ManualBloque = {
       termino: "Propone, no escribe",
       texto: "Ninguna extracción entra sola. La propuesta se revisa bloque por bloque y se aplica solo lo aprobado.",
     },
+    {
+      termino: "Lee evolución, no fotos sueltas",
+      texto: "Cuando hay histórico, la interpretación habla de trayectoria: qué se aceleró, qué se frenó, qué se revirtió. Una cifra que sube más lento que el mes pasado es una lectura distinta de una que simplemente sube.",
+    },
+    {
+      termino: "El informe se compara consigo mismo",
+      texto: "Del segundo informe en adelante recibe el anterior: qué recomendó, qué pasos se cumplieron y cuáles no. Así el sistema se hace responsable de lo que dijo antes en vez de empezar de cero cada vez.",
+    },
+  ],
+};
+
+export const SISTEMA_HISTORICO: ManualBloque = {
+  titulo: "El histórico: cómo el sistema acumula",
+  parrafos: [
+    "Cada carga de data guarda automáticamente una foto de los indicadores (streams, seguidores, Momentum Index, tamaño del catálogo) con su fecha y su origen. Solo se conserva una por día: interesa la evolución, no cada pulsación.",
+    "Eso es lo que convierte la plataforma en memoria en vez de tablero. Sin histórico, cada carga sobrescribe la anterior y el sistema solo sabe cómo está la carrera hoy; con histórico sabe cómo llegó hasta aquí, y la IA puede leer la trayectoria.",
+    "Los informes siguen la misma lógica: emitir uno nuevo archiva el anterior en lugar de destruirlo, con todo lo que hubieras editado a mano. Ese archivo es el registro de qué se decidió, cuándo, y si funcionó.",
   ],
 };
 

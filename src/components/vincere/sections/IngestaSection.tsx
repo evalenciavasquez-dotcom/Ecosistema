@@ -57,6 +57,7 @@ function leerArchivo(file: File): Promise<{ data: string; mediaType: string }> {
 export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto }) {
   const aplicarIngesta = useVincereStore((s) => s.aplicarIngesta);
   const addAlertas = useVincereStore((s) => s.addAlertas);
+  const capturarSnapshot = useVincereStore((s) => s.capturarSnapshot);
   const showToast = useVincereStore((s) => s.showToast);
 
   const [texto, setTexto] = useState("");
@@ -116,7 +117,12 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
     });
 
     const bloques = Object.keys(filtrada).length;
-    if (bloques > 0) aplicarIngesta(proyecto.id, filtrada);
+    if (bloques > 0) {
+      aplicarIngesta(proyecto.id, filtrada);
+      // Entrada de data nueva es el momento natural de dejar constancia:
+      // así el histórico se construye solo, sin que haya que acordarse.
+      capturarSnapshot(proyecto.id, resultado.fuente);
+    }
     if (resultado.alertas.length) {
       addAlertas(
         proyecto.id,

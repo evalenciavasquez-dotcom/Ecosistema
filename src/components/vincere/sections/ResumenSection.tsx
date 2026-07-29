@@ -7,6 +7,7 @@ import { formatFollowers, formatStreams, signed } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
 import StreamsChart from "../StreamsChart";
 import AlertasPanel from "../AlertasPanel";
+import EvolucionPanel from "../EvolucionPanel";
 import { Panel, PanelLabel, StatCard } from "../primitives";
 
 const SCENARIO_DEFS = [
@@ -57,6 +58,8 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
         <PanelLabel>Streams · últimos meses (miles)</PanelLabel>
         <StreamsChart serie={r.serie} />
       </Panel>
+
+      <EvolucionPanel proyecto={proyecto} />
 
       <Panel>
         <div className="mb-1 flex items-center justify-between">

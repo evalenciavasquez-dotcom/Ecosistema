@@ -20,6 +20,7 @@ import {
   VincereQAEntry,
   VincereResumen,
   VincereSeccion,
+  VincereSnapshot,
   VincereTriageCaso,
   VincereZonaCalor,
 } from "./types";
@@ -96,6 +97,11 @@ interface VincereState {
   addQA: (proyectoId: string, seccion: VincereSeccion, entry: VincereQAEntry) => void;
   setInforme: (proyectoId: string, informe: VincereInforme) => void;
   updateInforme: (proyectoId: string, patch: Partial<VincereInforme>) => void;
+
+  capturarSnapshot: (proyectoId: string, etiqueta: string) => void;
+  eliminarSnapshot: (proyectoId: string, snapshotId: string) => void;
+  restaurarInformeArchivado: (proyectoId: string, generadoEn: string) => void;
+  eliminarInformeArchivado: (proyectoId: string, generadoEn: string) => void;
 
   aplicarIngesta: (proyectoId: string, propuesta: VincereIngestaPropuesta) => void;
   addAlertas: (proyectoId: string, alertas: Omit<VincereAlerta, "id" | "creadoEn">[]) => void;
@@ -340,8 +346,71 @@ export const useVincereStore = create<VincereState>()(
             qaLog: { ...p.qaLog, [seccion]: [...(p.qaLog[seccion] ?? []), entry] },
           })),
         })),
+      // Guarda una foto de los indicadores. Se descarta la del mismo día para
+      // que cargar tres veces en una tarde no llene el histórico de ruido:
+      // interesa la evolución, no cada pulsación.
+      capturarSnapshot: (proyectoId, etiqueta) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            const fecha = new Date().toISOString().slice(0, 10);
+            const snapshot: VincereSnapshot = {
+              id: genId("snap"),
+              fecha,
+              etiqueta,
+              streamsMes: p.resumen.streamsMes,
+              seguidores: p.resumen.seguidores,
+              momentumIndex: p.resumen.momentumIndex,
+              cancionesTotal: p.canciones.length,
+              creadoEn: new Date().toISOString(),
+            };
+            const previos = (p.historial ?? []).filter((h) => h.fecha !== fecha);
+            return { ...p, historial: [...previos, snapshot].slice(-60) };
+          }),
+        })),
+
+      eliminarSnapshot: (proyectoId, snapshotId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            historial: (p.historial ?? []).filter((h) => h.id !== snapshotId),
+          })),
+        })),
+
+      restaurarInformeArchivado: (proyectoId, generadoEn) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            const archivado = (p.informesArchivados ?? []).find((i) => i.generadoEn === generadoEn);
+            if (!archivado) return p;
+            const resto = (p.informesArchivados ?? []).filter((i) => i.generadoEn !== generadoEn);
+            return {
+              ...p,
+              informe: archivado,
+              // El que estaba activo no se pierde: pasa al archivo.
+              informesArchivados: p.informe ? [p.informe, ...resto] : resto,
+            };
+          }),
+        })),
+
+      eliminarInformeArchivado: (proyectoId, generadoEn) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            informesArchivados: (p.informesArchivados ?? []).filter((i) => i.generadoEn !== generadoEn),
+          })),
+        })),
+
+      // Emitir un informe nuevo archiva el anterior en vez de borrarlo: si ya
+      // lo habías trabajado a mano, ese trabajo sigue recuperable.
       setInforme: (proyectoId, informe) =>
-        set((s) => ({ proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, informe })) })),
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            informe,
+            informesArchivados: p.informe
+              ? [p.informe, ...(p.informesArchivados ?? [])].slice(0, 12)
+              : (p.informesArchivados ?? []),
+          })),
+        })),
       // Edición del informe dentro de la plataforma: se trabaja sobre el
       // documento en vez de tener que regenerarlo entero para corregir algo.
       updateInforme: (proyectoId, patch) =>

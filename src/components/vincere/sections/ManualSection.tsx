@@ -16,6 +16,7 @@ import {
   SISTEMA_DATOS,
   SISTEMA_EVIDENCIA,
   SISTEMA_FOSO,
+  SISTEMA_HISTORICO,
   SISTEMA_IA,
   SISTEMA_INTRO,
   SISTEMA_MOTORES,
@@ -220,6 +221,7 @@ function ManualSistema() {
       </section>
 
       <BloqueDoc bloque={SISTEMA_IA} />
+      <BloqueDoc bloque={SISTEMA_HISTORICO} />
       <BloqueDoc bloque={SISTEMA_EVIDENCIA} />
       <BloqueDoc bloque={SISTEMA_DATOS} />
       <BloqueDoc bloque={SISTEMA_ALCANCE} />

@@ -15,7 +15,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { buildInformeContext } from "@/lib/vincere/context";
 import { fetchInforme, registerNotion } from "@/lib/vincere/ai-client";
 import { downloadMarkdown, informeToMarkdown } from "@/lib/vincere/informe-export";
-import { SectionHeader, Panel } from "../primitives";
+import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
 const PRIORIDAD_COLOR: Record<VincerePrioridadPaso, string> = {
@@ -29,6 +29,8 @@ const NIVELES: VincereNivel[] = [4, 3, 2, 1];
 export default function InformeSection({ proyecto }: { proyecto: VincereProyecto }) {
   const setInforme = useVincereStore((s) => s.setInforme);
   const updateInforme = useVincereStore((s) => s.updateInforme);
+  const restaurarArchivado = useVincereStore((s) => s.restaurarInformeArchivado);
+  const eliminarArchivado = useVincereStore((s) => s.eliminarInformeArchivado);
   const showToast = useVincereStore((s) => s.showToast);
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
@@ -102,8 +104,8 @@ export default function InformeSection({ proyecto }: { proyecto: VincereProyecto
 
       {informe && editando && (
         <p className="vin-no-print vin-faint mb-4 text-xs leading-relaxed">
-          Modo edición: toca cualquier texto para corregirlo. Los cambios se guardan solos. «Volver a emitir» descarta
-          todo lo editado y pide un borrador nuevo.
+          Modo edición: toca cualquier texto para corregirlo. Los cambios se guardan solos. «Volver a emitir» genera un
+          borrador nuevo y archiva este — lo editado no se pierde, queda en «Informes anteriores».
         </p>
       )}
 
@@ -133,6 +135,56 @@ export default function InformeSection({ proyecto }: { proyecto: VincereProyecto
 
       {informe && (
         <InformeDocumento informe={informe} proyecto={proyecto} editando={editando} patch={patch} />
+      )}
+
+      {(proyecto.informesArchivados?.length ?? 0) > 0 && (
+        <div className="vin-no-print mt-5">
+          <Panel>
+            <PanelLabel>Informes anteriores · {proyecto.informesArchivados!.length}</PanelLabel>
+            <p className="vin-faint mb-3 text-xs leading-relaxed">
+              Cada vez que emites uno nuevo, el anterior se archiva aquí con lo que hubieras editado. Recuperar uno
+              intercambia: el activo pasa al archivo.
+            </p>
+            <ul className="space-y-2.5">
+              {proyecto.informesArchivados!.map((a) => (
+                <li
+                  key={a.generadoEn}
+                  className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b pb-2.5"
+                  style={{ borderColor: "var(--vin-border)" }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13.5px] leading-snug">{a.titulo}</div>
+                    <div className="vin-faint mt-0.5 text-[11px]">
+                      {new Date(a.generadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
+                      {" · "}
+                      {a.proximosPasos.filter((p) => p.hecho).length} de {a.proximosPasos.length} pasos cumplidos
+                      {a.editadoEn ? " · trabajado a mano" : ""}
+                    </div>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-3 text-xs">
+                    <button
+                      onClick={() => {
+                        restaurarArchivado(proyecto.id, a.generadoEn);
+                        showToast("Informe recuperado");
+                      }}
+                      className="hover:underline"
+                      style={{ color: "var(--vin-accent)" }}
+                    >
+                      Recuperar
+                    </button>
+                    <button
+                      onClick={() => eliminarArchivado(proyecto.id, a.generadoEn)}
+                      className="vin-faint hover:underline"
+                      title="Eliminar del archivo"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
       )}
     </div>
   );

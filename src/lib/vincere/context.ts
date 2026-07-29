@@ -4,8 +4,25 @@ import { formatFollowers, formatStreams } from "./format";
 // Construye el contexto compacto que se le entrega a la IA por sección —
 // solo la data de ESA sección, para que la interpretación sea específica y
 // no un resumen genérico de todo el proyecto.
+// Últimas fotos de los indicadores, de más antigua a más reciente. Es lo que
+// permite que la lectura hable de evolución ("cayó respecto al mes pasado")
+// en vez de describir una foto suelta.
+function historialReciente(p: VincereProyecto, cuantas = 8) {
+  const h = p.historial ?? [];
+  if (h.length < 2) return undefined;
+  return h.slice(-cuantas).map((s) => ({
+    fecha: s.fecha,
+    streamsMes: s.streamsMes,
+    seguidores: s.seguidores,
+    momentumIndex: s.momentumIndex,
+    cancionesEnCatalogo: s.cancionesTotal,
+    origen: s.etiqueta,
+  }));
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
+  const evolucion = historialReciente(p);
 
   switch (seccion) {
     case "resumen":
@@ -17,6 +34,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         seguidoresCambioPct: p.resumen.seguidoresCambioPct,
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
+        ...(evolucion ? { historialDeCargas: evolucion } : {}),
       };
     case "diagnostico":
       return { ...base, diagnostico: p.diagnostico };
@@ -38,7 +56,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
     case "management":
       return { ...base, decisiones: p.decisiones };
     case "kpis":
-      return { ...base, kpis: p.kpis };
+      return { ...base, kpis: p.kpis, ...(evolucion ? { historialDeCargas: evolucion } : {}) };
     default:
       return base;
   }
@@ -119,6 +137,18 @@ export function buildInformeContext(p: VincereProyecto): unknown {
     kpis: sinData(p.kpis),
     lecturasVincerePrevias: lecturasPrevias.length ? lecturasPrevias : "todavía no se han generado lecturas por sección",
     preguntasTrabajadas: preguntasTrabajadas.length ? preguntasTrabajadas : "sin preguntas trabajadas",
+    historialDeCargas:
+      historialReciente(p, 12) ??
+      "solo hay una foto de indicadores: todavía no se puede leer evolución en el tiempo",
+    informeAnterior: (p.informesArchivados ?? [])[0]
+      ? {
+          fecha: (p.informesArchivados ?? [])[0].generadoEn.slice(0, 10),
+          titulo: (p.informesArchivados ?? [])[0].titulo,
+          veredicto: (p.informesArchivados ?? [])[0].veredicto,
+          pasosCumplidos: (p.informesArchivados ?? [])[0].proximosPasos.filter((x) => x.hecho).map((x) => x.accion),
+          pasosPendientes: (p.informesArchivados ?? [])[0].proximosPasos.filter((x) => !x.hecho).map((x) => x.accion),
+        }
+      : "no hay informe anterior con el que comparar",
   };
 }
 

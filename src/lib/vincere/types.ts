@@ -191,6 +191,22 @@ export interface VincereIngestaResultado {
   confianza: VincereNivel;
 }
 
+// --- Histórico: que el sistema acumule en vez de sobrescribir ---
+// Cada vez que entra data nueva se guarda una foto de los indicadores. Sin
+// esto la plataforma solo sabe cómo está la carrera hoy, nunca cómo llegó
+// hasta aquí — y la interpretación pierde la mitad de su valor.
+
+export interface VincereSnapshot {
+  id: string;
+  fecha: string; // YYYY-MM-DD
+  etiqueta: string; // De dónde vino esta foto.
+  streamsMes: number;
+  seguidores: number;
+  momentumIndex: number;
+  cancionesTotal: number;
+  creadoEn: string;
+}
+
 // --- Informe Final: el entregable que emite la plataforma ---
 // No es un resumen de paneles: es la postura del director sobre el proyecto,
 // cruzando todos los motores en un solo documento presentable.
@@ -256,7 +272,11 @@ export interface VincereProyecto {
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;
   qaLog: Partial<Record<VincereSeccion, VincereQAEntry[]>>;
   informe?: VincereInforme | null;
+  // Informes anteriores. Reemitir ya no destruye el trabajo hecho sobre el
+  // informe: lo archiva aquí y queda como histórico consultable.
+  informesArchivados?: VincereInforme[];
   alertas?: VincereAlerta[];
+  historial?: VincereSnapshot[];
   creadoEn: string;
 }
 
