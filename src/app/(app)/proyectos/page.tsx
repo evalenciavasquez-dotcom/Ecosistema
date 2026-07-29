@@ -424,11 +424,33 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
   const evidencias = useAppStore((s) => s.evidencias).filter((e) => e.proyectoId === proyecto.id);
   const historial = useAppStore((s) => s.historial).filter((h) => h.entidadId === proyecto.id);
   const movimientos = useAppStore((s) => s.movimientos);
+  const movimientosProyecto = movimientos.filter((m) => m.proyectoId === proyecto.id);
+  const agendaProyecto = useAppStore((s) => s.agenda).filter((e) => e.proyectoId === proyecto.id);
   const updateProyecto = useAppStore((s) => s.updateProyecto);
+  const deleteProyecto = useAppStore((s) => s.deleteProyecto);
 
   const personasProyecto = personas.filter((p) => proyecto.personaIds.includes(p.id));
   const [editando, setEditando] = useState(false);
   const [agregandoPersona, setAgregandoPersona] = useState(false);
+
+  function handleDeleteProyecto() {
+    const vinculos: string[] = [];
+    if (personasProyecto.length > 0) vinculos.push(`${personasProyecto.length} persona(s)`);
+    if (acciones.length > 0) vinculos.push(`${acciones.length} acción(es)`);
+    if (decisiones.length > 0) vinculos.push(`${decisiones.length} decisión(es)`);
+    if (movimientosProyecto.length > 0) vinculos.push(`${movimientosProyecto.length} movimiento(s) económico(s)`);
+    if (evidencias.length > 0) vinculos.push(`${evidencias.length} evidencia(s)`);
+    if (agendaProyecto.length > 0) vinculos.push(`${agendaProyecto.length} evento(s) de agenda`);
+
+    const aviso =
+      vinculos.length > 0
+        ? `"${proyecto.nombre}" tiene datos vinculados: ${vinculos.join(", ")}. No se borrarán, pero quedarán sin proyecto asociado.\n\n¿Eliminar "${proyecto.nombre}" de todas formas?`
+        : `¿Eliminar "${proyecto.nombre}"? Esta acción no se puede deshacer.`;
+
+    if (!window.confirm(aviso)) return;
+    deleteProyecto(proyecto.id);
+    onClose();
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -588,6 +610,15 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
             {a === "negocio" ? "Negocio" : "Personal"}
           </button>
         ))}
+      </div>
+
+      <div className="pt-4 border-t border-border-subtle">
+        <button
+          onClick={handleDeleteProyecto}
+          className="text-xs font-medium text-accent-red hover:underline"
+        >
+          Eliminar proyecto
+        </button>
       </div>
     </div>
   );

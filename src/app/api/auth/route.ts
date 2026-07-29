@@ -1,12 +1,33 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE, checkPassword, createSessionToken } from "@/lib/auth";
+import { isDbConfigured } from "@/lib/db/client";
+import { estaBloqueado, limpiarIntentos, registrarIntentoFallido } from "@/lib/db/loginAttempts";
+
+function clientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return request.headers.get("x-real-ip") ?? "unknown";
+}
 
 export async function POST(request: Request) {
+  const ip = clientIp(request);
+  const conDb = isDbConfigured();
+
+  if (conDb && (await estaBloqueado(ip).catch(() => false))) {
+    return NextResponse.json(
+      { ok: false, error: "Demasiados intentos fallidos — espera unos minutos e intenta de nuevo." },
+      { status: 429 }
+    );
+  }
+
   const { password } = await request.json().catch(() => ({ password: "" }));
 
   if (!(await checkPassword(password ?? ""))) {
+    if (conDb) await registrarIntentoFallido(ip).catch(() => {});
     return NextResponse.json({ ok: false, error: "Contraseña incorrecta" }, { status: 401 });
   }
+
+  if (conDb) await limpiarIntentos(ip).catch(() => {});
 
   const token = await createSessionToken();
   if (!token) {
