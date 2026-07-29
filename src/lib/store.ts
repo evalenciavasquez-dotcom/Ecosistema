@@ -33,6 +33,7 @@ import {
   ClasificacionSugerida,
   Decision,
   Evidencia,
+  Goal,
   HistorialEntry,
   MetaFinanciera,
   MovimientoEconomico,
@@ -70,6 +71,11 @@ interface AppState {
   cierresMensuales: CierreMensual[];
   generandoCierreMensual: boolean;
   generarCierreMensualAhora: () => Promise<{ ok: boolean; error?: string }>;
+
+  goals: Goal[];
+  addGoal: (goal: { titulo: string; descripcion: string; proyectoId?: string | null; fechaObjetivo?: string | null }) => void;
+  updateGoal: (id: string, cambios: Partial<Pick<Goal, "titulo" | "descripcion" | "progreso" | "estado" | "fechaObjetivo">>) => void;
+  deleteGoal: (id: string) => void;
 
   // Cronómetro de trabajo: uno activo a la vez, local a este dispositivo.
   timerActivo: { proyectoId: string; inicio: string } | null;
@@ -161,6 +167,7 @@ function seedState() {
     metasFinancieras: [] as MetaFinanciera[],
     cierresMensuales: [] as CierreMensual[],
     generandoCierreMensual: false,
+    goals: [] as Goal[],
     timerActivo: null as { proyectoId: string; inicio: string } | null,
   };
 }
@@ -237,6 +244,32 @@ export const useAppStore = create<AppState>()(
       deleteMetaFinanciera: (id) => {
         set((state) => ({ metasFinancieras: state.metasFinancieras.filter((m) => m.id !== id) }));
         dbMutate("metasFinancieras", "delete", id);
+      },
+
+      addGoal: (goal) => {
+        const nuevo: Goal = {
+          id: genId("goal"),
+          titulo: goal.titulo,
+          descripcion: goal.descripcion,
+          proyectoId: goal.proyectoId ?? null,
+          progreso: 0,
+          estado: "en_progreso",
+          fechaObjetivo: goal.fechaObjetivo ?? null,
+          creadoEn: new Date().toISOString(),
+        };
+        set((state) => ({ goals: [nuevo, ...state.goals] }));
+        dbMutate("goals", "insert", undefined, nuevo);
+        get().logHistorial("goal", nuevo.id, `Goal "${goal.titulo}" creado`);
+      },
+      updateGoal: (id, cambios) => {
+        set((state) => ({
+          goals: state.goals.map((g) => (g.id === id ? { ...g, ...cambios } : g)),
+        }));
+        dbMutate("goals", "update", id, cambios);
+      },
+      deleteGoal: (id) => {
+        set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }));
+        dbMutate("goals", "delete", id);
       },
 
       addStrategicCase: (strategicCase) => {
@@ -851,6 +884,7 @@ export const useAppStore = create<AppState>()(
           tiempo: [],
           metasFinancieras: [],
           cierresMensuales: [],
+          goals: [],
           timerActivo: null,
         }),
 
@@ -898,6 +932,7 @@ export const useAppStore = create<AppState>()(
           tiempo: (server.tiempo ?? []) as RegistroTiempo[],
           metasFinancieras: (server.metasFinancieras ?? []) as MetaFinanciera[],
           cierresMensuales: (server.cierresMensuales ?? []) as CierreMensual[],
+          goals: (server.goals ?? []) as Goal[],
         });
       },
 

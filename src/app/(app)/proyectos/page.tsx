@@ -6,6 +6,8 @@ import { AmbitoBadge, ProyectoEstadoBadge, PrioridadBadge, EvidenceBadge, Accion
 import {
   AnalisisEconomicoProyecto,
   Decision,
+  Goal,
+  GoalEstado,
   MovimientoEconomico,
   Proyecto,
   ProyectoAmbito,
@@ -522,6 +524,8 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
 
       <CierreMensualProyectoSection proyectoId={proyecto.id} />
 
+      <GoalsProyectoSection proyectoId={proyecto.id} />
+
       <Section title="Personas involucradas">
         {personasProyecto.length === 0 && <Empty />}
         <div className="space-y-2">
@@ -768,6 +772,84 @@ function CierreMensualProyectoSection({ proyectoId }: { proyectoId: string }) {
           </div>
         )}
       </div>
+    </Section>
+  );
+}
+
+const GOAL_ESTADO_TONE: Record<GoalEstado, "green" | "amber" | "red" | "blue"> = {
+  en_progreso: "blue",
+  cumplida: "green",
+  pausada: "amber",
+  descartada: "red",
+};
+
+const GOAL_ESTADO_LABEL: Record<GoalEstado, string> = {
+  en_progreso: "En progreso",
+  cumplida: "Cumplida",
+  pausada: "Pausada",
+  descartada: "Descartada",
+};
+
+function GoalsProyectoSection({ proyectoId }: { proyectoId: string }) {
+  const goals = useAppStore((s) => s.goals).filter((g) => g.proyectoId === proyectoId);
+  const addGoal = useAppStore((s) => s.addGoal);
+  const updateGoal = useAppStore((s) => s.updateGoal);
+  const deleteGoal = useAppStore((s) => s.deleteGoal);
+  const [nuevoTitulo, setNuevoTitulo] = useState("");
+
+  function handleAgregar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nuevoTitulo.trim()) return;
+    addGoal({ titulo: nuevoTitulo.trim(), descripcion: "", proyectoId });
+    setNuevoTitulo("");
+  }
+
+  return (
+    <Section title="Goals del proyecto">
+      {goals.length === 0 && <Empty />}
+      <div className="space-y-2">
+        {goals.map((g: Goal) => (
+          <div key={g.id} className="rounded-xl border border-border-subtle bg-surface p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{g.titulo}</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <Pill tone={GOAL_ESTADO_TONE[g.estado]}>{GOAL_ESTADO_LABEL[g.estado]}</Pill>
+                <button onClick={() => deleteGoal(g.id)} className="text-accent-red text-xs" aria-label="Eliminar goal">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={g.progreso}
+                onChange={(e) => {
+                  const progreso = Number(e.target.value);
+                  updateGoal(g.id, {
+                    progreso,
+                    estado: progreso >= 100 ? "cumplida" : g.estado === "cumplida" ? "en_progreso" : g.estado,
+                  });
+                }}
+                className="flex-1"
+              />
+              <span className="text-xs font-medium tabular-nums w-10 text-right">{g.progreso}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleAgregar} className="flex gap-2 mt-2">
+        <input
+          value={nuevoTitulo}
+          onChange={(e) => setNuevoTitulo(e.target.value)}
+          placeholder="Nuevo goal para este proyecto..."
+          className="flex-1 rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+        />
+        <button type="submit" className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-2 shrink-0">
+          + Agregar
+        </button>
+      </form>
     </Section>
   );
 }
