@@ -14,7 +14,9 @@ import {
   VincereFase,
   VincereInforme,
   VincereInsight,
+  VincereInvestigacion,
   VincereKpi,
+  VincereSenalPlaza,
   VincereProyecto,
   VincereProyectoTipo,
   VincereQAEntry,
@@ -101,6 +103,10 @@ interface VincereState {
 
   addStressTest: (proyectoId: string, test: VincereStressTest) => void;
   eliminarStressTest: (proyectoId: string, testId: string) => void;
+
+  addInvestigacion: (proyectoId: string, investigacion: VincereInvestigacion) => void;
+  eliminarInvestigacion: (proyectoId: string, investigacionId: string) => void;
+  aplicarSenalesPlaza: (proyectoId: string, investigacionId: string, senales: VincereSenalPlaza[]) => void;
 
   capturarSnapshot: (proyectoId: string, etiqueta: string) => void;
   eliminarSnapshot: (proyectoId: string, snapshotId: string) => void;
@@ -365,6 +371,50 @@ export const useVincereStore = create<VincereState>()(
             ...p,
             stressTests: (p.stressTests ?? []).filter((t) => t.id !== testId),
           })),
+        })),
+
+      // Las investigaciones se acumulan: lo que se buscó hace dos meses sigue
+      // sirviendo de línea base para saber si el mercado se movió.
+      addInvestigacion: (proyectoId, investigacion) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            investigaciones: [investigacion, ...(p.investigaciones ?? [])].slice(0, 20),
+          })),
+        })),
+      eliminarInvestigacion: (proyectoId, investigacionId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            investigaciones: (p.investigaciones ?? []).filter((i) => i.id !== investigacionId),
+          })),
+        })),
+
+      // Traslada al mapa de calor lo que la investigación encontró afuera. Es
+      // un paso deliberado y no automático: una señal de la web no tiene el
+      // mismo peso que un dato propio de Spotify, y el mapa es de Eduardo.
+      aplicarSenalesPlaza: (proyectoId, investigacionId, senales) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            if (!senales.length) return p;
+            const porCiudad = new Map(p.zonasCalor.map((z) => [z.ciudad.toLowerCase().trim(), z]));
+            const entrantes = senales.map((sn) => {
+              const previa = porCiudad.get(sn.ciudad.toLowerCase().trim());
+              const calor = Math.max(0, Math.min(100, Math.round(sn.calorSugerido)));
+              return previa ? { ...previa, calor } : { id: genId("city"), ciudad: sn.ciudad, calor };
+            });
+            const ciudadesEntrantes = new Set(entrantes.map((z) => z.ciudad.toLowerCase().trim()));
+            return {
+              ...p,
+              zonasCalor: [
+                ...p.zonasCalor.filter((z) => !ciudadesEntrantes.has(z.ciudad.toLowerCase().trim())),
+                ...entrantes,
+              ],
+              investigaciones: (p.investigaciones ?? []).map((i) =>
+                i.id === investigacionId ? { ...i, aplicadaEnCalor: true } : i
+              ),
+            };
+          }),
         })),
 
       // Guarda una foto de los indicadores. Se descarta la del mismo día para

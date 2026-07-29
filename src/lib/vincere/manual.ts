@@ -54,19 +54,23 @@ export const GUIA_PRIMEROS_PASOS: ManualBloque = {
       texto: "Botón «+ Proyecto» arriba. Nombre del artista, género y fase de carrera. Elige «Proyecto propio» si lo diriges tú.",
     },
     {
-      termino: "2. Carga un motor, no diez",
+      termino: "2. Si no tienes data todavía, investiga",
+      texto: "El motor de Investigación no necesita que cargues nada: escribes el nombre del artista y sale a buscar a la web. Es la forma de arrancar un proyecto en frío.",
+    },
+    {
+      termino: "3. Carga un motor, no diez",
       texto: "Empieza por Resumen · Momentum con los números que ya tengas a mano. Un motor con data real vale más que ocho vacíos.",
     },
     {
-      termino: "3. Genera tu primera lectura",
+      termino: "4. Genera tu primera lectura",
       texto: "En esa misma sección, «Generar lectura VINCERE». Ahí ves si la interpretación suena a tu criterio o hay que presionarla.",
     },
     {
-      termino: "4. Presiónala con una pregunta",
+      termino: "5. Presiónala con una pregunta",
       texto: "Usa la zona de preguntas de la sección. Si la respuesta no te convence, eso también es información — dímelo y ajustamos el método.",
     },
     {
-      termino: "5. Cuando tengas 3 o 4 motores, emite el informe",
+      termino: "6. Cuando tengas 3 o 4 motores, emite el informe",
       texto: "Ahí es donde la plataforma muestra lo que ninguna otra hace: cruzar todo y tomar postura.",
     },
   ],
@@ -83,6 +87,7 @@ export const GUIA_CICLO: ManualPaso[] = [
       "Lo que no pudo leer queda anotado para que lo completes a mano en su sección.",
       "Cada sección sigue siendo editable directamente: «Editar data» para ajustar un número suelto sin volver a cargar nada.",
       "En Song Intelligence, además de las métricas, pega la letra de cada canción — es lo que permite leerla como obra y no como fila de números.",
+      "Lo que no tengas y no puedas conseguir, búscalo: «Investigación» sale a la web y trae el contexto de mercado con sus fuentes. No llena los paneles, pero alimenta todas las lecturas.",
     ],
   },
   {
@@ -156,6 +161,26 @@ export const GUIA_TAREAS: ManualTarea[] = [
       "Nombre y métricas (streams, retención, skip, playlist adds).",
       "Haz clic en la canción de la lista para abrir su panel.",
       "Pega la letra en el campo de texto y pulsa «Analizar canción con VINCERE».",
+    ],
+  },
+  {
+    tarea: "Investigar algo que no está en tu data",
+    pasos: [
+      "Investigación → elige el tipo: Artista, Canción, Plaza / mercado o Pregunta abierta.",
+      "Escribe qué quieres saber, concreto. «Feid» funciona mejor que «reggaetón colombiano».",
+      "«Investigar». El sistema hace varias búsquedas en la web y lee las páginas: tarda más que una lectura de sección.",
+      "Cada hallazgo llega con su implicación para tu artista y con la fuente enlazada — se puede abrir y verificar. Lo que dice «sin fuente · criterio» es lectura del motor, no evidencia.",
+      "Si aparecieron ciudades, «Llevar a Zonas de Calor» las traslada al mapa. No entran solas: la decides tú.",
+      "A partir de ahí, todas las lecturas del proyecto tienen esa investigación como contexto de mercado.",
+    ],
+  },
+  {
+    tarea: "Cargar un panel de industria (Chartmetric y similares)",
+    pasos: [
+      "Toma la captura o descarga el resumen en PDF desde el panel.",
+      "Cargar data → suéltalo ahí. El lector reconoce material de Chartmetric, Songstats, Soundcharts y Luminate.",
+      "Reparte cada bloque a su motor; las métricas que no tienen motor propio quedan registradas en KPIs con el nombre del panel en vez de perderse.",
+      "Revisa lo extraído y aplica. Las ciudades y países del panel llenan Zonas de Calor y Audiencia.",
     ],
   },
   {
@@ -246,6 +271,10 @@ export const GUIA_PROBLEMAS: ManualBloque = {
       texto: "Faltan sus dos variables en el servidor. La descarga a archivo funciona igual y no depende de eso.",
     },
     {
+      termino: "La investigación volvió sin fuentes",
+      texto: "La web no tenía nada utilizable sobre eso. El sistema te lo avisa y baja todo a nivel 2 en vez de fingir evidencia. Prueba con el nombre exacto, o con una pregunta más concreta y menos abstracta.",
+    },
+    {
       termino: "El informe salió flaco o genérico",
       texto: "Casi siempre es falta de insumo: pocos motores con data o pocas lecturas generadas. Carga más, genera lecturas por sección y vuelve a emitirlo.",
     },
@@ -314,6 +343,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Cargar data (Ingesta)",
     cuandoUsarlo: "La puerta de entrada de información al sistema: capturas, PDF, CSV o texto pegado.",
     queCargar: "El material crudo. La IA extrae, reparte por motor y levanta alertas; tú apruebas antes de que se escriba.",
+  },
+  {
+    motor: "Investigación",
+    cuandoUsarlo: "Cuando necesitas saber algo que no está en tu data: quién es un artista, cómo le fue a una canción, qué escena hay en una plaza, cuánto se paga por algo.",
+    queCargar: "Nada: escribes qué quieres saber y el sistema busca en la web. Vuelve con hallazgos citados y su fuente enlazada.",
   },
   {
     motor: "Resumen · Momentum",
@@ -415,6 +449,18 @@ export const SISTEMA_IA: ManualBloque = {
       texto: "Al leer una canción no juzga la letra en el vacío: la contrasta con su retención y su skip, y con la audiencia y la marca del artista.",
     },
     {
+      termino: "En Investigación sale a buscar de verdad",
+      texto: "El motor de Investigación usa la búsqueda web del propio modelo: hace varias búsquedas, lee las páginas y vuelve con las URLs consultadas. Trabaja en dos pasos — primero investiga con las fuentes delante, después ordena lo encontrado — porque el criterio nace cuando tiene las páginas en contexto, no al rellenar un formulario.",
+    },
+    {
+      termino: "Un hallazgo sin fuente no puede subir de nivel 2",
+      texto: "Es la regla que hace confiable lo que viene de afuera. Cada hallazgo señala de qué fuente salió y esa cita es un enlace que puedes abrir. Si no hay fuente, se marca como criterio del motor y el sistema le pone techo aunque el modelo declare más confianza.",
+    },
+    {
+      termino: "Lo externo nunca se confunde con lo propio",
+      texto: "Los hallazgos entran al contexto de los demás motores etiquetados como externos, con instrucción explícita de no mezclarlos con las métricas del artista en la misma frase. Un dato de una nota de prensa no pesa lo que uno de tu Spotify.",
+    },
+    {
       termino: "En la ingesta extrae, no completa",
       texto: "Al leer un archivo solo registra lo que ve. Lo ausente queda en null y se anota como faltante; el sistema nunca escribe encima de data buena con campos vacíos, ni rellena con conocimiento del artista.",
     },
@@ -488,8 +534,16 @@ export const SISTEMA_ALCANCE: ManualBloque = {
       texto: "No hay cuentas, roles ni permisos. El acceso se protege con la contraseña de la aplicación.",
     },
     {
-      termino: "Data manual",
-      texto: "No hay conexión con Spotify, YouTube, Meta ni Google Trends. La arquitectura está preparada para conectarlas después sin rehacer las secciones.",
+      termino: "Data manual, investigación automática",
+      texto: "Los números los cargas tú: no hay conexión directa con Spotify, YouTube ni Meta, y la arquitectura está preparada para conectarlas después sin rehacer las secciones. Lo que sí sale solo a buscar es el motor de Investigación, que consulta la web abierta.",
+    },
+    {
+      termino: "Google Trends no está y no está previsto",
+      texto: "Google no publica una API estable de Trends; las librerías que existen son ingeniería inversa y se rompen, y las IPs de servidor quedan bloqueadas — funcionaría en local y fallaría en producción. La búsqueda web de Investigación cubre la misma necesidad con fuentes citables. Para números duros de mercado, la vía es un panel de industria (Chartmetric, Songstats, Soundcharts) cargado por Ingesta.",
+    },
+    {
+      termino: "La investigación depende de lo que haya publicado",
+      texto: "Si la web no tiene datos sobre lo que preguntas, el motor lo dice en vez de inventarlo, y toda la lectura queda con techo de nivel 2. Un artista muy pequeño o un mercado poco cubierto por prensa devolverá poco — eso es información honesta, no un fallo.",
     },
     {
       termino: "Sin análisis técnico de audio",

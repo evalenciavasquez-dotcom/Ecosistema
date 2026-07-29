@@ -154,6 +154,77 @@ export const ingestResponseSchema = z.object({
     .describe("Qué no se pudo leer o quedó ambiguo, para que Eduardo lo complete a mano"),
 });
 
+// Estructura la investigación web ya hecha. El campo que sostiene todo el
+// motor es 'fuentes': un hallazgo que no puede señalar de dónde salió no
+// tiene derecho a un nivel de evidencia alto.
+export const researchResponseSchema = z.object({
+  titulo: z
+    .string()
+    .describe("Título corto y concreto de lo investigado. Ej. 'Feid: alcance real en Chile y solape de audiencia'"),
+  resumen: z
+    .string()
+    .describe(
+      "Un párrafo (4-7 frases) con la síntesis: qué se buscó, qué se encontró de verdad y qué tan sólido es. Si la web dio poco, dilo aquí sin rodeos."
+    ),
+  hallazgos: z
+    .array(
+      z.object({
+        texto: z.string().describe("El hallazgo concreto tal como lo sostiene la fuente — hecho, no opinión"),
+        implicacion: z
+          .string()
+          .describe("Qué significa esto para ESTE artista en su fase actual. Aquí está el valor: el hecho solo no sirve"),
+        nivel: nivelSchema,
+        fuentes: z
+          .array(z.number().int())
+          .describe(
+            "Números de las fuentes de la lista entregada que respaldan este hallazgo (empiezan en 1). Array vacío si es inferencia tuya y no un hecho leído — en ese caso el nivel no puede pasar de 2"
+          ),
+      })
+    )
+    .max(8)
+    .describe("Hallazgos ordenados por relevancia para la carrera, no por orden de búsqueda"),
+  senalesPlaza: z
+    .array(
+      z.object({
+        ciudad: z.string().describe("Ciudad tal como se nombra habitualmente, sin país salvo que haga falta desambiguar"),
+        senal: z.string().describe("Qué se encontró de esa plaza y por qué importa para este artista"),
+        calorSugerido: z
+          .number()
+          .describe("Intensidad 0-100 propuesta para Zonas de Calor, justificada por lo encontrado — no un número al azar"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(8)
+    .describe(
+      "Ciudades o plazas que aparecieron en la investigación y merecen entrar al mapa de calor. Vacío si la búsqueda no fue geográfica — no inventes ciudades para llenar"
+    ),
+  implicacionesCatalogo: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué le dice lo encontrado al catálogo propio: qué tema se parece, qué hueco quedó libre, qué se está repitiendo en el mercado"),
+  preguntasAbiertas: z
+    .array(z.string())
+    .max(5)
+    .describe("Lo que la búsqueda NO respondió y sigue haciendo falta. Es información honesta, no un fallo"),
+  alertas: z
+    .array(
+      z.object({
+        texto: z.string().describe("Qué encontraste afuera que exige atención adentro, en una o dos frases de director"),
+        severidad: z.enum(["critica", "atencion", "oportunidad"]),
+        seccion: z
+          .enum(["resumen", "diagnostico", "song", "audiencia", "calor", "management", "kpis"])
+          .nullable()
+          .describe("Motor del sistema al que pertenece la alerta"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(4)
+    .describe("Solo si lo encontrado cambia algo de lo que el sistema ya sabe. Vacío si no — inventar alarmas destruye la confianza"),
+  nivelGlobal: nivelSchema.describe(
+    "Nivel de evidencia del conjunto, según cuántas fuentes reales hubo y qué tan directas eran. Sin fuentes útiles el máximo es 2"
+  ),
+});
+
 export const informeResponseSchema = z.object({
   titulo: z
     .string()
@@ -258,6 +329,7 @@ export const stressTestResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Qué tan completo estaba el plan y cuánta data del artista respalda esta evaluación"),
 });
 
+export type ResearchResponse = z.infer<typeof researchResponseSchema>;
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
 export type InformeResponse = z.infer<typeof informeResponseSchema>;
 export type IngestResponse = z.infer<typeof ingestResponseSchema>;

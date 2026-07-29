@@ -20,9 +20,61 @@ function historialReciente(p: VincereProyecto, cuantas = 8) {
   }));
 }
 
+// Lo que el sistema encontró afuera. Se entrega aparte y etiquetado como
+// externo a propósito: la IA nunca debe mezclarlo con la data propia, porque
+// una cifra leída en una nota de prensa no tiene el peso de una de Spotify.
+// 'respaldo' dice si el hallazgo venía con fuente o era criterio del motor.
+export function investigacionExterna(
+  p: VincereProyecto,
+  foco: "plazas" | "catalogo" | "general" | "todo",
+  cuantas = 3
+): unknown | undefined {
+  const invs = (p.investigaciones ?? []).slice(0, cuantas);
+  if (!invs.length) return undefined;
+
+  const lista = invs.map((inv) => {
+    const comun = {
+      consulta: inv.consulta,
+      fecha: inv.creadoEn.slice(0, 10),
+      resumen: inv.resumen,
+      hallazgos: inv.hallazgos.map((h) => ({
+        hallazgo: h.texto,
+        implicacion: h.implicacion,
+        nivel: h.nivel,
+        respaldo: h.fuentes.length ? `${h.fuentes.length} fuente(s) web` : "sin fuente — criterio del motor",
+      })),
+      preguntasSinResponder: inv.preguntasAbiertas,
+    };
+    if (foco === "todo") {
+      return {
+        ...comun,
+        senalesDePlaza: inv.senalesPlaza,
+        implicacionesParaElCatalogo: inv.implicacionesCatalogo,
+      };
+    }
+    if (foco === "plazas") {
+      return { ...comun, senalesDePlaza: inv.senalesPlaza };
+    }
+    if (foco === "catalogo") {
+      return { ...comun, implicacionesParaElCatalogo: inv.implicacionesCatalogo };
+    }
+    return comun;
+  });
+
+  return {
+    advertencia:
+      "Esto viene de búsquedas en la web, NO de la data propia del artista. Trátalo como referencia externa: nómbralo como tal y nunca lo presentes como una métrica del proyecto.",
+    investigaciones: lista,
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
+  const conExterno = (foco: "plazas" | "catalogo" | "general") => {
+    const externo = investigacionExterna(p, foco);
+    return externo ? { investigacionExterna: externo } : {};
+  };
 
   switch (seccion) {
     case "resumen":
@@ -35,9 +87,10 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
+        ...conExterno("general"),
       };
     case "diagnostico":
-      return { ...base, diagnostico: p.diagnostico };
+      return { ...base, diagnostico: p.diagnostico, ...conExterno("general") };
     case "song":
       return {
         ...base,
@@ -48,13 +101,14 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
           skipPct: c.skipPct,
           playlistAdds: c.playlistAdds,
         })),
+        ...conExterno("catalogo"),
       };
     case "audiencia":
-      return { ...base, audiencia: p.audiencia };
+      return { ...base, audiencia: p.audiencia, ...conExterno("general") };
     case "calor":
-      return { ...base, zonasCalor: p.zonasCalor };
+      return { ...base, zonasCalor: p.zonasCalor, ...conExterno("plazas") };
     case "management":
-      return { ...base, decisiones: p.decisiones };
+      return { ...base, decisiones: p.decisiones, ...conExterno("general") };
     case "kpis":
       return { ...base, kpis: p.kpis, ...(evolucion ? { historialDeCargas: evolucion } : {}) };
     default:
@@ -140,6 +194,9 @@ export function buildInformeContext(p: VincereProyecto): unknown {
     historialDeCargas:
       historialReciente(p, 12) ??
       "solo hay una foto de indicadores: todavía no se puede leer evolución en el tiempo",
+    investigacionExterna:
+      investigacionExterna(p, "todo", 4) ??
+      "no se ha investigado nada afuera para este proyecto: el informe se sostiene solo en data propia",
     informeAnterior: (p.informesArchivados ?? [])[0]
       ? {
           fecha: (p.informesArchivados ?? [])[0].generadoEn.slice(0, 10),

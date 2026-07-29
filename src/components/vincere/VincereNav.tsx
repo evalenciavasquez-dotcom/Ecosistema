@@ -5,6 +5,7 @@ import { VincereSeccion, VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 
 const CORE_SECTIONS: VincereSeccion[] = [
   "ingesta",
+  "investigacion",
   "resumen",
   "diagnostico",
   "song",

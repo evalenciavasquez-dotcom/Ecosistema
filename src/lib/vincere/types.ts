@@ -22,6 +22,7 @@ export type VincereSeccion =
   | "kpis"
   | "triage"
   | "ingesta"
+  | "investigacion"
   | "stress"
   | "informe"
   | "manual";
@@ -36,6 +37,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   kpis: "Ejecución / KPIs",
   triage: "Triage",
   ingesta: "Cargar data",
+  investigacion: "Investigación",
   stress: "Plan Stress-Test",
   informe: "Informe Final",
   manual: "Documentación",
@@ -257,6 +259,68 @@ export interface VincereSnapshot {
   creadoEn: string;
 }
 
+// --- Investigación: lo que el sistema sale a buscar afuera ---
+// Todo lo demás en VINCERE se alimenta de data que Eduardo trae. Este motor
+// es el único que mira hacia afuera: busca en la web al artista, la canción o
+// la plaza, y devuelve hallazgos CON su fuente. La regla que lo hace confiable
+// es que un hallazgo sin fuente nunca puede subir de nivel 2.
+
+export type VincereInvestigacionTipo = "artista" | "cancion" | "mercado" | "libre";
+
+export const VINCERE_INVESTIGACION_LABEL: Record<VincereInvestigacionTipo, string> = {
+  artista: "Artista",
+  cancion: "Canción",
+  mercado: "Plaza / mercado",
+  libre: "Pregunta abierta",
+};
+
+export const VINCERE_INVESTIGACION_PLACEHOLDER: Record<VincereInvestigacionTipo, string> = {
+  artista: "Ej. «Feid» · «quién compite con nosotros en indie pop en español»",
+  cancion: "Ej. «cómo le fue a Ojos Marrones de Lasso» · «qué canciones usan este mismo gancho»",
+  mercado: "Ej. «escena de reggaetón en Santiago de Chile» · «festivales de verano en México 2026»",
+  libre: "Ej. «cuánto paga hoy un sello por un anticipo a un emergente en Latam»",
+};
+
+export interface VincereFuente {
+  titulo: string;
+  url: string;
+  fecha?: string | null; // Antigüedad que reporta el buscador, si la trae.
+}
+
+export interface VincereHallazgo {
+  texto: string; // Qué se encontró.
+  implicacion: string; // Qué significa para ESTE artista — el valor real.
+  nivel: VincereNivel;
+  fuentes: number[]; // Índices (base 1) dentro de fuentes[]. Vacío = inferencia.
+}
+
+// Lo que la investigación aporta a Zonas de Calor. No se escribe solo: se
+// propone, y Eduardo decide si lo traslada al mapa.
+export interface VincereSenalPlaza {
+  ciudad: string;
+  senal: string;
+  calorSugerido: number; // 0-100
+  nivel: VincereNivel;
+}
+
+export interface VincereInvestigacion {
+  id: string;
+  tipo: VincereInvestigacionTipo;
+  consulta: string; // Lo que Eduardo pidió buscar.
+  titulo: string;
+  resumen: string;
+  hallazgos: VincereHallazgo[];
+  senalesPlaza: VincereSenalPlaza[];
+  implicacionesCatalogo: string[]; // Qué le dice esto al catálogo propio.
+  preguntasAbiertas: string[]; // Lo que la web no respondió.
+  fuentes: VincereFuente[];
+  nivelGlobal: VincereNivel;
+  // Nada encontrado en la web: la lectura entonces es criterio, no evidencia.
+  sinFuentes: boolean;
+  aplicadaEnCalor?: boolean;
+  creadoEn: string;
+}
+
 // --- Informe Final: el entregable que emite la plataforma ---
 // No es un resumen de paneles: es la postura del director sobre el proyecto,
 // cruzando todos los motores en un solo documento presentable.
@@ -328,6 +392,7 @@ export interface VincereProyecto {
   alertas?: VincereAlerta[];
   historial?: VincereSnapshot[];
   stressTests?: VincereStressTest[];
+  investigaciones?: VincereInvestigacion[];
   creadoEn: string;
 }
 

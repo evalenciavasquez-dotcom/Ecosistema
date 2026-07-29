@@ -120,7 +120,8 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 - **Informe Final**: la plataforma emite el entregable del proyecto — sinopsis central, veredicto, bloques que cruzan motores entre sí, riesgos, oportunidades y próximos pasos con responsable y plazo. Se descarga a Markdown, se imprime a PDF (hay estilos de impresión en claro) y se archiva en Notion.
 
 - **Gestión de proyectos**: botón "+ Proyecto" en la barra superior — crear proyectos propios o referencias de mercado, renombrarlos, cambiarles la fase y eliminarlos.
-- **Ingesta de data ("Cargar data")**: se suelta una captura (Spotify for Artists, Instagram, YouTube Studio), un PDF, o se pega un CSV/texto. La IA lo lee, extrae los números y los reparte al motor que les corresponde, levantando alertas por severidad (crítica / atención / oportunidad). La propuesta se revisa bloque por bloque y solo se escribe lo aprobado; los bloques que la fuente no contiene van en `null` y nunca sobrescriben data existente.
+- **Ingesta de data ("Cargar data")**: se suelta una captura (Spotify for Artists, Instagram, YouTube Studio, o un panel de industria tipo Chartmetric / Songstats / Soundcharts), un PDF, o se pega un CSV/texto. La IA lo lee, extrae los números y los reparte al motor que les corresponde, levantando alertas por severidad (crítica / atención / oportunidad). La propuesta se revisa bloque por bloque y solo se escribe lo aprobado; los bloques que la fuente no contiene van en `null` y nunca sobrescriben data existente.
+- **Investigación (búsqueda web)**: el único motor que mira hacia afuera. Se escribe qué se quiere saber — un artista, una canción, una plaza o una pregunta de industria — y la ruta usa las herramientas de servidor `web_search_20260209` / `web_fetch_20260209` para buscar de verdad. Corre en **dos fases deliberadas**: primero investiga en prosa con las páginas en contexto (reanudando los `pause_turn` del bucle de servidor y recogiendo las URLs de cada `web_search_tool_result`), y después una segunda llamada sin herramientas estructura ese reporte contra el esquema — las citas de búsqueda y la salida tipada no conviven en la misma llamada. Cada hallazgo cita el número de la fuente que lo respalda, y **un hallazgo sin fuente tiene techo de nivel 2**, forzado en el cliente aunque el modelo declare más. Las señales de plaza se proponen para Zonas de Calor y solo entran al mapa con aprobación explícita. Los hallazgos se inyectan en el contexto de los demás motores etiquetados como externos, con instrucción de no mezclarlos con las métricas propias.
 
 **La documentación vive dentro de la plataforma**, en la sección "Documentación" (`src/lib/vincere/manual.ts` es su fuente única), con dos documentos imprimibles:
 
@@ -129,7 +130,9 @@ Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vi
 
 No se duplican aquí para que no se desincronicen.
 
-La interpretación, las preguntas por sección, el triage, el análisis de letra, la ingesta y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`.
+La interpretación, las preguntas por sección, el triage, el análisis de letra, la ingesta, la investigación y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`.
+
+**Por qué no hay Google Trends.** Google no publica una API estable de Trends; las librerías existentes son ingeniería inversa y se rompen, y las IPs de datacenter (Vercel incluida) quedan bloqueadas — funcionaría en local y fallaría en producción. El motor de Investigación cubre esa necesidad con búsqueda web citable, sin proveedor ni credencial adicional. Para métricas duras de mercado la vía es un panel de industria cargado por Ingesta; si en algún momento se quiere data estructurada de terceros, los candidatos son la Spotify Web API pública (búsqueda de artistas, popularity, seguidores, géneros, relacionados — gratis, requiere client id/secret) o Chartmetric / Songstats / Soundcharts (de pago).
 
 **Persistencia.** Con `DATABASE_URL` configurada, VINCERE sincroniza con Postgres igual que el C.C.O.: al abrir lee `/api/vincere/state` y, si la base tiene contenido, esa versión reemplaza la copia local; desde ahí una suscripción al store detecta qué proyectos cambiaron (por identidad de referencia) y los envía a `/api/vincere/sync` con debounce. La primera conexión sube lo que ya hubiera en el navegador. El `localStorage` (clave `vincere-storage`) se conserva como caché de pintado inmediato y respaldo si la red falla; sin `DATABASE_URL` es lo único que hay y el encabezado lo indica ("Solo este dispositivo").
 
@@ -148,6 +151,7 @@ src/
       state/                 GET: estado de VINCERE desde Postgres
       sync/                  POST: guarda proyectos cambiados y estado
       ingest/                Lee capturas, PDF o texto y extrae la data por motor (IA)
+      research/              Investigación con búsqueda web en dos fases (IA)
       stress-test/           Somete el plan de un tercero a prueba (IA)
       analyze-song/          Lectura profunda de la letra de una canción (IA)
       informe/               Informe final del proyecto, cruzando motores (IA)

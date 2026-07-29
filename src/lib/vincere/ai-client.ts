@@ -1,10 +1,13 @@
 import {
+  VincereAlerta,
   VincereAlertaSeveridad,
   VincereCancion,
   VincereCancionAnalisis,
   VincereInforme,
   VincereIngestaPropuesta,
   VincereIngestaResultado,
+  VincereInvestigacion,
+  VincereInvestigacionTipo,
   VincereNivel,
   VincerePotencialCancion,
   VincerePrioridadPaso,
@@ -322,6 +325,107 @@ export async function fetchStressTest(input: {
     veredicto: r.veredicto ?? "",
     nivelGlobal: clampNivel(r.nivelGlobal),
     creadoEn: new Date().toISOString(),
+  };
+}
+
+// Investigación web: el sistema sale a buscar afuera y vuelve con hallazgos
+// citados. Devuelve también las alertas, que se levantan aparte igual que en
+// la ingesta.
+export async function fetchResearch(input: {
+  tipo: VincereInvestigacionTipo;
+  consulta: string;
+  artista: unknown;
+}): Promise<{
+  investigacion: Omit<VincereInvestigacion, "id">;
+  alertas: Omit<VincereAlerta, "id" | "creadoEn" | "origen">[];
+}> {
+  const res = await fetch("/api/vincere/research", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const body = await res.json();
+  const r = body?.result ?? {};
+
+  const fuentes = (Array.isArray(body?.fuentes) ? body.fuentes : []).map(
+    (f: { titulo?: string; url?: string; fecha?: string | null }) => ({
+      titulo: f.titulo ?? f.url ?? "Fuente sin título",
+      url: f.url ?? "",
+      fecha: f.fecha ?? null,
+    })
+  );
+
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  // Un número de fuente fuera de rango sería una cita rota en pantalla: se
+  // descarta aquí en vez de dejar que el enlace apunte a la nada.
+  const referenciasValidas = (v: unknown): number[] =>
+    Array.isArray(v)
+      ? v
+          .filter((n): n is number => typeof n === "number" && Number.isInteger(n))
+          .filter((n) => n >= 1 && n <= fuentes.length)
+      : [];
+
+  const hallazgos = (Array.isArray(r.hallazgos) ? r.hallazgos : []).map(
+    (h: { texto?: string; implicacion?: string; nivel?: number; fuentes?: unknown }) => {
+      const refs = referenciasValidas(h.fuentes);
+      return {
+        texto: h.texto ?? "",
+        implicacion: h.implicacion ?? "",
+        // Un hallazgo sin fuente es criterio, no evidencia: se le pone techo
+        // aunque el modelo se haya entusiasmado con el nivel.
+        nivel: refs.length === 0 ? (Math.min(2, clampNivel(h.nivel)) as VincereNivel) : clampNivel(h.nivel),
+        fuentes: refs,
+      };
+    }
+  );
+
+  const senalesPlaza = (Array.isArray(r.senalesPlaza) ? r.senalesPlaza : [])
+    .map((s: { ciudad?: string; senal?: string; calorSugerido?: number; nivel?: number }) => ({
+      ciudad: (s.ciudad ?? "").trim(),
+      senal: s.senal ?? "",
+      calorSugerido: Math.max(0, Math.min(100, Math.round(Number(s.calorSugerido) || 0))),
+      nivel: clampNivel(s.nivel),
+    }))
+    .filter((s: { ciudad: string }) => s.ciudad.length > 0);
+
+  const sinFuentes = Boolean(body?.sinFuentes) || fuentes.length === 0;
+
+  const alertas = (Array.isArray(r.alertas) ? r.alertas : []).map(
+    (a: { texto?: string; severidad?: string; seccion?: string; nivel?: number }) => ({
+      texto: a.texto ?? "",
+      severidad: SEVERIDADES.includes(a.severidad as VincereAlertaSeveridad)
+        ? (a.severidad as VincereAlertaSeveridad)
+        : "atencion",
+      seccion: SECCIONES_ALERTA.includes(a.seccion as VincereSeccion) ? (a.seccion as VincereSeccion) : null,
+      nivel: clampNivel(a.nivel),
+    })
+  );
+
+  return {
+    investigacion: {
+      tipo: input.tipo,
+      consulta: input.consulta,
+      titulo: r.titulo ?? input.consulta,
+      resumen: r.resumen ?? "",
+      hallazgos,
+      senalesPlaza,
+      implicacionesCatalogo: textos(r.implicacionesCatalogo),
+      preguntasAbiertas: textos(r.preguntasAbiertas),
+      fuentes,
+      nivelGlobal: sinFuentes
+        ? (Math.min(2, clampNivel(r.nivelGlobal)) as VincereNivel)
+        : clampNivel(r.nivelGlobal),
+      sinFuentes,
+      aplicadaEnCalor: false,
+      creadoEn: new Date().toISOString(),
+    },
+    alertas,
   };
 }
 

@@ -9,6 +9,7 @@ import {
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import { fetchSongAnalysis } from "@/lib/vincere/ai-client";
+import { investigacionExterna } from "@/lib/vincere/context";
 import { formatStreams } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
@@ -202,6 +203,9 @@ function SongDetail({
         skipPct: c.skipPct,
         playlistAdds: c.playlistAdds,
       })),
+      // Lo que se investigó afuera: sirve para juzgar si el tema se parece a
+      // lo que ya está saturando el mercado o si abre un carril libre.
+      investigacionExterna: investigacionExterna(proyecto, "catalogo", 2),
     }),
     [proyecto]
   );

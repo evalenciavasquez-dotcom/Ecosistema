@@ -10,6 +10,7 @@ import {
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import { fetchStressTest } from "@/lib/vincere/ai-client";
+import { investigacionExterna } from "@/lib/vincere/context";
 import { genId } from "@/lib/id";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
@@ -77,6 +78,9 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
     kpis: proyecto.kpis,
     decisionesAbiertas: proyecto.decisiones.filter((d) => d.estado === "Pendiente").map((d) => d.texto),
     historial: (proyecto.historial ?? []).slice(-6),
+    // Si ya se investigó al tercero que propone el plan o la plaza donde se
+    // quiere tocar, esa evidencia externa entra a la evaluación.
+    investigacionExterna: investigacionExterna(proyecto, "todo", 3),
   };
 
   async function evaluar() {
