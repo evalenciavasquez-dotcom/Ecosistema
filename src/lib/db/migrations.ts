@@ -83,6 +83,34 @@ export async function ensureMetasFinancierasTable() {
   metasFinancierasEnsured = true;
 }
 
+let cierresMensualesEnsured = false;
+export async function ensureCierresMensualesTable() {
+  if (cierresMensualesEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS cierres_mensuales (
+      id text PRIMARY KEY,
+      mes text NOT NULL,
+      proyecto_id text,
+      proyecto_nombre text,
+      resumen_por_moneda jsonb NOT NULL,
+      categorias_gasto jsonb NOT NULL,
+      horas_invertidas double precision,
+      metas_financieras jsonb NOT NULL,
+      pagos_vencidos jsonb NOT NULL,
+      proyectos_en_riesgo jsonb NOT NULL,
+      decisiones_sin_cerrar jsonb NOT NULL,
+      lectura_estrategica text NOT NULL,
+      semaforo text NOT NULL,
+      creado_en text NOT NULL
+    )`)
+  );
+  await getDb().execute(
+    sql.raw(`CREATE UNIQUE INDEX IF NOT EXISTS cierres_mensuales_mes_proyecto_idx
+      ON cierres_mensuales (mes, COALESCE(proyecto_id, ''))`)
+  );
+  cierresMensualesEnsured = true;
+}
+
 let googleSchemaEnsured = false;
 export async function ensureGoogleSchema() {
   if (googleSchemaEnsured) return;

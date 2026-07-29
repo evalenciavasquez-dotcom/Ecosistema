@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb, isDbConfigured } from "@/lib/db/client";
 import { acciones, agenda, TABLES, type TableName } from "@/lib/db/schema";
 import {
+  ensureCierresMensualesTable,
   ensureEvidenciaArchivoColumns,
   ensureGoogleSchema,
   ensureMetasFinancierasTable,
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     if (table === "proyectos") await ensureProyectoColumns();
     if (table === "agenda" || table === "acciones") await ensureGoogleSchema();
     if (table === "metasFinancieras") await ensureMetasFinancierasTable();
+    if (table === "cierresMensuales") await ensureCierresMensualesTable();
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });

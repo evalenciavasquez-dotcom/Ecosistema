@@ -267,6 +267,57 @@ export interface BandejaItem {
   resultadoLabel?: string;
 }
 
+// --- Cierre económico mensual con lectura estratégica ---
+
+export interface CierreResumenMoneda {
+  moneda: string;
+  ingresosMes: number;
+  gastosMes: number;
+  deficitMes: number;
+  ingresosMesAnterior: number;
+  gastosMesAnterior: number;
+  cajaActual: number;
+  mesesRunway: number | null;
+}
+
+export interface CierreCategoriaGasto {
+  categoria: string;
+  moneda: string;
+  monto: number;
+}
+
+export interface CierrePagoVencido {
+  descripcion: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  diasVencido: number;
+}
+
+export interface CierreMetaSnapshot {
+  descripcion: string;
+  moneda: string;
+  progreso: number; // 0..1
+  cumplida: boolean;
+}
+
+export interface CierreMensual {
+  id: string;
+  mes: string; // "2026-07"
+  proyectoId: string | null; // null = cierre general
+  proyectoNombre: string | null;
+  resumenPorMoneda: CierreResumenMoneda[];
+  categoriasGasto: CierreCategoriaGasto[];
+  horasInvertidas: number | null; // solo cierre por proyecto
+  metasFinancieras: CierreMetaSnapshot[]; // solo cierre general
+  pagosVencidos: CierrePagoVencido[];
+  proyectosEnRiesgo: string[]; // solo cierre general
+  decisionesSinCerrar: string[]; // solo cierre general
+  lecturaEstrategica: string;
+  semaforo: "verde" | "amarillo" | "rojo";
+  creadoEn: string;
+}
+
 export interface RegistroTiempo {
   id: string;
   proyectoId: string;

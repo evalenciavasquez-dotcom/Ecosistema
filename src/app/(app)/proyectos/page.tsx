@@ -15,6 +15,34 @@ import {
 import { formatMinutos, hoyISO, inicioSemanaISO, minutosDe } from "@/lib/tiempo";
 import { useOpenParam } from "@/lib/useOpenParam";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
+import { Pill } from "@/components/ui/Pill";
+
+const SEMAFORO_TONE: Record<string, "green" | "amber" | "red"> = {
+  verde: "green",
+  amarillo: "amber",
+  rojo: "red",
+};
+
+const SEMAFORO_LABEL: Record<string, string> = {
+  verde: "Mes sano",
+  amarillo: "Para revisar",
+  rojo: "Riesgo",
+};
+
+function mesLabel(mes: string): string {
+  const [y, m] = mes.split("-").map(Number);
+  const nombre = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+}
+
+function formatMontoCierre(value: number, moneda: string) {
+  const signo = value < 0 ? "-" : "";
+  return `${signo}$${Math.abs(value).toLocaleString("es-ES")} ${moneda}`;
+}
 
 const ESTADOS: ProyectoEstado[] = [
   "Idea",
@@ -492,6 +520,8 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
 
       <TiempoSection proyectoId={proyecto.id} />
 
+      <CierreMensualProyectoSection proyectoId={proyecto.id} />
+
       <Section title="Personas involucradas">
         {personasProyecto.length === 0 && <Empty />}
         <div className="space-y-2">
@@ -621,6 +651,124 @@ function ProyectoDetail({ proyecto, onClose }: { proyecto: Proyecto; onClose: ()
         </button>
       </div>
     </div>
+  );
+}
+
+function CierreMensualProyectoSection({ proyectoId }: { proyectoId: string }) {
+  const cierresMensuales = useAppStore((s) => s.cierresMensuales).filter((c) => c.proyectoId === proyectoId);
+  const generarCierreMensualAhora = useAppStore((s) => s.generarCierreMensualAhora);
+  const generandoCierreMensual = useAppStore((s) => s.generandoCierreMensual);
+  const [error, setError] = useState("");
+  const ultimo = cierresMensuales[0] ?? null;
+  const historial = cierresMensuales.slice(1, 4);
+
+  async function handleGenerar() {
+    setError("");
+    const result = await generarCierreMensualAhora();
+    if (!result.ok) setError(result.error ?? "No se pudo generar el cierre mensual");
+  }
+
+  return (
+    <Section title="Cierre mensual del proyecto">
+      <div className="rounded-2xl border border-border-subtle bg-surface p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted">
+            Gastos, ingresos, horas invertidas y pagos vencidos de este proyecto, con lectura estratégica de la IA.
+          </p>
+          <button
+            onClick={handleGenerar}
+            disabled={generandoCierreMensual}
+            className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50 shrink-0"
+          >
+            {generandoCierreMensual ? "Generando…" : ultimo ? "Generar de nuevo" : "Generar cierre"}
+          </button>
+        </div>
+
+        {error && (
+          <div className="rounded-xl p-3 text-xs leading-relaxed bg-accent-red/10 border border-accent-red/30 text-accent-red">
+            {error}
+          </div>
+        )}
+
+        {!ultimo ? (
+          <Empty />
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-sm font-medium">{mesLabel(ultimo.mes)}</span>
+              <Pill tone={SEMAFORO_TONE[ultimo.semaforo]}>{SEMAFORO_LABEL[ultimo.semaforo]}</Pill>
+            </div>
+
+            <p className="text-sm leading-relaxed rounded-xl bg-surface-2 p-3.5">{ultimo.lecturaEstrategica}</p>
+
+            {ultimo.horasInvertidas !== null && (
+              <div className="text-xs text-muted">Horas invertidas en el mes: {ultimo.horasInvertidas}h</div>
+            )}
+
+            {ultimo.resumenPorMoneda.length > 0 && (
+              <div className="space-y-2">
+                {ultimo.resumenPorMoneda.map((r) => (
+                  <div key={r.moneda} className="rounded-xl bg-surface-2 p-3">
+                    <div className="text-xs text-muted mb-2">{r.moneda}</div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-[10px] text-muted">Ingresos</div>
+                        <div className="text-sm font-semibold tabular-nums text-accent-green">
+                          {formatMontoCierre(r.ingresosMes, r.moneda)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted">Gastos</div>
+                        <div className="text-sm font-semibold tabular-nums text-accent-red">
+                          {formatMontoCierre(r.gastosMes, r.moneda)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted">Déficit</div>
+                        <div
+                          className={`text-sm font-semibold tabular-nums ${r.deficitMes >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                        >
+                          {formatMontoCierre(r.deficitMes, r.moneda)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {ultimo.pagosVencidos.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-accent-amber mb-1.5">
+                  {ultimo.pagosVencidos.length} pago(s) esperado(s) vencido(s)
+                </div>
+                <div className="space-y-1">
+                  {ultimo.pagosVencidos.slice(0, 4).map((p, i) => (
+                    <div key={i} className="text-xs text-muted">
+                      {p.descripcion} · {formatMontoCierre(p.monto, p.moneda)} · {p.diasVencido} día(s) vencido
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {historial.length > 0 && (
+              <div className="pt-2 border-t border-border-subtle">
+                <div className="text-[11px] uppercase tracking-wide text-muted mb-1.5">Meses anteriores</div>
+                <div className="space-y-1">
+                  {historial.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-xs">
+                      <span className="text-muted">{mesLabel(c.mes)}</span>
+                      <Pill tone={SEMAFORO_TONE[c.semaforo]}>{SEMAFORO_LABEL[c.semaforo]}</Pill>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }
 
