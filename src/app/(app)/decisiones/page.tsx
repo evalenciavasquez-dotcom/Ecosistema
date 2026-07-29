@@ -14,7 +14,6 @@ import {
   StrategicCase,
 } from "@/lib/types";
 import { buildAnalysisContext, proyectoNombre } from "@/lib/selectors";
-import { genId } from "@/lib/id";
 import { useOpenParam } from "@/lib/useOpenParam";
 
 const ESCENARIO_ORDEN: EscenarioTipo[] = [
@@ -117,13 +116,33 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
   const historial = useAppStore((s) => s.historial);
   const decisiones = useAppStore((s) => s.decisiones);
   const strategicCases = useAppStore((s) => s.strategicCases);
-  const addStrategicCase = useAppStore((s) => s.addStrategicCase);
+  const crearCasoDesdeAnalisis = useAppStore((s) => s.crearCasoDesdeAnalisis);
   const resolverDecision = useAppStore((s) => s.resolverDecision);
+  const updateDecision = useAppStore((s) => s.updateDecision);
+  const updateStrategicCase = useAppStore((s) => s.updateStrategicCase);
   const [respuesta, setRespuesta] = useState(decision.decisionFinal);
   const [analizando, setAnalizando] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState("");
 
   const strategicCase = strategicCases.find((c) => c.decisionId === decision.id) ?? null;
+
+  const [resultado, setResultado] = useState(decision.resultadoPosterior);
+  const [hipotesisSeCumplio, setHipotesisSeCumplio] = useState<boolean | null>(
+    strategicCase?.hipotesisSeCumplio ?? null
+  );
+  const [costoDiasRunway, setCostoDiasRunway] = useState(
+    strategicCase?.costoDiasRunway != null ? String(strategicCase.costoDiasRunway) : ""
+  );
+
+  function handleGuardarResultado() {
+    updateDecision(decision.id, { resultadoPosterior: resultado });
+    if (strategicCase) {
+      updateStrategicCase(decision.id, {
+        hipotesisSeCumplio,
+        costoDiasRunway: costoDiasRunway.trim() ? Number(costoDiasRunway) : null,
+      });
+    }
+  }
 
   async function handleAnalyze() {
     setAnalizando(true);
@@ -140,15 +159,7 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
         setErrorAnalisis(data.error || "No se pudo generar el análisis.");
         return;
       }
-      const nuevoCaso: StrategicCase = {
-        id: genId("case"),
-        decisionId: decision.id,
-        ...data.result,
-        nivelAnalisis: "3",
-        modeloUsado: "claude-sonnet-5",
-        creadoEn: new Date().toISOString(),
-      };
-      addStrategicCase(nuevoCaso);
+      crearCasoDesdeAnalisis(decision.id, data.result, false);
     } catch {
       setErrorAnalisis("Error de conexión al generar el análisis.");
     } finally {
@@ -271,6 +282,73 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
           <p className="text-xs text-accent-green">Decisión registrada — estado: {decision.estado}</p>
         )}
       </div>
+
+      {decision.estado !== "Abierta" && (
+        <div className="rounded-xl border border-border-subtle bg-surface p-4 space-y-3">
+          <div className="text-[11px] uppercase tracking-wide text-muted">Resultado</div>
+          <p className="text-xs text-muted">
+            Cerrar el ciclo es lo que hace que el sistema aprenda — qué pasó de verdad con lo que decidiste.
+          </p>
+          {strategicCase?.hipotesisCritica && (
+            <div className="text-xs rounded-lg bg-surface-2 px-3 py-2">
+              <span className="text-muted">La hipótesis crítica era: </span>
+              {strategicCase.hipotesisCritica}
+              <span className="text-muted"> ¿se cumplió?</span>
+            </div>
+          )}
+          {strategicCase && (
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  { v: true, label: "Sí se cumplió" },
+                  { v: false, label: "No se cumplió" },
+                  { v: null, label: "Aún no sé" },
+                ] as const
+              ).map(({ v, label }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setHipotesisSeCumplio(v)}
+                  className={`rounded-full px-3 py-1 text-xs border transition-colors ${
+                    hipotesisSeCumplio === v
+                      ? "bg-accent-blue/20 border-accent-blue text-accent-blue"
+                      : "border-border-subtle text-muted hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          <textarea
+            value={resultado}
+            onChange={(e) => setResultado(e.target.value)}
+            rows={2}
+            placeholder="¿Qué pasó de verdad? (revisa a los 30/60/90 días)"
+            className="w-full resize-none rounded-lg bg-surface-2 border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+          />
+          {strategicCase && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted">Costo real medido, en días de runway:</span>
+              <input
+                type="number"
+                value={costoDiasRunway}
+                onChange={(e) => setCostoDiasRunway(e.target.value)}
+                placeholder="—"
+                className="w-24 rounded-lg bg-surface-2 border border-border-subtle px-2 py-1 text-xs outline-none focus:border-accent-blue"
+              />
+            </div>
+          )}
+          <div className="flex justify-end">
+            <button
+              onClick={handleGuardarResultado}
+              className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2"
+            >
+              Guardar resultado
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -355,6 +433,28 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
           (el más reciente: “{cambiosPosteriores[0].cambio}”). Usa «Regenerar análisis» para
           incorporarlos.
         </div>
+      )}
+
+      {c.metricasFinancieras && c.metricasFinancieras.length > 0 && (
+        <Section title="Chequeo financiero — antes de cualquier opinión">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {c.metricasFinancieras.map((m, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-3 ${
+                  m.semaforo === "verde"
+                    ? "border-accent-green/40 bg-accent-green/5"
+                    : m.semaforo === "amarillo"
+                      ? "border-accent-amber/40 bg-accent-amber/5"
+                      : "border-accent-red/40 bg-accent-red/5"
+                }`}
+              >
+                <div className="text-[11px] uppercase tracking-wide text-muted">{m.nombre}</div>
+                <div className="text-sm font-medium mt-1">{m.valor}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
       )}
 
       <Section title="Resumen ejecutivo">
@@ -541,6 +641,31 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
           })}
         </div>
       </Section>
+
+      {(c.argumentoEnContra || c.hipotesisCritica || c.costoDeEsperar30Dias) && (
+        <Section title="Antes de decidir">
+          {c.argumentoEnContra && (
+            <div className="rounded-xl border border-accent-red/40 bg-accent-red/5 p-4 mb-3">
+              <div className="text-[11px] uppercase tracking-wide text-accent-red mb-1">
+                El mejor argumento en contra
+              </div>
+              <p className="text-sm">{c.argumentoEnContra}</p>
+            </div>
+          )}
+          {c.hipotesisCritica && (
+            <div className="rounded-xl border border-accent-amber/40 bg-accent-amber/5 p-4 mb-3">
+              <div className="text-[11px] uppercase tracking-wide text-accent-amber mb-1">Hipótesis crítica</div>
+              <p className="text-sm">{c.hipotesisCritica}</p>
+            </div>
+          )}
+          {c.costoDeEsperar30Dias && (
+            <div className="rounded-xl border border-border-subtle bg-surface p-4">
+              <div className="text-[11px] uppercase tracking-wide text-muted mb-1">Costo de esperar 30 días</div>
+              <p className="text-sm">{c.costoDeEsperar30Dias}</p>
+            </div>
+          )}
+        </Section>
+      )}
 
       <Section title="Recomendación ejecutiva">
         <div className="rounded-xl border border-accent-blue/50 bg-accent-blue/10 p-4 space-y-3">

@@ -159,6 +159,10 @@ export interface Decision {
   resultadoPosterior: string;
   estado: "Abierta" | "Decidida" | "Cerrada";
   creadoEn: string;
+  // Cuándo se registró la decisión final — usada por el recordatorio de
+  // cierre de ciclo a los 30/60/90 días (ver Bloque 3 de la capa de
+  // cuestionamiento en decisiones).
+  fechaDecision?: string | null;
 }
 
 export type MovimientoTipo = "ingreso" | "gasto";
@@ -203,9 +207,27 @@ export interface Evidencia {
   archivoNombre?: string | null;
 }
 
-export type BandejaEstado = "Nuevo" | "En análisis" | "Necesita confirmación" | "Procesado" | "Descartado";
+export type BandejaEstado =
+  | "Nuevo"
+  | "En análisis"
+  | "Necesita confirmación"
+  | "Requiere decisión"
+  | "Procesado"
+  | "Descartado";
 
 export type BandejaDestino = "accion" | "decision" | "economia" | "evidencia" | "evento" | "registro";
+
+// Señales de que una novedad merece pensarse como Decisión antes de
+// registrarse tal cual, aunque esté escrita como un gasto o una tarea
+// cualquiera — ver "Capa de cuestionamiento en decisiones".
+export type DisparadorDecision = "plata_saliendo" | "compromiso_sin_papel" | "duda" | "ninguno";
+
+export const DISPARADOR_DECISION_LABEL: Record<DisparadorDecision, string> = {
+  plata_saliendo: "plata saliendo",
+  compromiso_sin_papel: "compromiso sin papel",
+  duda: "duda expresada",
+  ninguno: "ninguno",
+};
 
 export const BANDEJA_DESTINO_LABEL: Record<BandejaDestino, string> = {
   accion: "Acción",
@@ -228,6 +250,12 @@ export interface ClasificacionSugerida {
   tipoMovimiento?: MovimientoTipo | null;
   fechaEvento?: string | null;
   horaEvento?: string | null;
+  // Capa de cuestionamiento en decisiones: qué señal detectó la IA (si
+  // alguna) y por qué. diasRunwayEstimado se calcula en el cliente a partir
+  // del monto detectado y el gasto real — no lo produce la IA.
+  disparadorDecision?: DisparadorDecision | null;
+  disparadorRazon?: string | null;
+  diasRunwayEstimado?: number | null;
 }
 
 export interface BandejaItem {
@@ -239,6 +267,57 @@ export interface BandejaItem {
   resultadoLabel?: string;
 }
 
+// --- Cierre económico mensual con lectura estratégica ---
+
+export interface CierreResumenMoneda {
+  moneda: string;
+  ingresosMes: number;
+  gastosMes: number;
+  deficitMes: number;
+  ingresosMesAnterior: number;
+  gastosMesAnterior: number;
+  cajaActual: number;
+  mesesRunway: number | null;
+}
+
+export interface CierreCategoriaGasto {
+  categoria: string;
+  moneda: string;
+  monto: number;
+}
+
+export interface CierrePagoVencido {
+  descripcion: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  diasVencido: number;
+}
+
+export interface CierreMetaSnapshot {
+  descripcion: string;
+  moneda: string;
+  progreso: number; // 0..1
+  cumplida: boolean;
+}
+
+export interface CierreMensual {
+  id: string;
+  mes: string; // "2026-07"
+  proyectoId: string | null; // null = cierre general
+  proyectoNombre: string | null;
+  resumenPorMoneda: CierreResumenMoneda[];
+  categoriasGasto: CierreCategoriaGasto[];
+  horasInvertidas: number | null; // solo cierre por proyecto
+  metasFinancieras: CierreMetaSnapshot[]; // solo cierre general
+  pagosVencidos: CierrePagoVencido[];
+  proyectosEnRiesgo: string[]; // solo cierre general
+  decisionesSinCerrar: string[]; // solo cierre general
+  lecturaEstrategica: string;
+  semaforo: "verde" | "amarillo" | "rojo";
+  creadoEn: string;
+}
+
 export interface RegistroTiempo {
   id: string;
   proyectoId: string;
@@ -246,6 +325,30 @@ export interface RegistroTiempo {
   minutos: number;
   descripcion: string;
   creadoEn: string;
+}
+
+export type GoalEstado = "en_progreso" | "cumplida" | "pausada" | "descartada";
+
+// Criterio que permite al sistema marcar un reto de la IA como cumplido solo
+// — sin que Eduardo tenga que hacerlo — cuando es genuinamente verificable
+// contra datos reales. Todo lo demás (la mayoría de los retos) se marca a mano.
+export type GoalCriterioAuto =
+  | { tipo: "runway_minimo"; moneda: string; mesesMinimos: number }
+  | { tipo: "cero_pagos_vencidos" }
+  | { tipo: "cero_acciones_vencidas" };
+
+export interface Goal {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  proyectoId: string | null; // null = goal general / personal, sin proyecto
+  progreso: number; // 0..100, actualizado a mano (o por el sistema si se cumple criterioAuto)
+  estado: GoalEstado;
+  fechaObjetivo: string | null;
+  creadoEn: string;
+  origen: "manual" | "ia"; // "ia" = reto generado por el sistema para el pool de retos
+  completadoEn: string | null; // fecha en que pasó a "cumplida" — usado para el conteo mensual y la racha
+  criterioAuto: GoalCriterioAuto | null; // si existe, el sistema puede marcarlo cumplido solo
 }
 
 export interface MetaFinanciera {
@@ -363,7 +466,25 @@ export interface RecomendacionEjecutiva {
   confianzaExplicacion: string;
 }
 
+export interface MetricaFinanciera {
+  nombre: string;
+  valor: string;
+  semaforo: "rojo" | "amarillo" | "verde";
+}
+
 export type NivelAnalisis = "1" | "2" | "3";
+
+// Checklist de PROCESO (no de acierto) — mide si el análisis corrió como
+// debía, no si la recomendación resultó correcta. Ver Bloque 3: no se puede
+// medir si una recomendación estratégica fue "correcta", pero sí que el
+// proceso haya corrido — eso es lo auditable, con meta de ≥95%.
+export interface ChecklistProceso {
+  detectoDisparador: boolean;
+  corrioMetricasAntesDeOpinar: boolean;
+  produjoArgumentoEnContra: boolean;
+  nombroHipotesisCritica: boolean;
+  evaluoCostoDeEsperar: boolean;
+}
 
 export interface StrategicCase {
   id: string;
@@ -388,4 +509,14 @@ export interface StrategicCase {
   nivelAnalisis: NivelAnalisis;
   modeloUsado: string;
   creadoEn: string;
+  // --- Aprendizaje: cerrar el ciclo (Bloque 3) ---
+  recomendacionSistema?: string | null;
+  hipotesisCritica?: string | null;
+  hipotesisSeCumplio?: boolean | null;
+  costoDiasRunway?: number | null;
+  checklistProceso?: ChecklistProceso | null;
+  // --- Debate real del panel (Bloque 2) ---
+  metricasFinancieras?: MetricaFinanciera[] | null;
+  argumentoEnContra?: string | null;
+  costoDeEsperar30Dias?: string | null;
 }

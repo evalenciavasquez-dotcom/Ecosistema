@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getDb, isDbConfigured } from "@/lib/db/client";
-import { acciones, agenda, decisiones, movimientos, personas } from "@/lib/db/schema";
+import { acciones, agenda, decisiones, movimientos, personas, strategicCases } from "@/lib/db/schema";
+import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
 import { sendPushToAll } from "@/lib/db/push";
+import { generarCierreMensual } from "@/lib/cierreMensualEngine";
+import { actualizarRetosIA } from "@/lib/goalsEngine";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
 import { getConnection, isGoogleConfigured } from "@/lib/google";
 import { runGoogleSync } from "@/lib/googleSync";
@@ -13,20 +16,26 @@ function hoyISO(): string {
   return now.toISOString().slice(0, 10);
 }
 
+function mesAnteriorAHoy(hoy: string): string {
+  const [y, m] = hoy.slice(0, 7).split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 2, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 function diasHasta(fechaISO: string, hoy: string): number {
   return Math.round((new Date(fechaISO).getTime() - new Date(hoy).getTime()) / 86400000);
 }
 
 export async function GET(request: Request) {
-  // Si Eduardo define CRON_SECRET en Vercel, se exige; sin definirla, el
-  // endpoint solo permite el user-agent del cron de Vercel o una sesión válida
-  // (la protección del proxy ya cubrió el caso de sesión).
+  // Esta ruta queda fuera del proxy de sesión (para que el cron de Vercel
+  // pueda llamarla sin cookie) — por eso CRON_SECRET es obligatoria: sin
+  // ella, cualquiera en internet podría disparar el barrido de Google y leer
+  // el resumen del día. Vercel manda automáticamente el header Authorization
+  // con este valor cuando la variable está configurada.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+  const auth = request.headers.get("authorization");
+  if (!secret || auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   if (!isDbConfigured()) {
@@ -59,13 +68,37 @@ export async function GET(request: Request) {
       }
     }
 
-    const [accionesRows, decisionesRows, personasRows, agendaRows, movimientosRows] = await Promise.all([
-      db.select().from(acciones),
-      db.select().from(decisiones),
-      db.select().from(personas),
-      db.select().from(agenda),
-      db.select().from(movimientos),
-    ]);
+    // Todos los días: verifica retos de la IA cumplidos por criterio
+    // automático y repone el pool hasta 3 activos. No es crítico.
+    try {
+      await actualizarRetosIA();
+    } catch (err) {
+      console.error("Error actualizando los retos de la IA desde el resumen diario", err);
+    }
+
+    // El día 1 de cada mes, cierra el mes recién terminado (general + por
+    // proyecto). No es crítico — un fallo aquí no debe romper el push del día.
+    if (hoy.slice(8, 10) === "01") {
+      try {
+        const resultado = await generarCierreMensual(mesAnteriorAHoy(hoy));
+        if (resultado.generado) {
+          lineas.push(`📊 Cierre de ${resultado.mes} listo — revísalo en Economía.`);
+        }
+      } catch (err) {
+        console.error("Error generando el cierre mensual desde el resumen diario", err);
+      }
+    }
+
+    await ensureStrategicCaseColumns();
+    const [accionesRows, decisionesRows, personasRows, agendaRows, movimientosRows, strategicCasesRows] =
+      await Promise.all([
+        db.select().from(acciones),
+        db.select().from(decisiones),
+        db.select().from(personas),
+        db.select().from(agenda),
+        db.select().from(movimientos),
+        db.select().from(strategicCases),
+      ]);
 
     const abiertas = accionesRows.filter((a) => a.estado === "Pendiente" || a.estado === "En curso");
     const vencidas = abiertas.filter((a) => a.fecha && a.fecha < hoy);
@@ -94,6 +127,24 @@ export async function GET(request: Request) {
       const dias = diasHasta(d.fechaLimite, hoy);
       urgente = urgente || dias <= 1;
       lineas.push(`Decisión "${d.pregunta}" vence ${dias === 0 ? "HOY" : `en ${dias} día(s)`}`);
+    }
+
+    // Cerrar el ciclo (Bloque 3): si decidiste algo hace exactamente 30, 60 o
+    // 90 días y nunca registraste qué pasó, una sola pregunta al día — sin
+    // esto los campos de resultado quedan vacíos para siempre.
+    const paraCierre = decisionesRows.filter((d) => {
+      if (!d.fechaDecision || d.resultadoPosterior) return false;
+      const diasDesde = -diasHasta(d.fechaDecision, hoy);
+      return diasDesde === 30 || diasDesde === 60 || diasDesde === 90;
+    });
+    if (paraCierre.length > 0) {
+      const d = paraCierre[0];
+      const diasDesde = -diasHasta(d.fechaDecision as string, hoy);
+      const caso = strategicCasesRows.find((c) => c.decisionId === d.id);
+      lineas.push(
+        `Hace ${diasDesde} días decidiste "${d.pregunta}". ¿Qué pasó?` +
+          (caso?.hipotesisCritica ? ` La hipótesis crítica era: ${caso.hipotesisCritica}. ¿Se cumplió?` : "")
+      );
     }
 
     const esperando = personasRows.filter((p) => (p.diasSinResponder ?? 0) >= 5);

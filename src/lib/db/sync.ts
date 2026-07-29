@@ -31,6 +31,8 @@ export interface ServerState {
   strategicCases?: unknown[];
   tiempo?: unknown[];
   metasFinancieras?: unknown[];
+  cierresMensuales?: unknown[];
+  goals?: unknown[];
 }
 
 export interface MigrationResult {

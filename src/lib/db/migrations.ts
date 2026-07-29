@@ -29,8 +29,17 @@ export async function ensureStrategicCaseColumns() {
     sql.raw(`ALTER TABLE strategic_cases
       ADD COLUMN IF NOT EXISTS tipo_de_caso text,
       ADD COLUMN IF NOT EXISTS lentes_activos jsonb,
-      ADD COLUMN IF NOT EXISTS panel_expertos jsonb`)
+      ADD COLUMN IF NOT EXISTS panel_expertos jsonb,
+      ADD COLUMN IF NOT EXISTS recomendacion_sistema text,
+      ADD COLUMN IF NOT EXISTS hipotesis_critica text,
+      ADD COLUMN IF NOT EXISTS hipotesis_se_cumplio boolean,
+      ADD COLUMN IF NOT EXISTS costo_dias_runway double precision,
+      ADD COLUMN IF NOT EXISTS checklist_proceso jsonb,
+      ADD COLUMN IF NOT EXISTS metricas_financieras jsonb,
+      ADD COLUMN IF NOT EXISTS argumento_en_contra text,
+      ADD COLUMN IF NOT EXISTS costo_de_esperar_30_dias text`)
   );
+  await getDb().execute(sql.raw(`ALTER TABLE decisiones ADD COLUMN IF NOT EXISTS fecha_decision text`));
   strategicCaseColumnsEnsured = true;
 }
 
@@ -97,6 +106,66 @@ export async function ensureVincereSchema() {
     )`)
   );
   vincereSchemaEnsured = true;
+}
+
+let cierresMensualesEnsured = false;
+export async function ensureCierresMensualesTable() {
+  if (cierresMensualesEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS cierres_mensuales (
+      id text PRIMARY KEY,
+      mes text NOT NULL,
+      proyecto_id text,
+      proyecto_nombre text,
+      resumen_por_moneda jsonb NOT NULL,
+      categorias_gasto jsonb NOT NULL,
+      horas_invertidas double precision,
+      metas_financieras jsonb NOT NULL,
+      pagos_vencidos jsonb NOT NULL,
+      proyectos_en_riesgo jsonb NOT NULL,
+      decisiones_sin_cerrar jsonb NOT NULL,
+      lectura_estrategica text NOT NULL,
+      semaforo text NOT NULL,
+      creado_en text NOT NULL
+    )`)
+  );
+  await getDb().execute(
+    sql.raw(`CREATE UNIQUE INDEX IF NOT EXISTS cierres_mensuales_mes_proyecto_idx
+      ON cierres_mensuales (mes, COALESCE(proyecto_id, ''))`)
+  );
+  cierresMensualesEnsured = true;
+}
+
+let goalsEnsured = false;
+export async function ensureGoalsTable() {
+  if (goalsEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS goals (
+      id text PRIMARY KEY,
+      titulo text NOT NULL,
+      descripcion text NOT NULL,
+      proyecto_id text,
+      progreso integer NOT NULL DEFAULT 0,
+      estado text NOT NULL,
+      fecha_objetivo text,
+      creado_en text NOT NULL
+    )`)
+  );
+  goalsEnsured = true;
+}
+
+let goalColumnsEnsured = false;
+// Columnas del pool de retos de la IA — llegaron después de la tabla goals
+// original, así que las tablas ya creadas necesitan el ALTER.
+export async function ensureGoalColumns() {
+  if (goalColumnsEnsured) return;
+  await getDb().execute(
+    sql.raw(`ALTER TABLE goals
+      ADD COLUMN IF NOT EXISTS origen text NOT NULL DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS completado_en text,
+      ADD COLUMN IF NOT EXISTS criterio_auto jsonb`)
+  );
+  goalColumnsEnsured = true;
 }
 
 let googleSchemaEnsured = false;

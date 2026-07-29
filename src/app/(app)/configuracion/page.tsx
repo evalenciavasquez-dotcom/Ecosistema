@@ -40,6 +40,8 @@ export default function ConfiguracionPage() {
   const router = useRouter();
   const modoEnfoque = useAppStore((s) => s.modoEnfoque);
   const toggleModoEnfoque = useAppStore((s) => s.toggleModoEnfoque);
+  const umbralRunwayDecisionDias = useAppStore((s) => s.umbralRunwayDecisionDias);
+  const setUmbralRunwayDecisionDias = useAppStore((s) => s.setUmbralRunwayDecisionDias);
   const resetToSeed = useAppStore((s) => s.resetToSeed);
   const resetToEmpty = useAppStore((s) => s.resetToEmpty);
   const historial = useAppStore((s) => s.historial);
@@ -388,6 +390,33 @@ export default function ConfiguracionPage() {
               }`}
             />
           </button>
+        </div>
+      </Section>
+
+      <Section title="Cuestionamiento en decisiones">
+        <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
+          <div>
+            <div className="text-sm font-medium">Umbral para analizar sin preguntar</div>
+            <p className="text-xs text-muted mt-0.5 max-w-sm">
+              Cuando algo escrito como un gasto o un compromiso cualquiera en realidad pesa una decisión grande, el
+              sistema te pregunta primero si quieres el análisis completo antes de registrarlo. Si pesa más que este
+              umbral de días de runway, corre el análisis solo, sin preguntar — para que no dependa de tu estado de
+              ánimo del momento.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              value={umbralRunwayDecisionDias}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (Number.isFinite(v) && v > 0) setUmbralRunwayDecisionDias(v);
+              }}
+              className="w-20 rounded-lg bg-surface-2 border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue"
+            />
+            <span className="text-sm text-muted">días de runway</span>
+          </div>
         </div>
       </Section>
 

@@ -54,6 +54,21 @@ export function computeRunway(movimientos: MovimientoEconomico[], hoyISO: string
   });
 }
 
+// Cuántos días de runway representa un monto puntual — la unidad en la que
+// Eduardo decide mejor que en moneda cruda (ver "Capa de cuestionamiento en
+// decisiones"). null si no hay suficiente historial de gasto en esa moneda
+// para medirlo — en ese caso el disparador debe preguntar, nunca auto-actuar.
+export function diasRunwayDeMonto(
+  monto: number,
+  moneda: string,
+  movimientos: MovimientoEconomico[],
+  hoyISO: string
+): number | null {
+  const runway = computeRunway(movimientos, hoyISO).find((r) => r.moneda === moneda);
+  if (!runway || runway.gastoMensualPromedio <= 0) return null;
+  return monto / (runway.gastoMensualPromedio / 30);
+}
+
 export interface ProyeccionPunto {
   moneda: string;
   cajaActual: number;

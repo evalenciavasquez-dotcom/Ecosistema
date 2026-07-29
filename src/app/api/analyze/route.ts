@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { strategicCaseGeneratedSchema } from "@/lib/strategic-case-schema";
 import { SYSTEM_PROMPT, buildUserPrompt } from "@/lib/analysis-prompt";
+import { AJENO, CONTRADICTOR, correrRondaDos, correrRondaUno, elegirEspecialistas } from "@/lib/debate/engine";
 
 export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -21,15 +22,40 @@ export async function POST(request: Request) {
   const client = new Anthropic({ apiKey });
 
   try {
+    // Router (3-5 especialistas relevantes) + Contradictor y Ajeno, que
+    // entran siempre. Con eso corre el debate real en dos rondas antes de
+    // que el modelo de síntesis vea el caso.
+    const resumenCaso = buildUserPrompt(body);
+    const especialistasElegidos = await elegirEspecialistas(client, resumenCaso);
+    const especialistas = [...especialistasElegidos, CONTRADICTOR, AJENO];
+
+    const rondaUno = await correrRondaUno(client, especialistas, resumenCaso);
+    const rondaDos = await correrRondaDos(client, especialistas, rondaUno);
+
+    const contextoConDebate = {
+      ...body,
+      debate: {
+        rondaUno: rondaUno.map((r) => ({ nombre: r.nombre, texto: r.texto })),
+        rondaDos: rondaDos.map((r) => ({
+          nombre: r.nombre,
+          respuestaMasFuerte: r.respuestaMasFuerte,
+          razonMasFuerte: r.razonMasFuerte,
+          puntoCiegoMasGrande: r.puntoCiegoMasGrande,
+          cualEsElPuntoCiego: r.cualEsElPuntoCiego,
+          queSeEscapoATodas: r.queSeEscapoATodas,
+        })),
+      },
+    };
+
     const response = await client.messages.parse({
       model: "claude-sonnet-5",
-      max_tokens: 10000,
+      max_tokens: 12000,
       thinking: { type: "adaptive" },
       output_config: {
         format: zodOutputFormat(strategicCaseGeneratedSchema),
       },
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildUserPrompt(body) }],
+      messages: [{ role: "user", content: buildUserPrompt(contextoConDebate) }],
     });
 
     if (response.stop_reason === "refusal") {

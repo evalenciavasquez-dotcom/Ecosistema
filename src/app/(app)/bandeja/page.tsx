@@ -4,10 +4,24 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { BandejaEstadoBadge } from "@/components/ui/badges";
-import { BANDEJA_DESTINO_LABEL, BandejaDestino, BandejaItem, ClasificacionSugerida, Proyecto } from "@/lib/types";
+import {
+  BANDEJA_DESTINO_LABEL,
+  BandejaDestino,
+  BandejaItem,
+  ClasificacionSugerida,
+  DISPARADOR_DECISION_LABEL,
+  Proyecto,
+} from "@/lib/types";
 import { proyectoNombre } from "@/lib/selectors";
 
-const ESTADOS_ORDEN = ["Nuevo", "En análisis", "Necesita confirmación", "Procesado", "Descartado"] as const;
+const ESTADOS_ORDEN = [
+  "Nuevo",
+  "En análisis",
+  "Necesita confirmación",
+  "Requiere decisión",
+  "Procesado",
+  "Descartado",
+] as const;
 
 function BandejaContent() {
   const params = useSearchParams();
@@ -29,6 +43,8 @@ function BandejaContent() {
   const approveBandejaItem = useAppStore((s) => s.approveBandejaItem);
   const discardBandejaItem = useAppStore((s) => s.discardBandejaItem);
   const reclassifyBandejaItem = useAppStore((s) => s.reclassifyBandejaItem);
+  const aceptarAnalisisBandeja = useAppStore((s) => s.aceptarAnalisisBandeja);
+  const rechazarAnalisisBandeja = useAppStore((s) => s.rechazarAnalisisBandeja);
 
   useEffect(() => {
     if (params.get("focus") === "1") textareaRef.current?.focus();
@@ -146,6 +162,8 @@ function BandejaContent() {
               reclassifyBandejaItem(item.id, patch);
               setEditingId(null);
             }}
+            onAceptarAnalisis={() => aceptarAnalisisBandeja(item.id)}
+            onRechazarAnalisis={() => rechazarAnalisisBandeja(item.id)}
           />
         ))}
       </div>
@@ -162,6 +180,8 @@ function BandejaCard({
   onApprove,
   onDiscard,
   onReclassify,
+  onAceptarAnalisis,
+  onRechazarAnalisis,
 }: {
   item: BandejaItem;
   proyectos: Proyecto[];
@@ -171,9 +191,13 @@ function BandejaCard({
   onApprove: () => void;
   onDiscard: () => void;
   onReclassify: (patch: Partial<ClasificacionSugerida>) => void;
+  onAceptarAnalisis: () => void;
+  onRechazarAnalisis: () => void;
 }) {
   const procesado = item.estado === "Procesado" || item.estado === "Descartado";
   const clasificando = item.estado === "En análisis";
+  const requiereDecision = item.estado === "Requiere decisión";
+  const [analizando, setAnalizando] = useState(false);
   const c = item.clasificacion;
   const previewEconomia =
     c.destino === "economia" && !procesado
@@ -212,7 +236,42 @@ function BandejaCard({
         </div>
       )}
 
-      {!procesado && !clasificando && (
+      {requiereDecision && (
+        <div className="rounded-xl border border-accent-red/40 bg-accent-red/5 p-3 mt-3 space-y-2">
+          <div className="text-xs font-medium text-accent-red">
+            ⚠️ Detecté {c.disparadorDecision ? DISPARADOR_DECISION_LABEL[c.disparadorDecision] : "una señal"}
+            {c.disparadorRazon ? ` — ${c.disparadorRazon}` : ""}
+          </div>
+          <div className="text-xs text-muted">
+            {c.diasRunwayEstimado != null
+              ? `Esto pesa ~${Math.round(c.diasRunwayEstimado)} días de runway.`
+              : "No se detectó un monto claro para pesarlo en días de runway."}{" "}
+            ¿Lo analizo antes de registrar?
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={async () => {
+                setAnalizando(true);
+                await onAceptarAnalisis();
+                setAnalizando(false);
+              }}
+              disabled={analizando}
+              className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50"
+            >
+              {analizando ? "Analizando…" : "Sí, analizalo"}
+            </button>
+            <button
+              onClick={onRechazarAnalisis}
+              disabled={analizando}
+              className="text-xs font-medium text-muted hover:text-foreground disabled:opacity-50"
+            >
+              No, registrá y ya
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!procesado && !clasificando && !requiereDecision && (
         <div className="flex items-center gap-4 mt-3">
           <button onClick={onApprove} className="text-xs font-medium text-accent-blue">
             Aprobar

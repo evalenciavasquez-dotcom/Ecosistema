@@ -1,12 +1,19 @@
-import { doublePrecision, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 import type {
   AnalisisEconomicoProyecto,
+  ChecklistProceso,
+  CierreCategoriaGasto,
+  CierreMetaSnapshot,
+  CierrePagoVencido,
+  CierreResumenMoneda,
   ClasificacionSugerida,
   Dofa,
   EscenarioEvaluacion,
   EscenarioProfundo,
   GananciaPerdida,
+  GoalCriterioAuto,
   HechoOHipotesis,
+  MetricaFinanciera,
   RecomendacionEjecutiva,
   Rentabilidad,
   StakeholderAnalysis,
@@ -85,6 +92,9 @@ export const decisiones = pgTable("decisiones", {
   resultadoPosterior: text("resultado_posterior").notNull(),
   estado: text("estado").notNull(),
   creadoEn: text("creado_en").notNull(),
+  // Cuándo se registró la decisión final (resolverDecision) — usada por el
+  // recordatorio de cierre de ciclo a los 30/60/90 días.
+  fechaDecision: text("fecha_decision"),
 });
 
 export const movimientos = pgTable("movimientos", {
@@ -173,6 +183,19 @@ export const strategicCases = pgTable("strategic_cases", {
   nivelAnalisis: text("nivel_analisis").notNull(),
   modeloUsado: text("modelo_usado").notNull(),
   creadoEn: text("creado_en").notNull(),
+  // --- Aprendizaje: cerrar el ciclo (ver "Capa de cuestionamiento en
+  // decisiones", Bloque 3) — qué recomendó el sistema, si el proceso corrió
+  // como debía, y qué pasó después de verdad. Todos nullable porque se
+  // llenan progresivamente, no al momento de crear el análisis.
+  recomendacionSistema: text("recomendacion_sistema"),
+  hipotesisCritica: text("hipotesis_critica"),
+  hipotesisSeCumplio: boolean("hipotesis_se_cumplio"),
+  costoDiasRunway: doublePrecision("costo_dias_runway"),
+  checklistProceso: jsonb("checklist_proceso").$type<ChecklistProceso>(),
+  // --- Debate real del panel (Bloque 2) ---
+  metricasFinancieras: jsonb("metricas_financieras").$type<MetricaFinanciera[]>(),
+  argumentoEnContra: text("argumento_en_contra"),
+  costoDeEsperar30Dias: text("costo_de_esperar_30_dias"),
 });
 
 export const tiempo = pgTable("tiempo", {
@@ -192,6 +215,41 @@ export const metasFinancieras = pgTable("metas_financieras", {
   montoObjetivo: doublePrecision("monto_objetivo").notNull(),
   fechaObjetivo: text("fecha_objetivo"),
   creadoEn: text("creado_en").notNull(),
+});
+
+// Cierre económico mensual con lectura estratégica — una fila por mes en
+// general (proyecto_id null) y una por cada proyecto activo ese mes.
+export const cierresMensuales = pgTable("cierres_mensuales", {
+  id: text("id").primaryKey(),
+  mes: text("mes").notNull(),
+  proyectoId: text("proyecto_id"),
+  proyectoNombre: text("proyecto_nombre"),
+  resumenPorMoneda: jsonb("resumen_por_moneda").$type<CierreResumenMoneda[]>().notNull(),
+  categoriasGasto: jsonb("categorias_gasto").$type<CierreCategoriaGasto[]>().notNull(),
+  horasInvertidas: doublePrecision("horas_invertidas"),
+  metasFinancieras: jsonb("metas_financieras").$type<CierreMetaSnapshot[]>().notNull(),
+  pagosVencidos: jsonb("pagos_vencidos").$type<CierrePagoVencido[]>().notNull(),
+  proyectosEnRiesgo: jsonb("proyectos_en_riesgo").$type<string[]>().notNull(),
+  decisionesSinCerrar: jsonb("decisiones_sin_cerrar").$type<string[]>().notNull(),
+  lecturaEstrategica: text("lectura_estrategica").notNull(),
+  semaforo: text("semaforo").notNull(),
+  creadoEn: text("creado_en").notNull(),
+});
+
+// GOALS — objetivos generales del sistema (no solo financieros), atados a
+// un proyecto o sueltos (personales/generales); progreso manual.
+export const goals = pgTable("goals", {
+  id: text("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  descripcion: text("descripcion").notNull(),
+  proyectoId: text("proyecto_id"),
+  progreso: integer("progreso").notNull().default(0),
+  estado: text("estado").notNull(),
+  fechaObjetivo: text("fecha_objetivo"),
+  creadoEn: text("creado_en").notNull(),
+  origen: text("origen").notNull().default("manual"),
+  completadoEn: text("completado_en"),
+  criterioAuto: jsonb("criterio_auto").$type<GoalCriterioAuto | null>(),
 });
 
 // Conexión OAuth con Google — una sola fila (id fijo "default"), no es
@@ -242,6 +300,8 @@ export const vincereEstado = pgTable("vincere_estado", {
 export const TABLES = {
   tiempo,
   metasFinancieras,
+  cierresMensuales,
+  goals,
   proyectos,
   personas,
   acciones,

@@ -69,7 +69,8 @@ const STATEMENTS = [
     condiciones jsonb NOT NULL,
     resultado_posterior text NOT NULL,
     estado text NOT NULL,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    fecha_decision text
   )`,
   `CREATE TABLE IF NOT EXISTS movimientos (
     id text PRIMARY KEY,
@@ -154,6 +155,35 @@ const STATEMENTS = [
     fecha_objetivo text,
     creado_en text NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS cierres_mensuales (
+    id text PRIMARY KEY,
+    mes text NOT NULL,
+    proyecto_id text,
+    proyecto_nombre text,
+    resumen_por_moneda jsonb NOT NULL,
+    categorias_gasto jsonb NOT NULL,
+    horas_invertidas double precision,
+    metas_financieras jsonb NOT NULL,
+    pagos_vencidos jsonb NOT NULL,
+    proyectos_en_riesgo jsonb NOT NULL,
+    decisiones_sin_cerrar jsonb NOT NULL,
+    lectura_estrategica text NOT NULL,
+    semaforo text NOT NULL,
+    creado_en text NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS goals (
+    id text PRIMARY KEY,
+    titulo text NOT NULL,
+    descripcion text NOT NULL,
+    proyecto_id text,
+    progreso integer NOT NULL DEFAULT 0,
+    estado text NOT NULL,
+    fecha_objetivo text,
+    creado_en text NOT NULL,
+    origen text NOT NULL DEFAULT 'manual',
+    completado_en text,
+    criterio_auto jsonb
+  )`,
   `CREATE TABLE IF NOT EXISTS strategic_cases (
     id text PRIMARY KEY,
     decision_id text NOT NULL,
@@ -177,7 +207,15 @@ const STATEMENTS = [
     recomendacion jsonb NOT NULL,
     nivel_analisis text NOT NULL,
     modelo_usado text NOT NULL,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    recomendacion_sistema text,
+    hipotesis_critica text,
+    hipotesis_se_cumplio boolean,
+    costo_dias_runway double precision,
+    checklist_proceso jsonb,
+    metricas_financieras jsonb,
+    argumento_en_contra text,
+    costo_de_esperar_30_dias text
   )`,
 ];
 
