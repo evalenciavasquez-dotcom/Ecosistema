@@ -4,6 +4,7 @@ import { acciones, agenda, decisiones, movimientos, personas, strategicCases } f
 import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
 import { sendPushToAll } from "@/lib/db/push";
 import { generarCierreMensual } from "@/lib/cierreMensualEngine";
+import { actualizarRetosIA } from "@/lib/goalsEngine";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
 import { getConnection, isGoogleConfigured } from "@/lib/google";
 import { runGoogleSync } from "@/lib/googleSync";
@@ -65,6 +66,14 @@ export async function GET(request: Request) {
       } catch (err) {
         console.error("Error sincronizando con Google desde el resumen diario", err);
       }
+    }
+
+    // Todos los días: verifica retos de la IA cumplidos por criterio
+    // automático y repone el pool hasta 3 activos. No es crítico.
+    try {
+      await actualizarRetosIA();
+    } catch (err) {
+      console.error("Error actualizando los retos de la IA desde el resumen diario", err);
     }
 
     // El día 1 de cada mes, cierra el mes recién terminado (general + por

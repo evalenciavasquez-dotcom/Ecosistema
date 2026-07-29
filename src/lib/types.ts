@@ -329,15 +329,26 @@ export interface RegistroTiempo {
 
 export type GoalEstado = "en_progreso" | "cumplida" | "pausada" | "descartada";
 
+// Criterio que permite al sistema marcar un reto de la IA como cumplido solo
+// — sin que Eduardo tenga que hacerlo — cuando es genuinamente verificable
+// contra datos reales. Todo lo demás (la mayoría de los retos) se marca a mano.
+export type GoalCriterioAuto =
+  | { tipo: "runway_minimo"; moneda: string; mesesMinimos: number }
+  | { tipo: "cero_pagos_vencidos" }
+  | { tipo: "cero_acciones_vencidas" };
+
 export interface Goal {
   id: string;
   titulo: string;
   descripcion: string;
   proyectoId: string | null; // null = goal general / personal, sin proyecto
-  progreso: number; // 0..100, actualizado a mano
+  progreso: number; // 0..100, actualizado a mano (o por el sistema si se cumple criterioAuto)
   estado: GoalEstado;
   fechaObjetivo: string | null;
   creadoEn: string;
+  origen: "manual" | "ia"; // "ia" = reto generado por el sistema para el pool de retos
+  completadoEn: string | null; // fecha en que pasó a "cumplida" — usado para el conteo mensual y la racha
+  criterioAuto: GoalCriterioAuto | null; // si existe, el sistema puede marcarlo cumplido solo
 }
 
 export interface MetaFinanciera {

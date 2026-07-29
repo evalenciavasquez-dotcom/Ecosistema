@@ -811,7 +811,10 @@ function GoalsProyectoSection({ proyectoId }: { proyectoId: string }) {
         {goals.map((g: Goal) => (
           <div key={g.id} className="rounded-xl border border-border-subtle bg-surface p-3 space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium">{g.titulo}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">{g.titulo}</span>
+                {g.origen === "ia" && <Pill tone="purple">Reto IA</Pill>}
+              </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Pill tone={GOAL_ESTADO_TONE[g.estado]}>{GOAL_ESTADO_LABEL[g.estado]}</Pill>
                 <button onClick={() => deleteGoal(g.id)} className="text-accent-red text-xs" aria-label="Eliminar goal">

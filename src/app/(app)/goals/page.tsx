@@ -22,18 +22,51 @@ const ESTADO_LABEL: Record<GoalEstado, string> = {
 
 const ESTADOS: GoalEstado[] = ["en_progreso", "cumplida", "pausada", "descartada"];
 
+function mesActualStr(): string {
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function computeRachaYContador(retosIA: Goal[]) {
+  const cumplidos = retosIA.filter((g) => g.estado === "cumplida" && g.completadoEn);
+  const porMes = new Map<string, number>();
+  cumplidos.forEach((g) => {
+    const mes = g.completadoEn!.slice(0, 7);
+    porMes.set(mes, (porMes.get(mes) ?? 0) + 1);
+  });
+  const esteMes = porMes.get(mesActualStr()) ?? 0;
+  let racha = 0;
+  const cursor = new Date();
+  cursor.setDate(1);
+  for (let mesesAtras = 0; mesesAtras < 240; mesesAtras++) {
+    const mesStr = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
+    if ((porMes.get(mesStr) ?? 0) === 0) break;
+    racha++;
+    cursor.setMonth(cursor.getMonth() - 1);
+  }
+  return { esteMes, totalHistorico: cumplidos.length, racha };
+}
+
 export default function GoalsPage() {
   const router = useRouter();
   const goals = useAppStore((s) => s.goals);
   const proyectos = useAppStore((s) => s.proyectos);
   const updateGoal = useAppStore((s) => s.updateGoal);
   const deleteGoal = useAppStore((s) => s.deleteGoal);
+  const buscarMasRetos = useAppStore((s) => s.buscarMasRetos);
+  const buscandoRetos = useAppStore((s) => s.buscandoRetos);
   const [showNew, setShowNew] = useState(false);
   const [mostrarCerradas, setMostrarCerradas] = useState(false);
+  const [errorRetos, setErrorRetos] = useState("");
 
+  const retosIA = useMemo(() => goals.filter((g) => g.origen === "ia"), [goals]);
+  const retosActivos = retosIA.filter((g) => g.estado === "en_progreso");
+  const { esteMes, totalHistorico, racha } = useMemo(() => computeRachaYContador(retosIA), [retosIA]);
+
+  const manuales = goals.filter((g) => g.origen === "manual");
   const visibles = useMemo(
-    () => goals.filter((g) => mostrarCerradas || (g.estado !== "cumplida" && g.estado !== "descartada")),
-    [goals, mostrarCerradas]
+    () => manuales.filter((g) => mostrarCerradas || (g.estado !== "cumplida" && g.estado !== "descartada")),
+    [manuales, mostrarCerradas]
   );
 
   const sinProyecto = visibles.filter((g) => !g.proyectoId);
@@ -49,15 +82,76 @@ export default function GoalsPage() {
     return map;
   }, [visibles]);
 
+  async function handleBuscarRetos() {
+    setErrorRetos("");
+    const result = await buscarMasRetos();
+    if (!result.ok) setErrorRetos(result.error ?? "No se pudo buscar retos nuevos");
+  }
+
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Goals</h2>
-          <p className="text-sm text-muted mt-1">
-            Objetivos generales — de proyecto, personales o del sistema — con progreso que tú actualizas.
-          </p>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Goals</h2>
+        <p className="text-sm text-muted mt-1">
+          Objetivos generales — de proyecto, personales o del sistema — con progreso que tú actualizas.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">Retos de la IA</div>
+          <button
+            onClick={handleBuscarRetos}
+            disabled={buscandoRetos}
+            className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50 shrink-0"
+          >
+            {buscandoRetos ? "Buscando…" : "Buscar más retos"}
+          </button>
         </div>
+
+        {errorRetos && (
+          <div className="rounded-xl p-3 text-xs leading-relaxed bg-accent-red/10 border border-accent-red/30 text-accent-red">
+            {errorRetos}
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl bg-surface-2 p-3">
+            <div className="text-[10px] text-muted">Este mes</div>
+            <div className="text-lg font-semibold tabular-nums">{esteMes}</div>
+          </div>
+          <div className="rounded-xl bg-surface-2 p-3">
+            <div className="text-[10px] text-muted">Racha</div>
+            <div className="text-lg font-semibold tabular-nums">{racha > 0 ? `🔥 ${racha}` : "0"}</div>
+          </div>
+          <div className="rounded-xl bg-surface-2 p-3">
+            <div className="text-[10px] text-muted">Total cumplidos</div>
+            <div className="text-lg font-semibold tabular-nums">{totalHistorico}</div>
+          </div>
+        </div>
+
+        {retosActivos.length === 0 ? (
+          <p className="text-sm text-muted">
+            Sin retos activos todavía. El sistema propone retos solo, basados en puntos débiles reales (runway,
+            pagos vencidos, proyectos en riesgo, etc.) — o pulsa &ldquo;Buscar más retos&rdquo; para generarlos ahora.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {retosActivos.map((g) => (
+              <GoalCard
+                key={g.id}
+                goal={g}
+                onUpdate={updateGoal}
+                onDelete={deleteGoal}
+                proyectoNombre={g.proyectoId ? proyectos.find((p) => p.id === g.proyectoId)?.nombre : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[11px] uppercase tracking-wide text-muted">Tus goals</div>
         <button
           onClick={() => setShowNew(true)}
           className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 shrink-0"
@@ -78,8 +172,8 @@ export default function GoalsPage() {
 
       {visibles.length === 0 && (
         <p className="text-sm text-muted">
-          Sin goals todavía. Un goal no es una meta financiera — es cualquier objetivo que quieras trackear: un
-          lanzamiento, cerrar un cliente, terminar una fase de un proyecto.
+          Sin goals propios todavía. Un goal no es una meta financiera — es cualquier objetivo que quieras
+          trackear: un lanzamiento, cerrar un cliente, terminar una fase de un proyecto.
         </p>
       )}
 
@@ -122,17 +216,24 @@ function GoalCard({
   goal,
   onUpdate,
   onDelete,
+  proyectoNombre,
 }: {
   goal: Goal;
   onUpdate: (id: string, cambios: Partial<Pick<Goal, "titulo" | "descripcion" | "progreso" | "estado" | "fechaObjetivo">>) => void;
   onDelete: (id: string) => void;
+  proyectoNombre?: string;
 }) {
   return (
     <div className="rounded-2xl border border-border-subtle bg-surface p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium">{goal.titulo}</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium">{goal.titulo}</span>
+            {goal.origen === "ia" && <Pill tone="purple">Reto IA</Pill>}
+            {goal.criterioAuto && <span className="text-[10px] text-muted">se verifica solo</span>}
+          </div>
           {goal.descripcion && <p className="text-xs text-muted mt-1 leading-relaxed">{goal.descripcion}</p>}
+          {proyectoNombre && <div className="text-[11px] text-accent-blue mt-1">{proyectoNombre}</div>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Pill tone={ESTADO_TONE[goal.estado]}>{ESTADO_LABEL[goal.estado]}</Pill>

@@ -76,6 +76,8 @@ interface AppState {
   addGoal: (goal: { titulo: string; descripcion: string; proyectoId?: string | null; fechaObjetivo?: string | null }) => void;
   updateGoal: (id: string, cambios: Partial<Pick<Goal, "titulo" | "descripcion" | "progreso" | "estado" | "fechaObjetivo">>) => void;
   deleteGoal: (id: string) => void;
+  buscandoRetos: boolean;
+  buscarMasRetos: () => Promise<{ ok: boolean; error?: string }>;
 
   // Cronómetro de trabajo: uno activo a la vez, local a este dispositivo.
   timerActivo: { proyectoId: string; inicio: string } | null;
@@ -168,6 +170,7 @@ function seedState() {
     cierresMensuales: [] as CierreMensual[],
     generandoCierreMensual: false,
     goals: [] as Goal[],
+    buscandoRetos: false,
     timerActivo: null as { proyectoId: string; inicio: string } | null,
   };
 }
@@ -256,20 +259,42 @@ export const useAppStore = create<AppState>()(
           estado: "en_progreso",
           fechaObjetivo: goal.fechaObjetivo ?? null,
           creadoEn: new Date().toISOString(),
+          origen: "manual",
+          completadoEn: null,
+          criterioAuto: null,
         };
         set((state) => ({ goals: [nuevo, ...state.goals] }));
         dbMutate("goals", "insert", undefined, nuevo);
         get().logHistorial("goal", nuevo.id, `Goal "${goal.titulo}" creado`);
       },
       updateGoal: (id, cambios) => {
+        // Si el cambio marca (o desmarca) el estado "cumplida", la fecha de
+        // cierre se lleva sola — la usan el conteo mensual y la racha.
+        const cambiosConFecha =
+          "estado" in cambios ? { ...cambios, completadoEn: cambios.estado === "cumplida" ? new Date().toISOString() : null } : cambios;
         set((state) => ({
-          goals: state.goals.map((g) => (g.id === id ? { ...g, ...cambios } : g)),
+          goals: state.goals.map((g) => (g.id === id ? { ...g, ...cambiosConFecha } : g)),
         }));
-        dbMutate("goals", "update", id, cambios);
+        dbMutate("goals", "update", id, cambiosConFecha);
       },
       deleteGoal: (id) => {
         set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }));
         dbMutate("goals", "delete", id);
+      },
+
+      buscarMasRetos: async () => {
+        set({ buscandoRetos: true });
+        try {
+          const res = await fetch("/api/goals-retos", { method: "POST" });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) return { ok: false, error: body?.error ?? "No se pudo buscar retos nuevos" };
+          await get().hydrateFromServer();
+          return { ok: true };
+        } catch {
+          return { ok: false, error: "No se pudo conectar con el servidor" };
+        } finally {
+          set({ buscandoRetos: false });
+        }
       },
 
       addStrategicCase: (strategicCase) => {
