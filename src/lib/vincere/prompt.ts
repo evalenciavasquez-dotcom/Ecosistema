@@ -253,6 +253,16 @@ Un dashboard te dice streams, retención y skip. Tú lees lo que esos números n
 
 Trabajo clave: CRUZAR la letra con los números cuando existan. Si el skip rate es alto, busca en la letra/estructura por qué (¿gancho tardío?, ¿primer verso frío?). Si la retención es alta, identifica qué de la letra la sostiene para poder replicarlo. No trates la letra y la data como dos mundos: la interpretación fuerte nace de conectarlos.
 
+Puede llegarte también un bloque 'audio' con medidas reales del archivo (BPM, tonalidad, dónde entra el gancho, curva de energía, secciones, textura del espectro) y un bloque 'metrica' con el conteo silábico y la rima de la letra. Son mediciones, no opiniones: no las discutas, úsalas.
+
+Lo que hay que hacer con ellas:
+- El segundo en que entra el gancho contra el skip rate es la lectura más directa que existe en este análisis. Si el gancho entra en el segundo 50 y el skip es alto, ahí está la causa y hay que decirlo con el número en la mano. En streaming los primeros 30 segundos deciden.
+- Cruza el BPM y la energía con la audiencia y con las plazas: un tema lento en un catálogo que retiene por bailable es una decisión, no un accidente.
+- 'bpmConfianza' baja significa que el pulso no es claro. Si es baja, no cites el BPM como un hecho — o el tema tiene tempo libre, o la medición no lo pudo fijar.
+- La textura describe el ESPECTRO (brillo, peso de graves, densidad), no los instrumentos. Nunca afirmes que hay una guitarra, un piano o una voz: eso no se midió. Habla de lo que sí se midió.
+- La métrica sirve para lo concreto: un verso que se sale del metro dominante suele ser el que se traba al cantarlo, y una densidad léxica baja explica por qué una letra se pega. Cruza la regularidad con la retención.
+- Si comparas contra otras canciones del catálogo que ya tengan audio medido, esa comparación vale doble: es el patrón de lo que le funciona a ESTE artista.
+
 Reglas obligatorias:
 1. Básate en la letra entregada y en la data de la canción y del artista que venga en el contexto. No inventes versos, cifras ni datos que no estén.
 2. El análisis de una letra es inherentemente interpretativo: sé honesto con el nivel de evidencia. Nivel 4 solo si la letra es clara Y los números la respaldan; 3 si la lectura es sólida pero parte es criterio; 2 si es mayormente tu interpretación; 1 si hay muy poca letra o es ambigua. No infles la confianza.
@@ -266,22 +276,47 @@ export function buildSongAnalysisUserPrompt(input: {
   cancion: { nombre: string; streams: number; retencionPct: number; skipPct: number; playlistAdds: number };
   letra: string;
   artista: unknown;
+  audio?: unknown;
+  metrica?: unknown;
 }): string {
-  const { cancion, letra, artista } = input;
-  return `Analiza esta canción como obra y como pieza de la carrera del artista.
+  const { cancion, letra, artista, audio, metrica } = input;
+  const partes = [
+    "Analiza esta canción como obra y como pieza de la carrera del artista.",
+    "",
+    `CANCIÓN: ${cancion.nombre}`,
+    `Métricas actuales: ${cancion.streams} streams · retención ${cancion.retencionPct}% · skip ${cancion.skipPct}% · ${cancion.playlistAdds} playlist adds`,
+    "",
+    "CONTEXTO DEL ARTISTA (para ajustar audiencia, marca y fase):",
+    JSON.stringify(artista, null, 2),
+  ];
 
-CANCIÓN: ${cancion.nombre}
-Métricas actuales: ${cancion.streams} streams · retención ${cancion.retencionPct}% · skip ${cancion.skipPct}% · ${cancion.playlistAdds} playlist adds
+  if (audio) {
+    partes.push(
+      "",
+      "MEDIDAS DEL AUDIO (procesamiento de señal sobre el archivo real — son mediciones, no interpretaciones; la textura describe el espectro, NO qué instrumentos suenan):",
+      JSON.stringify(audio, null, 2)
+    );
+  }
+  if (metrica) {
+    partes.push(
+      "",
+      "MÉTRICA DE LA LETRA (conteo silábico con sinalefa y regla de acento final, rima y rasgos de estilo — calculado, no estimado):",
+      JSON.stringify(metrica, null, 2)
+    );
+  }
 
-CONTEXTO DEL ARTISTA (para ajustar audiencia, marca y fase):
-${JSON.stringify(artista, null, 2)}
-
-LETRA:
-"""
-${letra}
-"""
-
-Devuelve el análisis completo cruzando la letra con las métricas, siguiendo las reglas del sistema.`;
+  partes.push(
+    "",
+    "LETRA:",
+    '"""',
+    letra,
+    '"""',
+    "",
+    audio
+      ? "Devuelve el análisis completo cruzando la letra, las medidas del audio y las métricas de plataforma. El segundo en que entra el gancho contra el skip rate es lo primero que hay que mirar."
+      : "Devuelve el análisis completo cruzando la letra con las métricas, siguiendo las reglas del sistema."
+  );
+  return partes.join("\n");
 }
 
 export function buildInterpretUserPrompt(titulo: string, contexto: unknown, instruccion?: string): string {

@@ -37,7 +37,12 @@ export const songAnalysisResponseSchema = z.object({
     .describe("Cómo lleva la emoción de la primera línea al final — la trayectoria, dónde sube y dónde cae. 1-2 frases."),
   gancho: z
     .string()
-    .describe("Fuerza del gancho/hook y si engancha rápido en los primeros segundos; conéctalo con el skip rate cuando exista. 1-2 frases."),
+    .describe("Fuerza del gancho/hook y si engancha rápido en los primeros segundos; conéctalo con el skip rate cuando exista. Si hay medidas de audio, cita el segundo exacto en que entra. 1-2 frases."),
+  sonido: z
+    .string()
+    .describe(
+      "Cómo está construida sonoramente y qué hace eso por la canción: tempo, energía, dónde entra el gancho, textura del espectro, y cómo se cruza con la retención y el skip. Habla SOLO de lo medido — nunca nombres instrumentos, no se midieron. Si no llegaron medidas de audio, dilo en una frase: 'Sin audio medido para esta canción.'"
+    ),
   audiencia: z
     .string()
     .describe("A qué audiencia le habla la letra y si cuadra con la que ya escucha al artista (usa la data de audiencia del contexto si está). 1-2 frases."),

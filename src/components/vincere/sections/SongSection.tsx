@@ -10,9 +10,11 @@ import {
 import { useVincereStore } from "@/lib/vincere/store";
 import { fetchSongAnalysis } from "@/lib/vincere/ai-client";
 import { investigacionExterna } from "@/lib/vincere/context";
+import { analizarLetra } from "@/lib/vincere/metrica";
 import { formatStreams } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
+import { AudioPanel, MetricaPanel } from "../AudioPanel";
 import EvidenceTag from "../EvidenceTag";
 
 const POTENCIAL_COLOR: Record<VincerePotencialCancion, string> = {
@@ -48,6 +50,7 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
   const deleteCancion = useVincereStore((s) => s.deleteCancion);
   const setCancionLetra = useVincereStore((s) => s.setCancionLetra);
   const setCancionAnalisis = useVincereStore((s) => s.setCancionAnalisis);
+  const setCancionAudio = useVincereStore((s) => s.setCancionAudio);
 
   const songs = proyecto.canciones;
   const [selectedId, setSelectedId] = useState<string | null>(songs[0]?.id ?? null);
@@ -163,6 +166,7 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
           song={selected}
           onSaveLetra={(letra) => setCancionLetra(proyecto.id, selected.id, letra)}
           onAnalisis={(a) => setCancionAnalisis(proyecto.id, selected.id, a)}
+          onAudio={(a) => setCancionAudio(proyecto.id, selected.id, a)}
           fetchAnalysis={fetchSongAnalysis}
         />
       )}
@@ -175,12 +179,14 @@ function SongDetail({
   song,
   onSaveLetra,
   onAnalisis,
+  onAudio,
   fetchAnalysis,
 }: {
   proyecto: VincereProyecto;
   song: VincereCancion;
   onSaveLetra: (letra: string) => void;
   onAnalisis: (a: NonNullable<VincereCancion["analisis"]>) => void;
+  onAudio: (a: NonNullable<VincereCancion["audio"]> | null) => void;
   fetchAnalysis: typeof fetchSongAnalysis;
 }) {
   const [letra, setLetra] = useState(song.letra ?? "");
@@ -228,6 +234,10 @@ function SongDetail({
         },
         letra,
         artista,
+        audio: song.audio ?? undefined,
+        // La métrica del estado puede estar desfasada si acaba de editar la
+        // letra: se recalcula sobre lo que se está mandando de verdad.
+        metrica: analizarLetra(letra) ?? undefined,
       });
       onAnalisis(result);
     } catch (err) {
@@ -260,7 +270,9 @@ function SongDetail({
         style={{ resize: "vertical", minHeight: "150px", lineHeight: "1.6" }}
       />
 
-      <div className="flex items-center gap-3">
+      {song.metrica && <MetricaPanel metrica={song.metrica} />}
+
+      <div className="mt-4 flex items-center gap-3">
         <button onClick={analizar} disabled={loading || !letra.trim()} className="vin-btn-primary">
           {loading ? "Analizando la letra…" : analisis ? "Volver a analizar" : "Analizar canción con VINCERE"}
         </button>
@@ -277,6 +289,8 @@ function SongDetail({
         </p>
       )}
 
+      <AudioPanel audio={song.audio ?? null} onAnalizado={onAudio} onQuitar={() => onAudio(null)} />
+
       {analisis && (
         <div className="mt-5 border-t pt-5" style={{ borderColor: "var(--vin-border)" }}>
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -291,6 +305,11 @@ function SongDetail({
             <Field label="A qué audiencia le habla">{analisis.audiencia}</Field>
             <Field label="Fit con la marca">{analisis.fitMarca}</Field>
             <Field label="Potencial">{analisis.potencial}</Field>
+            {analisis.sonido && (
+              <div className="md:col-span-2">
+                <Field label="Cómo está construida sonoramente">{analisis.sonido}</Field>
+              </div>
+            )}
           </div>
 
           {analisis.reescrituras.length > 0 && (

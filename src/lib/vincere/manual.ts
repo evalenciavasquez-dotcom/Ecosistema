@@ -155,12 +155,23 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
-    tarea: "Cargar una canción con su letra",
+    tarea: "Cargar una canción con su letra y su audio",
     pasos: [
-      "Song Intelligence → «+ Agregar canción».",
-      "Nombre y métricas (streams, retención, skip, playlist adds).",
+      "Song Intelligence → «+ Agregar canción». Nombre y métricas (streams, retención, skip, playlist adds).",
       "Haz clic en la canción de la lista para abrir su panel.",
-      "Pega la letra en el campo de texto y pulsa «Analizar canción con VINCERE».",
+      "Pega la letra. Al salir del campo se calcula sola la métrica: sílabas por verso, esquema de rima y densidad léxica.",
+      "Suelta el MP3 o WAV en la zona de Audio. Se analiza en tu navegador — el archivo no se sube a ningún servidor — y devuelve BPM, tonalidad, secciones y el segundo en que entra el gancho.",
+      "«Analizar canción con VINCERE». Ahora la lectura cruza tres cosas: la letra, el sonido y los números de plataforma.",
+    ],
+  },
+  {
+    tarea: "Entender qué le funcionó al artista en el pasado",
+    pasos: [
+      "Carga varias canciones viejas con sus métricas reales y el audio de cada una.",
+      "Analiza cada una por separado para tener su lectura individual.",
+      "Vuelve arriba y pulsa «Generar lectura VINCERE» del catálogo completo.",
+      "Ahí es donde aparece el patrón: qué tempo, qué energía y qué momento de gancho comparten las que retuvieron, frente a las que se saltaron.",
+      "Esa lectura es el material para decidir cómo se produce lo próximo, no solo cuál se empuja.",
     ],
   },
   {
@@ -361,8 +372,8 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
   },
   {
     motor: "Song Intelligence",
-    cuandoUsarlo: "Para decidir qué canción empujar, cuál es el próximo single y cuál sacar de rotación.",
-    queCargar: "Por canción: streams, retención, skip, playlist adds — y la letra.",
+    cuandoUsarlo: "Para decidir qué canción empujar, cuál es el próximo single y cuál sacar de rotación. También para entender el patrón de lo que ya le funcionó al artista.",
+    queCargar: "Por canción: streams, retención, skip, playlist adds, la letra y, si lo tienes, el archivo de audio.",
   },
   {
     motor: "Audiencia y Segmentos",
@@ -447,6 +458,22 @@ export const SISTEMA_IA: ManualBloque = {
     {
       termino: "El análisis de letra cruza con las métricas",
       texto: "Al leer una canción no juzga la letra en el vacío: la contrasta con su retención y su skip, y con la audiencia y la marca del artista.",
+    },
+    {
+      termino: "El audio se mide, no se le manda a la IA",
+      texto: "Claude no acepta audio como entrada: solo texto, imagen y PDF. Así que el archivo no viaja a ningún lado — se analiza con procesamiento de señal en tu propio navegador y lo que se le entrega a la IA son los números. Ventaja de paso: el máster no sale de tu equipo y no hay costo de subida ni almacenamiento.",
+    },
+    {
+      termino: "Lo que el audio sí mide",
+      texto: "BPM con su fiabilidad, tonalidad, duración, rango dinámico, curva de energía, secciones, y el segundo en que la canción alcanza su estado de alta energía — el 'gancho'. Ese segundo cruzado con el skip rate es la lectura más directa del sistema: si el gancho entra en el 0:50 y la gente se sale, ahí está la causa con número.",
+    },
+    {
+      termino: "Lo que el audio NO mide",
+      texto: "No reconoce instrumentos. Describe la TEXTURA del espectro (brillo, peso de graves, densidad rítmica), y la IA tiene prohibido afirmar que hay una guitarra o un piano porque eso no se midió. Nombrar instrumentos requeriría un modelo de reconocimiento aparte.",
+    },
+    {
+      termino: "La métrica de la letra es cálculo, no interpretación",
+      texto: "Sílabas por verso con sinalefa y regla de acento final, esquema y tipo de rima, densidad léxica y repeticiones se calculan solos al guardar la letra. Se hace así a propósito: contar sílabas es una regla y debe dar siempre lo mismo — un modelo de lenguaje se equivoca contando y cambia de respuesta entre llamadas. La IA solo lee qué significan esos números.",
     },
     {
       termino: "En Investigación sale a buscar de verdad",
@@ -546,8 +573,12 @@ export const SISTEMA_ALCANCE: ManualBloque = {
       texto: "Si la web no tiene datos sobre lo que preguntas, el motor lo dice en vez de inventarlo, y toda la lectura queda con techo de nivel 2. Un artista muy pequeño o un mercado poco cubierto por prensa devolverá poco — eso es información honesta, no un fallo.",
     },
     {
-      termino: "Sin análisis técnico de audio",
-      texto: "La lectura de canción trabaja sobre la letra y las métricas. El análisis del máster (MIR) es fase posterior.",
+      termino: "Audio: medida sí, reconocimiento no",
+      texto: "Se miden tempo, tonalidad, estructura, energía y textura. No se reconocen instrumentos ni se separan pistas: eso necesitaría un modelo de reconocimiento, propio o de un servicio de pago (Cyanite, Music.ai). Si algún día hace falta nombrar instrumentos, ese resultado entra por Cargar data como cualquier otra fuente.",
+    },
+    {
+      termino: "Formatos de audio",
+      texto: "Lo que el navegador sepa decodificar: MP3, WAV, M4A, OGG, FLAC. Un tema de tres minutos tarda unos segundos. Se analiza uno a uno; no hay carga por lote todavía.",
     },
     {
       termino: "Nueve motores más pendientes",

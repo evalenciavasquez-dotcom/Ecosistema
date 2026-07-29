@@ -96,6 +96,8 @@ export async function fetchSongAnalysis(input: {
   cancion: Pick<VincereCancion, "nombre" | "streams" | "retencionPct" | "skipPct" | "playlistAdds">;
   letra: string;
   artista: unknown;
+  audio?: unknown;
+  metrica?: unknown;
 }): Promise<Omit<VincereCancionAnalisis, "generadoEn"> & { generadoEn: string }> {
   const res = await fetch("/api/vincere/analyze-song", {
     method: "POST",
@@ -114,6 +116,7 @@ export async function fetchSongAnalysis(input: {
     tema: r.tema ?? "",
     arcoEmocional: r.arcoEmocional ?? "",
     gancho: r.gancho ?? "",
+    sonido: r.sonido ?? "",
     audiencia: r.audiencia ?? "",
     fitMarca: r.fitMarca ?? "",
     potencial: r.potencial ?? "",

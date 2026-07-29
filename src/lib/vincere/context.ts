@@ -1,5 +1,43 @@
-import { VincereProyecto, VincereSeccion, VINCERE_SECCION_LABEL } from "./types";
+import {
+  VincereAudioAnalisis,
+  VincereLetraMetrica,
+  VincereProyecto,
+  VincereSeccion,
+  VINCERE_SECCION_LABEL,
+} from "./types";
+import { describirTextura } from "./audio";
 import { formatFollowers, formatStreams } from "./format";
+
+// Versión compacta de las medidas del audio para el contexto. No se manda la
+// curva de energía completa: son 64 números que la IA no puede leer mejor que
+// el resumen, y ocuparían el contexto de varias canciones.
+function resumenAudio(a: VincereAudioAnalisis) {
+  return {
+    bpm: a.bpm > 0 ? a.bpm : null,
+    // Un BPM medido con poca confianza no debe citarse como hecho: se dice.
+    fiabilidadDelBpm: a.bpmConfianza >= 0.6 ? "alta" : a.bpmConfianza >= 0.3 ? "media" : "baja",
+    tonalidad: a.tonalidad,
+    duracionSeg: a.duracionSeg,
+    ganchoEntraEnSeg: a.ganchoSeg,
+    seccionesTotal: a.secciones.length,
+    energiaMedia: a.energiaMedia,
+    rangoDinamicoDb: a.rangoDinamico,
+    textura: describirTextura(a),
+    aviso: "La textura describe el espectro medido. NO se detectaron instrumentos: no afirmes que hay guitarra, piano ni voz.",
+  };
+}
+
+function resumenMetrica(m: VincereLetraMetrica) {
+  return {
+    versos: m.versos,
+    silabasPorVersoDominante: m.metricaDominante,
+    regularidadPct: m.regularidad,
+    esquemaRima: m.esquemaRima,
+    tipoRima: m.tipoRima,
+    densidadLexicaPct: m.densidadLexica,
+    versoMasRepetido: m.repeticiones[0] ?? null,
+  };
+}
 
 // Construye el contexto compacto que se le entrega a la IA por sección —
 // solo la data de ESA sección, para que la interpretación sea específica y
@@ -94,12 +132,20 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
     case "song":
       return {
         ...base,
+        // Con audio medido en varias canciones esta lectura deja de ser sobre
+        // temas sueltos y pasa a ser sobre el PATRÓN: qué tempo, qué energía y
+        // qué momento de gancho tienen las que de verdad funcionan.
+        nota: p.canciones.some((c) => c.audio)
+          ? "Varias canciones traen medidas del audio. Busca el patrón: compara tempo, energía, momento del gancho y textura entre las que retienen y las que se saltan."
+          : undefined,
         canciones: p.canciones.map((c) => ({
           nombre: c.nombre,
           streams: c.streams,
           retencionPct: c.retencionPct,
           skipPct: c.skipPct,
           playlistAdds: c.playlistAdds,
+          ...(c.audio ? { audio: resumenAudio(c.audio) } : {}),
+          ...(c.metrica ? { metrica: resumenMetrica(c.metrica) } : {}),
         })),
         ...conExterno("catalogo"),
       };
@@ -166,6 +212,8 @@ export function buildInformeContext(p: VincereProyecto): unknown {
           retencionPct: c.retencionPct,
           skipPct: c.skipPct,
           playlistAdds: c.playlistAdds,
+          ...(c.audio ? { audio: resumenAudio(c.audio) } : {}),
+          ...(c.metrica ? { metrica: resumenMetrica(c.metrica) } : {}),
           // El análisis de letra, cuando existe, es material de primera para
           // explicar por qué una canción retiene o se salta.
           analisisLetra: c.analisis

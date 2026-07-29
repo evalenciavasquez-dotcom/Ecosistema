@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { genId } from "../id";
 import { SEED_VINCERE_PROYECTOS, SEED_VINCERE_TRIAGE } from "./seed-data";
+import { analizarLetra } from "./metrica";
 import {
   VincereAlerta,
   VincereAudienciaSegmento,
+  VincereAudioAnalisis,
   VincereCancion,
   VincereCancionAnalisis,
   VincereComparacion,
@@ -77,6 +79,7 @@ interface VincereState {
   deleteCancion: (proyectoId: string, cancionId: string) => void;
   setCancionLetra: (proyectoId: string, cancionId: string, letra: string) => void;
   setCancionAnalisis: (proyectoId: string, cancionId: string, analisis: VincereCancionAnalisis) => void;
+  setCancionAudio: (proyectoId: string, cancionId: string, audio: VincereAudioAnalisis | null) => void;
 
   setAudienciaSegmentos: (
     proyectoId: string,
@@ -250,11 +253,23 @@ export const useVincereStore = create<VincereState>()(
             canciones: p.canciones.filter((c) => c.id !== cancionId),
           })),
         })),
+      // Al guardar la letra se mide sola: sílabas, rima y estilo son cálculo,
+      // no interpretación, así que no tiene sentido pedirlo con un botón
+      // aparte ni gastar una llamada a la IA en contarlo.
       setCancionLetra: (proyectoId, cancionId, letra) =>
         set((s) => ({
           proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
             ...p,
-            canciones: p.canciones.map((c) => (c.id === cancionId ? { ...c, letra } : c)),
+            canciones: p.canciones.map((c) =>
+              c.id === cancionId ? { ...c, letra, metrica: analizarLetra(letra) } : c
+            ),
+          })),
+        })),
+      setCancionAudio: (proyectoId, cancionId, audio) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            canciones: p.canciones.map((c) => (c.id === cancionId ? { ...c, audio } : c)),
           })),
         })),
       setCancionAnalisis: (proyectoId, cancionId, analisis) =>

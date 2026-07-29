@@ -20,7 +20,11 @@ export async function POST(request: Request) {
   try {
     const response = await client.messages.parse({
       model: "claude-sonnet-5",
-      max_tokens: 1600,
+      // Con medidas de audio y de métrica la lectura tiene que cruzar tres
+      // fuentes distintas, no solo leer una letra: se le da margen y se le
+      // deja razonar.
+      max_tokens: 3000,
+      thinking: { type: "adaptive" },
       output_config: { format: zodOutputFormat(songAnalysisResponseSchema) },
       system: VINCERE_SONG_SYSTEM_PROMPT,
       messages: [
@@ -30,6 +34,8 @@ export async function POST(request: Request) {
             cancion: body.cancion,
             letra: body.letra,
             artista: body.artista ?? {},
+            audio: body.audio ?? undefined,
+            metrica: body.metrica ?? undefined,
           }),
         },
       ],

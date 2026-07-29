@@ -96,6 +96,7 @@ export interface VincereCancionAnalisis {
   tema: string; // De qué habla de verdad, más allá de lo obvio.
   arcoEmocional: string; // Cómo lleva la emoción de la primera línea al final.
   gancho: string; // Fuerza del gancho y si engancha rápido — conecta con el skip.
+  sonido: string; // Cómo está construida sonoramente, cruzando las medidas del audio.
   audiencia: string; // A qué audiencia le habla y si cuadra con la que ya escucha.
   fitMarca: string; // Coherencia con la marca/identidad del artista.
   potencial: string; // Lectura del potencial comercial en texto.
@@ -104,6 +105,54 @@ export interface VincereCancionAnalisis {
   decision: string; // Qué hacer con la canción: gestión (single, empujar, sacar, feature…).
   nivel: VincereNivel;
   generadoEn: string;
+}
+
+// --- Medidas del audio ---
+// Claude no acepta audio: solo texto, imagen y PDF. Así que el archivo no se
+// le manda — se mide en el navegador con procesamiento de señal y lo que
+// viaja a la IA son estos números. El audio nunca sale del equipo.
+
+export interface VincereAudioSeccion {
+  inicioSeg: number;
+  finSeg: number;
+  energia: number; // 0-100 relativo al pico del tema
+}
+
+export interface VincereAudioAnalisis {
+  archivo: string;
+  duracionSeg: number;
+  bpm: number;
+  bpmConfianza: number; // 0-1 — un tema sin pulso claro no debe dar un BPM creíble
+  tonalidad: string | null;
+  energiaMedia: number; // 0-100
+  rangoDinamico: number; // dB entre lo suave y lo fuerte
+  brillo: number; // 0-100 por centroide espectral
+  pesoGraves: number; // % de energía bajo 200 Hz
+  pesoAgudos: number; // % de energía sobre 2 kHz
+  densidad: number; // eventos rítmicos por segundo
+  curvaEnergia: number[]; // 64 puntos, para dibujar
+  secciones: VincereAudioSeccion[];
+  // Dónde la canción alcanza por fin su estado de alta energía. No es "el
+  // estribillo" con certeza — es el momento que decide si alguien se queda.
+  ganchoSeg: number | null;
+  analizadoEn: string;
+}
+
+// --- Medidas de la letra ---
+// Contar sílabas es una regla, no una interpretación: se calcula aquí para que
+// dé siempre lo mismo, y la IA solo lee qué significa.
+
+export interface VincereLetraMetrica {
+  versos: number;
+  silabasPorVerso: number[];
+  silabasMedia: number;
+  metricaDominante: number | null; // el metro más repetido
+  regularidad: number; // 0-100: qué parte de los versos se ciñe al metro
+  esquemaRima: string; // "ABAB", "AABB", …
+  tipoRima: "consonante" | "asonante" | "mixta" | "libre";
+  densidadLexica: number; // % de palabras distintas — baja = pegajosa, alta = narrativa
+  repeticiones: { texto: string; veces: number }[];
+  palabrasTotal: number;
 }
 
 export interface VincereCancion {
@@ -116,6 +165,8 @@ export interface VincereCancion {
   // Contenido artístico de la canción — opcional para no romper data ya cargada.
   letra?: string;
   analisis?: VincereCancionAnalisis | null;
+  audio?: VincereAudioAnalisis | null;
+  metrica?: VincereLetraMetrica | null;
 }
 
 export interface VincereAudienciaSegmento {
