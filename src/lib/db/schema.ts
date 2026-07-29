@@ -235,6 +235,19 @@ export const cierresMensuales = pgTable("cierres_mensuales", {
   creadoEn: text("creado_en").notNull(),
 });
 
+// GOALS — objetivos generales del sistema (no solo financieros), atados a
+// un proyecto o sueltos (personales/generales); progreso manual.
+export const goals = pgTable("goals", {
+  id: text("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  descripcion: text("descripcion").notNull(),
+  proyectoId: text("proyecto_id"),
+  progreso: integer("progreso").notNull().default(0),
+  estado: text("estado").notNull(),
+  fechaObjetivo: text("fecha_objetivo"),
+  creadoEn: text("creado_en").notNull(),
+});
+
 // Conexión OAuth con Google — una sola fila (id fijo "default"), no es
 // parte del modelo de dominio sincronizado con el cliente vía TABLES/mutate.
 // Se maneja directamente desde src/lib/google.ts.
@@ -263,6 +276,7 @@ export const TABLES = {
   tiempo,
   metasFinancieras,
   cierresMensuales,
+  goals,
   proyectos,
   personas,
   acciones,

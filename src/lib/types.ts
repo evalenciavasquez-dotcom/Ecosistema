@@ -327,6 +327,19 @@ export interface RegistroTiempo {
   creadoEn: string;
 }
 
+export type GoalEstado = "en_progreso" | "cumplida" | "pausada" | "descartada";
+
+export interface Goal {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  proyectoId: string | null; // null = goal general / personal, sin proyecto
+  progreso: number; // 0..100, actualizado a mano
+  estado: GoalEstado;
+  fechaObjetivo: string | null;
+  creadoEn: string;
+}
+
 export interface MetaFinanciera {
   id: string;
   descripcion: string;

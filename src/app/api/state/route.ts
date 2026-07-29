@@ -8,6 +8,7 @@ import {
   cierresMensuales,
   decisiones,
   evidencias,
+  goals,
   historial,
   metasFinancieras,
   movimientos,
@@ -62,13 +63,14 @@ export async function GET() {
       db.select().from(strategicCases).orderBy(desc(strategicCases.creadoEn)),
     ]);
 
-    // Las tablas de tiempo, metas financieras y cierres mensuales llegaron
-    // después del esquema inicial: si aún no existen en esta base, no deben
-    // tumbar todo el estado.
-    const [tiempoRows, metasFinancierasRows, cierresMensualesRows] = await Promise.all([
+    // Las tablas de tiempo, metas financieras, cierres mensuales y goals
+    // llegaron después del esquema inicial: si aún no existen en esta base,
+    // no deben tumbar todo el estado.
+    const [tiempoRows, metasFinancierasRows, cierresMensualesRows, goalsRows] = await Promise.all([
       db.select().from(tiempo).orderBy(desc(tiempo.fecha)).catch(() => []),
       db.select().from(metasFinancieras).orderBy(desc(metasFinancieras.creadoEn)).catch(() => []),
       db.select().from(cierresMensuales).orderBy(desc(cierresMensuales.creadoEn)).catch(() => []),
+      db.select().from(goals).orderBy(desc(goals.creadoEn)).catch(() => []),
     ]);
 
     return NextResponse.json({
@@ -86,6 +88,7 @@ export async function GET() {
       tiempo: tiempoRows,
       metasFinancieras: metasFinancierasRows,
       cierresMensuales: cierresMensualesRows,
+      goals: goalsRows,
     });
   } catch (err) {
     console.error("Error leyendo estado desde la base de datos", err);

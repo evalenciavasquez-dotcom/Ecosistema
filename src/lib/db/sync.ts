@@ -32,6 +32,7 @@ export interface ServerState {
   tiempo?: unknown[];
   metasFinancieras?: unknown[];
   cierresMensuales?: unknown[];
+  goals?: unknown[];
 }
 
 export interface MigrationResult {

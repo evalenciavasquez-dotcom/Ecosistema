@@ -111,6 +111,24 @@ export async function ensureCierresMensualesTable() {
   cierresMensualesEnsured = true;
 }
 
+let goalsEnsured = false;
+export async function ensureGoalsTable() {
+  if (goalsEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS goals (
+      id text PRIMARY KEY,
+      titulo text NOT NULL,
+      descripcion text NOT NULL,
+      proyecto_id text,
+      progreso integer NOT NULL DEFAULT 0,
+      estado text NOT NULL,
+      fecha_objetivo text,
+      creado_en text NOT NULL
+    )`)
+  );
+  goalsEnsured = true;
+}
+
 let googleSchemaEnsured = false;
 export async function ensureGoogleSchema() {
   if (googleSchemaEnsured) return;
