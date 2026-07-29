@@ -161,7 +161,18 @@ export const GUIA_TAREAS: ManualTarea[] = [
       "Haz clic en la canción de la lista para abrir su panel.",
       "Pega la letra. Al salir del campo se calcula sola la métrica: sílabas por verso, esquema de rima y densidad léxica.",
       "Suelta el MP3 o WAV en la zona de Audio. Se analiza en tu navegador — el archivo no se sube a ningún servidor — y devuelve BPM, tonalidad, secciones y el segundo en que entra el gancho.",
-      "«Analizar canción con VINCERE». Ahora la lectura cruza tres cosas: la letra, el sonido y los números de plataforma.",
+      "Si tienes un análisis externo (Cyanite, Music.ai) o notas del productor, pégalas en «Análisis externo y notas de producción». Ahí van los instrumentos, el mood y los artistas similares — lo que la medición propia no alcanza.",
+      "«Analizar canción con VINCERE». La lectura cruza cuatro cosas: la letra, el sonido medido, la observación externa y los números de plataforma.",
+    ],
+  },
+  {
+    tarea: "Usar los artistas similares que detectó un servicio externo",
+    pasos: [
+      "Pega el análisis externo en la canción, con la lista de similares incluida.",
+      "Pulsa «Investigar los artistas similares →». Salta a Investigación con la consulta ya escrita.",
+      "Revísala y ajústala si quieres — no se lanza sola.",
+      "«Investigar». El sistema sale a la web a averiguar quiénes son, en qué fase están y qué plazas pisan.",
+      "Si aparecen ciudades, llévalas a Zonas de Calor. Ese es el recorrido completo: de cómo suena la canción a dónde tocar.",
     ],
   },
   {
@@ -470,6 +481,18 @@ export const SISTEMA_IA: ManualBloque = {
     {
       termino: "Lo que el audio NO mide",
       texto: "No reconoce instrumentos. Describe la TEXTURA del espectro (brillo, peso de graves, densidad rítmica), y la IA tiene prohibido afirmar que hay una guitarra o un piano porque eso no se midió. Nombrar instrumentos requeriría un modelo de reconocimiento aparte.",
+    },
+    {
+      termino: "El análisis externo entra por la puerta correcta",
+      texto: "Cada canción tiene un campo de «Análisis externo y notas de producción» donde se pega lo que la plataforma no mide: instrumentos, mood, género y artistas similares de un servicio (Cyanite, Music.ai) o del oído del productor. La IA lo lee marcado como observación externa, nunca como algo medido aquí — y si contradice lo medido, tiene instrucción de decirlo en vez de elegir una de las dos.",
+    },
+    {
+      termino: "El aviso salta una vez, no siempre",
+      texto: "Al medir el audio de una canción que aún no tiene análisis externo se levanta una alerta de oportunidad recordándolo. Solo la primera vez por canción: un recordatorio que salta cada vez se vuelve invisible y deja de recordar nada.",
+    },
+    {
+      termino: "De la similitud a la investigación",
+      texto: "Si el análisis externo trae artistas similares, el botón «Investigar los artistas similares» salta a Investigación con la consulta ya escrita. Ahí es donde la cadena se cierra: la plataforma mide qué ES la canción, el servicio externo dice a qué SE PARECE, y la búsqueda web averigua qué les ha pasado a esos similares en el mercado. La consulta se deja escrita, no se lanza sola — buscar cuesta y lo decide el director.",
     },
     {
       termino: "La métrica de la letra es cálculo, no interpretación",

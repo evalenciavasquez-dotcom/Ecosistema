@@ -32,8 +32,13 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
   const addAlertas = useVincereStore((s) => s.addAlertas);
   const showToast = useVincereStore((s) => s.showToast);
 
+  // La consulta vive en el store: así puede llegar escrita desde el panel de
+  // una canción (los similares que detectó un análisis externo) sin efectos de
+  // sincronía, y sobrevive si navegas a otro motor y vuelves.
+  const consulta = useVincereStore((s) => s.investigacionConsulta);
+  const setConsulta = useVincereStore((s) => s.setInvestigacionConsulta);
+
   const [tipo, setTipo] = useState<VincereInvestigacionTipo>("artista");
-  const [consulta, setConsulta] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<string | null>(null);
@@ -115,14 +120,21 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
           </div>
 
           <PanelLabel>Qué quieres saber</PanelLabel>
-          <input
+          {/* Área de texto y no un campo de una línea: una consulta que llega
+              desde el panel de una canción trae contexto y se cortaría. */}
+          <textarea
             value={consulta}
             onChange={(e) => setConsulta(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") investigar();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                investigar();
+              }
             }}
+            rows={consulta.length > 90 ? 3 : 2}
             placeholder={VINCERE_INVESTIGACION_PLACEHOLDER[tipo]}
             className="vin-input"
+            style={{ resize: "vertical", lineHeight: "1.6" }}
           />
         </Panel>
 

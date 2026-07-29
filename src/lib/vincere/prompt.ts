@@ -259,7 +259,8 @@ Lo que hay que hacer con ellas:
 - El segundo en que entra el gancho contra el skip rate es la lectura más directa que existe en este análisis. Si el gancho entra en el segundo 50 y el skip es alto, ahí está la causa y hay que decirlo con el número en la mano. En streaming los primeros 30 segundos deciden.
 - Cruza el BPM y la energía con la audiencia y con las plazas: un tema lento en un catálogo que retiene por bailable es una decisión, no un accidente.
 - 'bpmConfianza' baja significa que el pulso no es claro. Si es baja, no cites el BPM como un hecho — o el tema tiene tempo libre, o la medición no lo pudo fijar.
-- La textura describe el ESPECTRO (brillo, peso de graves, densidad), no los instrumentos. Nunca afirmes que hay una guitarra, un piano o una voz: eso no se midió. Habla de lo que sí se midió.
+- La textura describe el ESPECTRO (brillo, peso de graves, densidad), no los instrumentos. Nunca afirmes que hay una guitarra, un piano o una voz basándote en la textura: eso no se midió. Habla de lo que sí se midió.
+- Si llega una 'OBSERVACIÓN EXTERNA' (instrumentos, mood, género o artistas similares de un servicio o del productor), ahí SÍ puedes hablar de instrumentos — pero atribuyéndolo: "según el análisis externo", nunca como algo que la plataforma midió. Y lo más valioso es cruzarla: si el servicio dice que hay guitarra acústica al frente y la medición dice que el tema es oscuro y de rango dinámico amplio, esa combinación explica cosas que ninguna de las dos fuentes explica sola. Si la observación externa contradice lo medido, dilo — la contradicción es información.
 - La métrica sirve para lo concreto: un verso que se sale del metro dominante suele ser el que se traba al cantarlo, y una densidad léxica baja explica por qué una letra se pega. Cruza la regularidad con la retención.
 - Si comparas contra otras canciones del catálogo que ya tengan audio medido, esa comparación vale doble: es el patrón de lo que le funciona a ESTE artista.
 
@@ -278,8 +279,9 @@ export function buildSongAnalysisUserPrompt(input: {
   artista: unknown;
   audio?: unknown;
   metrica?: unknown;
+  notasProduccion?: string;
 }): string {
-  const { cancion, letra, artista, audio, metrica } = input;
+  const { cancion, letra, artista, audio, metrica, notasProduccion } = input;
   const partes = [
     "Analiza esta canción como obra y como pieza de la carrera del artista.",
     "",
@@ -302,6 +304,15 @@ export function buildSongAnalysisUserPrompt(input: {
       "",
       "MÉTRICA DE LA LETRA (conteo silábico con sinalefa y regla de acento final, rima y rasgos de estilo — calculado, no estimado):",
       JSON.stringify(metrica, null, 2)
+    );
+  }
+  if (notasProduccion?.trim()) {
+    partes.push(
+      "",
+      "OBSERVACIÓN EXTERNA (de un servicio de análisis o del productor — NO lo midió esta plataforma; instrumentos, mood, género o artistas similares):",
+      '"""',
+      notasProduccion.trim(),
+      '"""'
     );
   }
 

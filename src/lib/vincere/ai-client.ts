@@ -98,6 +98,7 @@ export async function fetchSongAnalysis(input: {
   artista: unknown;
   audio?: unknown;
   metrica?: unknown;
+  notasProduccion?: string;
 }): Promise<Omit<VincereCancionAnalisis, "generadoEn"> & { generadoEn: string }> {
   const res = await fetch("/api/vincere/analyze-song", {
     method: "POST",

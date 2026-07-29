@@ -58,6 +58,14 @@ interface VincereState {
   toast: string | null;
 
   setSeccion: (s: VincereSeccion) => void;
+  // La consulta de Investigación vive en el store, no en la sección. Así otra
+  // pantalla puede dejarla escrita — es lo que cierra la cadena: un servicio
+  // externo dice a qué artistas se parece la canción y desde el panel de la
+  // canción se salta a investigarlos sin volver a teclearlos. De paso, lo que
+  // estabas escribiendo sobrevive si navegas a otro motor y vuelves.
+  investigacionConsulta: string;
+  setInvestigacionConsulta: (consulta: string) => void;
+  abrirInvestigacion: (consulta: string) => void;
   selectProyecto: (id: string) => void;
   toggleCompare: () => void;
   setCompareProyectoId: (id: string | null) => void;
@@ -80,6 +88,7 @@ interface VincereState {
   setCancionLetra: (proyectoId: string, cancionId: string, letra: string) => void;
   setCancionAnalisis: (proyectoId: string, cancionId: string, analisis: VincereCancionAnalisis) => void;
   setCancionAudio: (proyectoId: string, cancionId: string, audio: VincereAudioAnalisis | null) => void;
+  setCancionNotasProduccion: (proyectoId: string, cancionId: string, notas: string) => void;
 
   setAudienciaSegmentos: (
     proyectoId: string,
@@ -161,6 +170,12 @@ export const useVincereStore = create<VincereState>()(
       toast: null,
 
       setSeccion: (seccion) => set({ seccion, compareOn: false }),
+      investigacionConsulta: "",
+      setInvestigacionConsulta: (investigacionConsulta) => set({ investigacionConsulta }),
+      // No se lanza la búsqueda sola: se deja escrita para revisarla. La
+      // búsqueda cuesta y la decide Eduardo.
+      abrirInvestigacion: (consulta) =>
+        set({ seccion: "investigacion", compareOn: false, investigacionConsulta: consulta }),
       selectProyecto: (id) => set({ selectedProyectoId: id, compareOn: false }),
       toggleCompare: () => set((s) => ({ compareOn: !s.compareOn })),
       setCompareProyectoId: (id) => set({ compareProyectoId: id }),
@@ -270,6 +285,13 @@ export const useVincereStore = create<VincereState>()(
           proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
             ...p,
             canciones: p.canciones.map((c) => (c.id === cancionId ? { ...c, audio } : c)),
+          })),
+        })),
+      setCancionNotasProduccion: (proyectoId, cancionId, notas) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            canciones: p.canciones.map((c) => (c.id === cancionId ? { ...c, notasProduccion: notas } : c)),
           })),
         })),
       setCancionAnalisis: (proyectoId, cancionId, analisis) =>

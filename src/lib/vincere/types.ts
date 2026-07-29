@@ -167,6 +167,11 @@ export interface VincereCancion {
   analisis?: VincereCancionAnalisis | null;
   audio?: VincereAudioAnalisis | null;
   metrica?: VincereLetraMetrica | null;
+  // Lo que el análisis propio NO puede medir y viene de fuera: instrumentos
+  // reconocidos, mood, artistas similares. Sea de un servicio (Cyanite,
+  // Music.ai) o del oído del productor — para el sistema es lo mismo: una
+  // observación externa que la IA lee junto al audio medido.
+  notasProduccion?: string;
 }
 
 export interface VincereAudienciaSegmento {

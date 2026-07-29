@@ -146,6 +146,9 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
           playlistAdds: c.playlistAdds,
           ...(c.audio ? { audio: resumenAudio(c.audio) } : {}),
           ...(c.metrica ? { metrica: resumenMetrica(c.metrica) } : {}),
+          ...(c.notasProduccion?.trim()
+            ? { observacionExterna: { texto: c.notasProduccion.trim(), origen: "servicio externo o productor, NO medido por la plataforma" } }
+            : {}),
         })),
         ...conExterno("catalogo"),
       };

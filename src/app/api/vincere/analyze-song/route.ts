@@ -36,6 +36,7 @@ export async function POST(request: Request) {
             artista: body.artista ?? {},
             audio: body.audio ?? undefined,
             metrica: body.metrica ?? undefined,
+            notasProduccion: typeof body.notasProduccion === "string" ? body.notasProduccion : undefined,
           }),
         },
       ],

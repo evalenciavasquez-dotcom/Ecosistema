@@ -14,7 +14,7 @@ import { analizarLetra } from "@/lib/vincere/metrica";
 import { formatStreams } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
-import { AudioPanel, MetricaPanel } from "../AudioPanel";
+import { AudioPanel, MetricaPanel, NotasProduccionPanel } from "../AudioPanel";
 import EvidenceTag from "../EvidenceTag";
 
 const POTENCIAL_COLOR: Record<VincerePotencialCancion, string> = {
@@ -51,6 +51,9 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
   const setCancionLetra = useVincereStore((s) => s.setCancionLetra);
   const setCancionAnalisis = useVincereStore((s) => s.setCancionAnalisis);
   const setCancionAudio = useVincereStore((s) => s.setCancionAudio);
+  const setNotasProduccion = useVincereStore((s) => s.setCancionNotasProduccion);
+  const addAlertas = useVincereStore((s) => s.addAlertas);
+  const abrirInvestigacion = useVincereStore((s) => s.abrirInvestigacion);
 
   const songs = proyecto.canciones;
   const [selectedId, setSelectedId] = useState<string | null>(songs[0]?.id ?? null);
@@ -166,7 +169,31 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
           song={selected}
           onSaveLetra={(letra) => setCancionLetra(proyecto.id, selected.id, letra)}
           onAnalisis={(a) => setCancionAnalisis(proyecto.id, selected.id, a)}
-          onAudio={(a) => setCancionAudio(proyecto.id, selected.id, a)}
+          onAudio={(a) => {
+            setCancionAudio(proyecto.id, selected.id, a);
+            // El aviso solo tiene sentido si falta lo que no medimos, y solo
+            // una vez por canción: un recordatorio que salta siempre se vuelve
+            // invisible, y entonces no recuerda nada.
+            const origen = `Audio · ${selected.nombre}`;
+            const yaAvisado = (proyecto.alertas ?? []).some((x) => x.origen === origen);
+            if (a && !selected.notasProduccion?.trim() && !yaAvisado) {
+              addAlertas(proyecto.id, [
+                {
+                  texto: `«${selected.nombre}» ya tiene tempo, estructura y gancho medidos, pero falta lo que la plataforma no puede medir: instrumentos, mood y artistas similares. Trae el análisis externo (Cyanite o similar) y pégalo en las notas de producción de la canción.`,
+                  severidad: "oportunidad",
+                  seccion: "song",
+                  nivel: 3,
+                  origen,
+                },
+              ]);
+            }
+          }}
+          onNotasProduccion={(v) => setNotasProduccion(proyecto.id, selected.id, v)}
+          onInvestigar={(consulta) =>
+            abrirInvestigacion(
+              `Artistas similares a «${selected.nombre}» de ${proyecto.nombre}. Según el análisis de producción: ${consulta}. Quiénes son, en qué fase están, qué plazas pisan y dónde hay hueco frente a ellos.`
+            )
+          }
           fetchAnalysis={fetchSongAnalysis}
         />
       )}
@@ -180,6 +207,8 @@ function SongDetail({
   onSaveLetra,
   onAnalisis,
   onAudio,
+  onNotasProduccion,
+  onInvestigar,
   fetchAnalysis,
 }: {
   proyecto: VincereProyecto;
@@ -187,6 +216,8 @@ function SongDetail({
   onSaveLetra: (letra: string) => void;
   onAnalisis: (a: NonNullable<VincereCancion["analisis"]>) => void;
   onAudio: (a: NonNullable<VincereCancion["audio"]> | null) => void;
+  onNotasProduccion: (v: string) => void;
+  onInvestigar: (consulta: string) => void;
   fetchAnalysis: typeof fetchSongAnalysis;
 }) {
   const [letra, setLetra] = useState(song.letra ?? "");
@@ -238,6 +269,7 @@ function SongDetail({
         // La métrica del estado puede estar desfasada si acaba de editar la
         // letra: se recalcula sobre lo que se está mandando de verdad.
         metrica: analizarLetra(letra) ?? undefined,
+        notasProduccion: song.notasProduccion?.trim() || undefined,
       });
       onAnalisis(result);
     } catch (err) {
@@ -290,6 +322,13 @@ function SongDetail({
       )}
 
       <AudioPanel audio={song.audio ?? null} onAnalizado={onAudio} onQuitar={() => onAudio(null)} />
+
+      <NotasProduccionPanel
+        key={song.id}
+        notas={song.notasProduccion ?? ""}
+        onGuardar={onNotasProduccion}
+        onInvestigar={onInvestigar}
+      />
 
       {analisis && (
         <div className="mt-5 border-t pt-5" style={{ borderColor: "var(--vin-border)" }}>

@@ -194,9 +194,24 @@ export function AudioPanel({
           <div>
             <div className="vin-label mb-1.5">Textura</div>
             <p className="vin-muted text-[13.5px] leading-relaxed">{describirTextura(audio)}</p>
-            <p className="vin-faint mt-2 text-[11.5px] leading-relaxed">
-              Son medidas del espectro, no reconocimiento de instrumentos: el sistema puede decir que el tema es
-              oscuro y con base pesada, no que haya una guitarra. Nombrar instrumentos necesitaría un modelo aparte.
+          </div>
+
+          {/* Lo que la medición no alcanza, dicho donde importa: justo después
+              de ver el resultado, no escondido en la documentación. */}
+          <div
+            className="rounded-sm p-4"
+            style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.28)" }}
+          >
+            <div className="vin-label mb-1.5" style={{ color: "#e0a83a" }}>
+              Lo que esto no mide
+            </div>
+            <p className="text-[13px] leading-relaxed">
+              La textura describe el espectro, no reconoce instrumentos: el sistema puede decir que el tema es oscuro
+              y con base pesada, no que haya una guitarra. Tampoco da mood, género ni artistas similares.
+            </p>
+            <p className="vin-muted mt-2 text-[12.5px] leading-relaxed">
+              Si tienes el análisis de un servicio externo (Cyanite, Music.ai) o las notas del productor, pégalas
+              abajo: la lectura de la canción las cruzará con lo medido aquí.
             </p>
           </div>
 
@@ -205,6 +220,48 @@ export function AudioPanel({
             {new Date(audio.analizadoEn).toLocaleDateString("es", { day: "numeric", month: "short" })}
           </p>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Lo que el análisis propio no puede medir y llega de fuera. No se distingue
+// entre servicio y oído humano a propósito: para el sistema ambas son
+// observación externa, y ambas se marcan como tales frente a lo medido.
+export function NotasProduccionPanel({
+  notas,
+  onGuardar,
+  onInvestigar,
+}: {
+  notas: string;
+  onGuardar: (v: string) => void;
+  onInvestigar: (consulta: string) => void;
+}) {
+  const [valor, setValor] = useState(notas);
+
+  return (
+    <div className="mt-5 border-t pt-5" style={{ borderColor: "var(--vin-border)" }}>
+      <PanelLabel>Análisis externo y notas de producción</PanelLabel>
+      <textarea
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        onBlur={() => onGuardar(valor)}
+        rows={4}
+        placeholder="Instrumentos, mood, género, artistas similares… lo que traigas de Cyanite, de Music.ai o del productor."
+        className="vin-input"
+        style={{ resize: "vertical", lineHeight: "1.6" }}
+      />
+      <p className="vin-faint mt-2 text-[11.5px] leading-relaxed">
+        Entra a la lectura marcado como observación externa, nunca como algo medido por la plataforma.
+      </p>
+      {valor.trim().length > 8 && (
+        <button
+          onClick={() => onInvestigar(valor.trim())}
+          className="vin-btn-ghost mt-3"
+          style={{ padding: "5px 11px", fontSize: "12px" }}
+        >
+          Investigar los artistas similares →
+        </button>
       )}
     </div>
   );
