@@ -11,6 +11,7 @@ import type {
   EscenarioEvaluacion,
   EscenarioProfundo,
   GananciaPerdida,
+  GoalCriterioAuto,
   HechoOHipotesis,
   MetricaFinanciera,
   RecomendacionEjecutiva,
@@ -246,6 +247,9 @@ export const goals = pgTable("goals", {
   estado: text("estado").notNull(),
   fechaObjetivo: text("fecha_objetivo"),
   creadoEn: text("creado_en").notNull(),
+  origen: text("origen").notNull().default("manual"),
+  completadoEn: text("completado_en"),
+  criterioAuto: jsonb("criterio_auto").$type<GoalCriterioAuto | null>(),
 });
 
 // Conexión OAuth con Google — una sola fila (id fijo "default"), no es

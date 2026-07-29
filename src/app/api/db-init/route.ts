@@ -179,7 +179,10 @@ const STATEMENTS = [
     progreso integer NOT NULL DEFAULT 0,
     estado text NOT NULL,
     fecha_objetivo text,
-    creado_en text NOT NULL
+    creado_en text NOT NULL,
+    origen text NOT NULL DEFAULT 'manual',
+    completado_en text,
+    criterio_auto jsonb
   )`,
   `CREATE TABLE IF NOT EXISTS strategic_cases (
     id text PRIMARY KEY,

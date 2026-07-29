@@ -129,6 +129,20 @@ export async function ensureGoalsTable() {
   goalsEnsured = true;
 }
 
+let goalColumnsEnsured = false;
+// Columnas del pool de retos de la IA — llegaron después de la tabla goals
+// original, así que las tablas ya creadas necesitan el ALTER.
+export async function ensureGoalColumns() {
+  if (goalColumnsEnsured) return;
+  await getDb().execute(
+    sql.raw(`ALTER TABLE goals
+      ADD COLUMN IF NOT EXISTS origen text NOT NULL DEFAULT 'manual',
+      ADD COLUMN IF NOT EXISTS completado_en text,
+      ADD COLUMN IF NOT EXISTS criterio_auto jsonb`)
+  );
+  goalColumnsEnsured = true;
+}
+
 let googleSchemaEnsured = false;
 export async function ensureGoogleSchema() {
   if (googleSchemaEnsured) return;

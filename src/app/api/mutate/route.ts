@@ -5,6 +5,7 @@ import { acciones, agenda, TABLES, type TableName } from "@/lib/db/schema";
 import {
   ensureCierresMensualesTable,
   ensureEvidenciaArchivoColumns,
+  ensureGoalColumns,
   ensureGoalsTable,
   ensureGoogleSchema,
   ensureMetasFinancierasTable,
@@ -55,7 +56,10 @@ export async function POST(request: Request) {
     if (table === "agenda" || table === "acciones") await ensureGoogleSchema();
     if (table === "metasFinancieras") await ensureMetasFinancierasTable();
     if (table === "cierresMensuales") await ensureCierresMensualesTable();
-    if (table === "goals") await ensureGoalsTable();
+    if (table === "goals") {
+      await ensureGoalsTable();
+      await ensureGoalColumns();
+    }
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });
