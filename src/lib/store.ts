@@ -29,6 +29,7 @@ import {
   BandejaEstado,
   BandejaItem,
   ChecklistProceso,
+  CierreMensual,
   ClasificacionSugerida,
   Decision,
   Evidencia,
@@ -66,6 +67,9 @@ interface AppState {
   strategicCases: StrategicCase[];
   tiempo: RegistroTiempo[];
   metasFinancieras: MetaFinanciera[];
+  cierresMensuales: CierreMensual[];
+  generandoCierreMensual: boolean;
+  generarCierreMensualAhora: () => Promise<{ ok: boolean; error?: string }>;
 
   // Cronómetro de trabajo: uno activo a la vez, local a este dispositivo.
   timerActivo: { proyectoId: string; inicio: string } | null;
@@ -155,6 +159,8 @@ function seedState() {
     strategicCases: [] as StrategicCase[],
     tiempo: [] as RegistroTiempo[],
     metasFinancieras: [] as MetaFinanciera[],
+    cierresMensuales: [] as CierreMensual[],
+    generandoCierreMensual: false,
     timerActivo: null as { proyectoId: string; inicio: string } | null,
   };
 }
@@ -844,6 +850,7 @@ export const useAppStore = create<AppState>()(
           strategicCases: [],
           tiempo: [],
           metasFinancieras: [],
+          cierresMensuales: [],
           timerActivo: null,
         }),
 
@@ -890,7 +897,25 @@ export const useAppStore = create<AppState>()(
           strategicCases: strategicCasesDeduped,
           tiempo: (server.tiempo ?? []) as RegistroTiempo[],
           metasFinancieras: (server.metasFinancieras ?? []) as MetaFinanciera[],
+          cierresMensuales: (server.cierresMensuales ?? []) as CierreMensual[],
         });
+      },
+
+      generarCierreMensualAhora: async () => {
+        set({ generandoCierreMensual: true });
+        try {
+          const res = await fetch("/api/cierre-mensual", { method: "POST" });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok || body?.generado === false) {
+            return { ok: false, error: body?.error ?? "No se pudo generar el cierre mensual" };
+          }
+          await get().hydrateFromServer();
+          return { ok: true };
+        } catch {
+          return { ok: false, error: "No se pudo conectar con el servidor" };
+        } finally {
+          set({ generandoCierreMensual: false });
+        }
       },
     }),
     {

@@ -2,6 +2,10 @@ import { boolean, doublePrecision, integer, jsonb, pgTable, text } from "drizzle
 import type {
   AnalisisEconomicoProyecto,
   ChecklistProceso,
+  CierreCategoriaGasto,
+  CierreMetaSnapshot,
+  CierrePagoVencido,
+  CierreResumenMoneda,
   ClasificacionSugerida,
   Dofa,
   EscenarioEvaluacion,
@@ -212,6 +216,25 @@ export const metasFinancieras = pgTable("metas_financieras", {
   creadoEn: text("creado_en").notNull(),
 });
 
+// Cierre económico mensual con lectura estratégica — una fila por mes en
+// general (proyecto_id null) y una por cada proyecto activo ese mes.
+export const cierresMensuales = pgTable("cierres_mensuales", {
+  id: text("id").primaryKey(),
+  mes: text("mes").notNull(),
+  proyectoId: text("proyecto_id"),
+  proyectoNombre: text("proyecto_nombre"),
+  resumenPorMoneda: jsonb("resumen_por_moneda").$type<CierreResumenMoneda[]>().notNull(),
+  categoriasGasto: jsonb("categorias_gasto").$type<CierreCategoriaGasto[]>().notNull(),
+  horasInvertidas: doublePrecision("horas_invertidas"),
+  metasFinancieras: jsonb("metas_financieras").$type<CierreMetaSnapshot[]>().notNull(),
+  pagosVencidos: jsonb("pagos_vencidos").$type<CierrePagoVencido[]>().notNull(),
+  proyectosEnRiesgo: jsonb("proyectos_en_riesgo").$type<string[]>().notNull(),
+  decisionesSinCerrar: jsonb("decisiones_sin_cerrar").$type<string[]>().notNull(),
+  lecturaEstrategica: text("lectura_estrategica").notNull(),
+  semaforo: text("semaforo").notNull(),
+  creadoEn: text("creado_en").notNull(),
+});
+
 // Conexión OAuth con Google — una sola fila (id fijo "default"), no es
 // parte del modelo de dominio sincronizado con el cliente vía TABLES/mutate.
 // Se maneja directamente desde src/lib/google.ts.
@@ -239,6 +262,7 @@ export const googleConnection = pgTable("google_connection", {
 export const TABLES = {
   tiempo,
   metasFinancieras,
+  cierresMensuales,
   proyectos,
   personas,
   acciones,

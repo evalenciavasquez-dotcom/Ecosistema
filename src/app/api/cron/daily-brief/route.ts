@@ -3,6 +3,7 @@ import { getDb, isDbConfigured } from "@/lib/db/client";
 import { acciones, agenda, decisiones, movimientos, personas, strategicCases } from "@/lib/db/schema";
 import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
 import { sendPushToAll } from "@/lib/db/push";
+import { generarCierreMensual } from "@/lib/cierreMensualEngine";
 import { computeProyeccion, computeRunway } from "@/lib/finanzas";
 import { getConnection, isGoogleConfigured } from "@/lib/google";
 import { runGoogleSync } from "@/lib/googleSync";
@@ -12,6 +13,12 @@ function hoyISO(): string {
   // Fecha "hoy" en hora de Colombia (UTC-5), independiente del reloj del servidor.
   const now = new Date(Date.now() - 5 * 60 * 60 * 1000);
   return now.toISOString().slice(0, 10);
+}
+
+function mesAnteriorAHoy(hoy: string): string {
+  const [y, m] = hoy.slice(0, 7).split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 2, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function diasHasta(fechaISO: string, hoy: string): number {
@@ -57,6 +64,19 @@ export async function GET(request: Request) {
         }
       } catch (err) {
         console.error("Error sincronizando con Google desde el resumen diario", err);
+      }
+    }
+
+    // El día 1 de cada mes, cierra el mes recién terminado (general + por
+    // proyecto). No es crítico — un fallo aquí no debe romper el push del día.
+    if (hoy.slice(8, 10) === "01") {
+      try {
+        const resultado = await generarCierreMensual(mesAnteriorAHoy(hoy));
+        if (resultado.generado) {
+          lineas.push(`📊 Cierre de ${resultado.mes} listo — revísalo en Economía.`);
+        }
+      } catch (err) {
+        console.error("Error generando el cierre mensual desde el resumen diario", err);
       }
     }
 

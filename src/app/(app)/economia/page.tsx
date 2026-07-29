@@ -25,6 +25,28 @@ import {
 } from "@/lib/finanzas";
 import { hoyISO } from "@/lib/tiempo";
 
+const SEMAFORO_TONE: Record<string, "green" | "amber" | "red"> = {
+  verde: "green",
+  amarillo: "amber",
+  rojo: "red",
+};
+
+const SEMAFORO_LABEL: Record<string, string> = {
+  verde: "Mes sano",
+  amarillo: "Para revisar",
+  rojo: "Riesgo",
+};
+
+function mesLabel(mes: string): string {
+  const [y, m] = mes.split("-").map(Number);
+  const nombre = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+}
+
 const ESTADO_TONE: Record<MovimientoEstado, "green" | "amber" | "red"> = {
   confirmado: "green",
   esperado: "amber",
@@ -81,6 +103,10 @@ export default function EconomiaPage() {
   const proyectos = useAppStore((s) => s.proyectos);
   const metasFinancieras = useAppStore((s) => s.metasFinancieras);
   const deleteMetaFinanciera = useAppStore((s) => s.deleteMetaFinanciera);
+  const cierresMensuales = useAppStore((s) => s.cierresMensuales);
+  const generarCierreMensualAhora = useAppStore((s) => s.generarCierreMensualAhora);
+  const generandoCierreMensual = useAppStore((s) => s.generandoCierreMensual);
+  const [errorCierre, setErrorCierre] = useState("");
   const decisionesAbiertas = useAppStore((s) => s.decisiones).filter((d) => d.estado === "Abierta");
   const proyectosConAnalisis = proyectos.filter((p) => p.analisisEconomico);
   const [showNew, setShowNew] = useState(false);
@@ -126,6 +152,16 @@ export default function EconomiaPage() {
     () => computeProgresoMetas(metasFinancieras, movimientos, hoy),
     [metasFinancieras, movimientos, hoy]
   );
+
+  const cierresGenerales = useMemo(() => cierresMensuales.filter((c) => !c.proyectoId), [cierresMensuales]);
+  const ultimoCierre = cierresGenerales[0] ?? null;
+  const historialCierres = cierresGenerales.slice(1, 6);
+
+  async function handleGenerarCierre() {
+    setErrorCierre("");
+    const result = await generarCierreMensualAhora();
+    if (!result.ok) setErrorCierre(result.error ?? "No se pudo generar el cierre mensual");
+  }
 
   const [interpretacion, setInterpretacion] = useState<InterpretacionEconomia | null>(null);
   const [interpretando, setInterpretando] = useState(false);
@@ -244,6 +280,149 @@ export default function EconomiaPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">Cierre mensual</div>
+          <button
+            onClick={handleGenerarCierre}
+            disabled={generandoCierreMensual}
+            className="rounded-full bg-accent-blue text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50 shrink-0"
+          >
+            {generandoCierreMensual ? "Generando…" : ultimoCierre ? "Generar de nuevo" : "Generar cierre"}
+          </button>
+        </div>
+
+        {errorCierre && (
+          <div className="rounded-xl p-3 text-xs leading-relaxed bg-accent-red/10 border border-accent-red/30 text-accent-red">
+            {errorCierre}
+          </div>
+        )}
+
+        {!ultimoCierre ? (
+          <p className="text-sm text-muted">
+            Cada día 1 se genera solo el cierre del mes anterior: gastos, ingresos, metas, pagos vencidos y una
+            lectura estratégica escrita por la IA. También puedes generarlo manualmente aquí.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-sm font-medium">{mesLabel(ultimoCierre.mes)}</span>
+              <Pill tone={SEMAFORO_TONE[ultimoCierre.semaforo]}>{SEMAFORO_LABEL[ultimoCierre.semaforo]}</Pill>
+            </div>
+
+            <p className="text-sm leading-relaxed rounded-xl bg-surface-2 p-3.5">{ultimoCierre.lecturaEstrategica}</p>
+
+            {ultimoCierre.resumenPorMoneda.length > 0 && (
+              <div className="space-y-2">
+                {ultimoCierre.resumenPorMoneda.map((r) => (
+                  <div key={r.moneda} className="rounded-xl bg-surface-2 p-3.5">
+                    <div className="text-xs text-muted mb-2">{r.moneda}</div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <div className="text-[10px] text-muted">Ingresos</div>
+                        <div className="text-sm font-semibold tabular-nums text-accent-green">
+                          {formatMonto(r.ingresosMes, r.moneda)}
+                        </div>
+                        <div className="text-[10px] text-muted mt-0.5">antes: {formatMonto(r.ingresosMesAnterior, r.moneda)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted">Gastos</div>
+                        <div className="text-sm font-semibold tabular-nums text-accent-red">
+                          {formatMonto(r.gastosMes, r.moneda)}
+                        </div>
+                        <div className="text-[10px] text-muted mt-0.5">antes: {formatMonto(r.gastosMesAnterior, r.moneda)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted">Déficit</div>
+                        <div
+                          className={`text-sm font-semibold tabular-nums ${r.deficitMes >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                        >
+                          {formatMonto(r.deficitMes, r.moneda)}
+                        </div>
+                        <div className="text-[10px] text-muted mt-0.5">
+                          runway: {r.mesesRunway === null ? "—" : r.mesesRunway < 0 ? "déficit" : `${r.mesesRunway.toFixed(1)}m`}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {ultimoCierre.categoriasGasto.length > 0 && (
+              <div>
+                <div className="text-xs text-muted mb-2">Gastos por categoría</div>
+                <div className="space-y-1">
+                  {ultimoCierre.categoriasGasto.map((c, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <span className="text-muted">{c.categoria}</span>
+                      <span className="font-medium tabular-nums">{formatMonto(c.monto, c.moneda)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {ultimoCierre.metasFinancieras.length > 0 && (
+              <div>
+                <div className="text-xs text-muted mb-2">Metas financieras</div>
+                <div className="space-y-1">
+                  {ultimoCierre.metasFinancieras.map((m, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <span className="text-muted">{m.descripcion}</span>
+                      <span className={`font-medium ${m.cumplida ? "text-accent-green" : ""}`}>
+                        {m.cumplida ? "Cumplida" : `${Math.round(m.progreso * 100)}%`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {ultimoCierre.pagosVencidos.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-accent-amber mb-2">
+                  {ultimoCierre.pagosVencidos.length} pago(s) esperado(s) vencido(s)
+                </div>
+                <div className="space-y-1">
+                  {ultimoCierre.pagosVencidos.slice(0, 5).map((p, i) => (
+                    <div key={i} className="text-xs text-muted">
+                      {p.descripcion} · {formatMonto(p.monto, p.moneda)} · {p.diasVencido} día(s) vencido
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {ultimoCierre.proyectosEnRiesgo.length > 0 && (
+              <div className="text-xs text-accent-red">
+                Proyectos en riesgo: {ultimoCierre.proyectosEnRiesgo.join(", ")}
+              </div>
+            )}
+
+            {ultimoCierre.decisionesSinCerrar.length > 0 && (
+              <div className="text-xs text-accent-amber">
+                Decisiones sin cerrar: {ultimoCierre.decisionesSinCerrar.join(" · ")}
+              </div>
+            )}
+
+            {historialCierres.length > 0 && (
+              <div className="pt-2 border-t border-border-subtle">
+                <div className="text-[11px] uppercase tracking-wide text-muted mb-2">Meses anteriores</div>
+                <div className="space-y-1.5">
+                  {historialCierres.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-xs">
+                      <span className="text-muted">{mesLabel(c.mes)}</span>
+                      <Pill tone={SEMAFORO_TONE[c.semaforo]}>{SEMAFORO_LABEL[c.semaforo]}</Pill>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

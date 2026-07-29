@@ -155,6 +155,22 @@ const STATEMENTS = [
     fecha_objetivo text,
     creado_en text NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS cierres_mensuales (
+    id text PRIMARY KEY,
+    mes text NOT NULL,
+    proyecto_id text,
+    proyecto_nombre text,
+    resumen_por_moneda jsonb NOT NULL,
+    categorias_gasto jsonb NOT NULL,
+    horas_invertidas double precision,
+    metas_financieras jsonb NOT NULL,
+    pagos_vencidos jsonb NOT NULL,
+    proyectos_en_riesgo jsonb NOT NULL,
+    decisiones_sin_cerrar jsonb NOT NULL,
+    lectura_estrategica text NOT NULL,
+    semaforo text NOT NULL,
+    creado_en text NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS strategic_cases (
     id text PRIMARY KEY,
     decision_id text NOT NULL,
