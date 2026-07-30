@@ -1,15 +1,54 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE, checkPassword, createSessionToken } from "@/lib/auth";
+import {
+  AUTH_COOKIE,
+  SESSION_SEGUNDOS,
+  checkPassword,
+  createSessionToken,
+  isAppPasswordConfigured,
+} from "@/lib/auth";
 import { isDbConfigured } from "@/lib/db/client";
 import { estaBloqueado, limpiarIntentos, registrarIntentoFallido } from "@/lib/db/loginAttempts";
 
+// De qué IP se fía el límite de intentos.
+//
+// 'x-forwarded-for' es una lista que el propio cliente puede empezar: el
+// PRIMER valor es precisamente el que él controla, así que tomarlo permitía
+// esquivar el bloqueo cambiando el header en cada intento. El valor de
+// confianza es el que añade el proxy de la plataforma — 'x-real-ip' cuando
+// está, y si no el ÚLTIMO de la lista, que es el que agregó el salto más
+// cercano al servidor.
 function clientIp(request: Request): string {
+  const real = request.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return request.headers.get("x-real-ip") ?? "unknown";
+  if (forwarded) {
+    const saltos = forwarded
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (saltos.length) return saltos[saltos.length - 1];
+  }
+  return "unknown";
 }
 
 export async function POST(request: Request) {
+  // Se avisa antes de comparar nada. Si falta la variable, checkPassword
+  // devuelve false siempre y la respuesta era "Contraseña incorrecta": quien
+  // administra el sitio se pone a buscar un error de tipeo en vez de la
+  // variable que falta. La rama de más abajo que sí lo decía era inalcanzable,
+  // porque solo se llega después de validar una contraseña que nunca valida.
+  if (!isAppPasswordConfigured()) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "El servidor no tiene APP_PASSWORD configurada. Nadie puede entrar hasta definir esa variable de entorno.",
+      },
+      { status: 503 }
+    );
+  }
+
   const ip = clientIp(request);
   const conDb = isDbConfigured();
 
@@ -31,7 +70,9 @@ export async function POST(request: Request) {
 
   const token = await createSessionToken();
   if (!token) {
-    return NextResponse.json({ ok: false, error: "APP_PASSWORD no está configurada en el servidor" }, { status: 500 });
+    // Inalcanzable en la práctica — la guarda de arriba ya cortó ese caso —,
+    // pero createSessionToken puede devolver null y el tipo lo obliga.
+    return NextResponse.json({ ok: false, error: "No se pudo crear la sesión" }, { status: 500 });
   }
   const response = NextResponse.json({ ok: true });
   response.cookies.set(AUTH_COOKIE, token, {
@@ -39,7 +80,9 @@ export async function POST(request: Request) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    // Misma fuente que el vencimiento firmado dentro del token: si se cambia
+    // la duración, cambian los dos a la vez y no quedan desalineados.
+    maxAge: SESSION_SEGUNDOS,
   });
   return response;
 }
