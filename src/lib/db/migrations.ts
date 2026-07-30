@@ -83,6 +83,31 @@ export async function ensureMetasFinancierasTable() {
   metasFinancierasEnsured = true;
 }
 
+// Tablas de VINCERE. Llegaron después del esquema original, así que se crean
+// bajo demanda: una base ya desplegada no necesita ningún paso manual.
+let vincereSchemaEnsured = false;
+export async function ensureVincereSchema() {
+  if (vincereSchemaEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS vincere_proyectos (
+      id text PRIMARY KEY,
+      nombre text NOT NULL,
+      tipo text NOT NULL,
+      actualizado_en text NOT NULL,
+      doc jsonb NOT NULL
+    )`)
+  );
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS vincere_estado (
+      id text PRIMARY KEY,
+      triage_casos jsonb NOT NULL,
+      comparaciones jsonb NOT NULL,
+      actualizado_en text NOT NULL
+    )`)
+  );
+  vincereSchemaEnsured = true;
+}
+
 let cierresMensualesEnsured = false;
 export async function ensureCierresMensualesTable() {
   if (cierresMensualesEnsured) return;

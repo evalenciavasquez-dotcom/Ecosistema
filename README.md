@@ -102,6 +102,70 @@ src/
   proxy.ts                  Gate de autenticación (antes "middleware.ts" en Next < 16)
 ```
 
+## VINCERE Intelligence Platform (`/vincere`)
+
+Además del C.C.O. E.V., el repositorio incluye la **VINCERE Intelligence Platform** (PRD v3.0): una plataforma de dirección estratégica musical tipo Chartmetric, pero donde cada sección corresponde a un motor del sistema VINCERE y, sobre la data, una capa de IA la interpreta con el método propio (qué significa, riesgo, oportunidad, decisión, nivel de evidencia 1-4).
+
+Se abre desde la entrada **VINCERE** en la barra lateral, o directamente en `/vincere`. Es su propia superficie de marca (look editorial oscuro), separada del resto de la app:
+
+- **Shell de plataforma** (P0.1): selector de proyecto + navegación lateral por motores + panel principal.
+- **Las 3 capas por sección** (P0.2): data (paneles/gráficas o campos editables) + interpretación de IA con nivel de evidencia + zona de acción (preguntas abiertas, ajuste de escenarios).
+- **Secciones núcleo** (P0.3): Resumen/Career Momentum · Diagnóstico Maestro · Marca · Song Intelligence · Audiencia · Zonas de Calor · Management/Decisiones · KPIs · Triage.
+- **Carga manual de data** por sección (P0.6) — arquitectura lista para APIs después.
+- **Modo comparación** (P0.8): proyecto propio vs. una referencia de mercado (competencia), con lectura ajustada por macro-fase. Arranca con SETTE (proyecto real) y LUNA REBEL (referencia) precargados.
+- **Registro a Notion** (P0.9): botón "Registrar en Notion" — escribe de verdad si `NOTION_TOKEN` + `NOTION_DATABASE_ID` están configuradas, si no avisa sin romper.
+- **Marca (`/api/vincere/marca`)**: el resto de la plataforma mide lo que el artista produce; este motor declara lo que dice ser —posicionamiento, promesa, atributos, territorio, y el antipatrón (lo que NO es)— junto con qué proyecta hoy cada punto de contacto. Su salida no es la declaración sino la **brecha**: el sistema contrasta lo declarado contra catálogo, audiencia y zonas, y devuelve dónde lo que se dice y lo que la gente recibe dejan de coincidir, con el dato que sostiene cada grieta y una puntuación de coherencia 0-100. Existe porque el análisis de canción ya juzgaba "fit de marca" sin tener ninguna marca contra la cual juzgar: ahora esa marca declarada viaja también al contexto de Song Intelligence y del Informe Final.
+- **Análisis de letra por canción**: dentro de Song Intelligence se pega la letra y la IA lee la canción como obra (tema real, arco emocional, gancho, audiencia, fit de marca, potencial, qué reescribir y la decisión de gestión), cruzándola con las métricas de esa canción.
+- **Análisis de audio (`src/lib/vincere/audio.ts`)**: Claude no acepta audio — solo texto, imagen y PDF — así que el archivo no se le manda: se mide con DSP escrito a mano **en el navegador** (FFT radix-2, flujo espectral, autocorrelación, matriz de auto-similitud con kernel de tablero) y a la IA viajan los números. El archivo nunca sale del equipo, no hay subida ni almacenamiento. Devuelve BPM con su fiabilidad, tonalidad, rango dinámico, curva de energía, secciones y el segundo en que entra el gancho — que cruzado con el skip rate es la lectura más directa del sistema. Dos decisiones de DSP que importan: el flujo espectral se calcula **por bandas logarítmicas y se promedia** (sumar bins linealmente hace que un charles de banda ancha ahogue al bombo y el detector marque las corcheas en vez del pulso), y sobre la autocorrelación se aplica una **preferencia log-normal centrada en 120 BPM**, que es como los detectores de ritmo reales resuelven la ambigüedad entre T y 2T. La textura describe el espectro: **no hay reconocimiento de instrumentos**, y el prompt lo prohíbe explícitamente.
+- **Análisis externo por canción**: campo de «Análisis externo y notas de producción» donde se pega lo que la medición propia no alcanza — instrumentos, mood, género y artistas similares de un servicio (Cyanite, Music.ai) o del productor. Entra al prompt y al contexto etiquetado como observación externa, con instrucción de atribuirlo y de señalar las contradicciones con lo medido en vez de elegir una fuente. Al medir el audio de una canción sin análisis externo se levanta una alerta de oportunidad, **una sola vez por canción** (un recordatorio que salta siempre deja de recordar). Si las notas traen artistas similares, un botón salta a Investigación con la consulta ya escrita — la cadena completa es: la plataforma mide qué ES la canción, el servicio externo dice a qué SE PARECE, y la búsqueda web averigua qué les pasó a esos similares. La consulta se deja escrita, no se lanza sola.
+- **Métrica de la letra (`src/lib/vincere/metrica.ts`)**: sílabas por verso con sinalefa y regla de acento final, esquema y tipo de rima, densidad léxica y repeticiones. Se calcula al guardar la letra, no se le pide a la IA: contar sílabas es una regla determinista y un modelo de lenguaje falla al contar y varía entre llamadas. La IA recibe el resultado y solo interpreta qué significa.
+- **Plan Stress-Test** (P1.3): se carga el plan de un tercero (PDF, captura o texto) y el sistema lo somete a prueba **contra la realidad de ese artista** — no en abstracto: el mismo plan puede servirle a un consolidado y arruinar a un emergente. Devuelve los supuestos que el plan da por hecho sin decirlo, las variables ganadoras/perdedoras ordenadas por impacto, los cinco escenarios (Pierde · Break-even · Probable · Gana · Expansión), el punto de quiebre (la pieza única que si falla tumba todo) y las condiciones concretas a exigir antes de aceptar. Los planes evaluados se acumulan como registro de qué se ofreció y con qué criterio se decidió.
+- **Histórico**: cada carga de data guarda una foto de los indicadores (streams, seguidores, Momentum Index, tamaño del catálogo) con fecha y origen — una por día, para que la evolución no se llene de ruido. El panel de Evolución en Resumen muestra la trayectoria por métrica con su delta, y el histórico entra en el contexto de la IA, que tiene instrucción de leer la evolución antes que el valor de hoy. Emitir un informe nuevo archiva el anterior (con lo editado a mano) en vez de destruirlo, y el informe siguiente recibe el previo para contrastar qué recomendó y qué pasos se cumplieron.
+- **Informe Final**: la plataforma emite el entregable del proyecto — sinopsis central, veredicto, bloques que cruzan motores entre sí, riesgos, oportunidades y próximos pasos con responsable y plazo. Se descarga a Markdown, se imprime a PDF (hay estilos de impresión en claro) y se archiva en Notion.
+
+- **Gestión de proyectos**: botón "+ Proyecto" en la barra superior — crear proyectos propios o referencias de mercado, renombrarlos, cambiarles la fase y eliminarlos.
+- **Ingesta de data ("Cargar data")**: se suelta una captura (Spotify for Artists, Instagram, YouTube Studio, o un panel de industria tipo Chartmetric / Songstats / Soundcharts), un PDF, o se pega un CSV/texto. La IA lo lee, extrae los números y los reparte al motor que les corresponde, levantando alertas por severidad (crítica / atención / oportunidad). La propuesta se revisa bloque por bloque y solo se escribe lo aprobado; los bloques que la fuente no contiene van en `null` y nunca sobrescriben data existente.
+- **Investigación (búsqueda web)**: el único motor que mira hacia afuera. Se escribe qué se quiere saber — un artista, una canción, una plaza o una pregunta de industria — y la ruta usa las herramientas de servidor `web_search_20260209` / `web_fetch_20260209` para buscar de verdad. Corre en **dos fases deliberadas**: primero investiga en prosa con las páginas en contexto (reanudando los `pause_turn` del bucle de servidor y recogiendo las URLs de cada `web_search_tool_result`), y después una segunda llamada sin herramientas estructura ese reporte contra el esquema — las citas de búsqueda y la salida tipada no conviven en la misma llamada. Cada hallazgo cita el número de la fuente que lo respalda, y **un hallazgo sin fuente tiene techo de nivel 2**, forzado en el cliente aunque el modelo declare más. Las señales de plaza se proponen para Zonas de Calor y solo entran al mapa con aprobación explícita. Los hallazgos se inyectan en el contexto de los demás motores etiquetados como externos, con instrucción de no mezclarlos con las métricas propias.
+
+**La documentación vive dentro de la plataforma**, en la sección "Documentación" (`src/lib/vincere/manual.ts` es su fuente única), con dos documentos imprimibles:
+
+- **Guía del Usuario** — primeros pasos, el ciclo de trabajo completo, tareas paso a paso, cadencia sugerida y qué hacer cuando algo falla.
+- **Manual del Sistema** — qué es VINCERE y qué no, las tres capas, los motores activos y los pendientes, cómo funciona la capa de IA, por qué existen los niveles de evidencia, dónde vive la información y el alcance real de esta versión.
+
+No se duplican aquí para que no se desincronicen.
+
+La interpretación, las preguntas por sección, el triage, el análisis de letra, la ingesta, la investigación y el informe llaman a Claude (Sonnet 5) vía las rutas `src/app/api/vincere/*`, usando la misma `ANTHROPIC_API_KEY`.
+
+**Por qué no hay Google Trends.** Google no publica una API estable de Trends; las librerías existentes son ingeniería inversa y se rompen, y las IPs de datacenter (Vercel incluida) quedan bloqueadas — funcionaría en local y fallaría en producción. El motor de Investigación cubre esa necesidad con búsqueda web citable, sin proveedor ni credencial adicional. Para métricas duras de mercado la vía es un panel de industria cargado por Ingesta; si en algún momento se quiere data estructurada de terceros, los candidatos son la Spotify Web API pública (búsqueda de artistas, popularity, seguidores, géneros, relacionados — gratis, requiere client id/secret) o Chartmetric / Songstats / Soundcharts (de pago).
+
+**Persistencia.** Con `DATABASE_URL` configurada, VINCERE sincroniza con Postgres igual que el C.C.O.: al abrir lee `/api/vincere/state` y, si la base tiene contenido, esa versión reemplaza la copia local; desde ahí una suscripción al store detecta qué proyectos cambiaron (por identidad de referencia) y los envía a `/api/vincere/sync` con debounce. La primera conexión sube lo que ya hubiera en el navegador. El `localStorage` (clave `vincere-storage`) se conserva como caché de pintado inmediato y respaldo si la red falla; sin `DATABASE_URL` es lo único que hay y el encabezado lo indica ("Solo este dispositivo").
+
+El proyecto se guarda como documento completo en `vincere_proyectos.doc` (jsonb) en vez de normalizado: siempre se lee y se escribe entero, y normalizar la decena de estructuras anidadas añadiría fragilidad sin ganancia. Las tablas se crean bajo demanda (`ensureVincereSchema`), así que una base ya desplegada no requiere pasos manuales.
+
+Estructura:
+
+```
+src/
+  app/
+    vincere/                 Shell de la plataforma (layout + page + vincere.css)
+    api/vincere/
+      interpret/             Lectura VINCERE por sección (IA)
+      ask/                   Preguntas abiertas por sección (IA)
+      triage/                Veredicto de casos nuevos (IA)
+      state/                 GET: estado de VINCERE desde Postgres
+      sync/                  POST: guarda proyectos cambiados y estado
+      ingest/                Lee capturas, PDF o texto y extrae la data por motor (IA)
+      research/              Investigación con búsqueda web en dos fases (IA)
+      stress-test/           Somete el plan de un tercero a prueba (IA)
+      analyze-song/          Lectura profunda de la letra de una canción (IA)
+      informe/               Informe final del proyecto, cruzando motores (IA)
+      notion/                Registro a Notion (si está configurado)
+  components/vincere/        Header, Nav, secciones, componentes de las 3 capas
+  lib/vincere/               types, seed-data (SETTE + LUNA REBEL), store, prompt,
+                             schema, context, manual (contenido de "Cómo se opera"),
+                             informe-export (Markdown + descarga)
+```
+
 ## Alcance y limitaciones de este v1
 
 - **Persistencia**: por defecto los datos viven en el `localStorage` del navegador. Si se configura `DATABASE_URL` (Neon en producción), los datos se sincronizan en Postgres y son los mismos en cualquier dispositivo — ver "Base de datos y sincronización entre dispositivos". Hay exportación manual a JSON en Configuración en ambos casos.
