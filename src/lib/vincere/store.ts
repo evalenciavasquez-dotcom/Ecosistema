@@ -18,6 +18,9 @@ import {
   VincereInsight,
   VincereInvestigacion,
   VincereKpi,
+  VincereMarca,
+  VincereMarcaDiagnostico,
+  VincerePuntoContacto,
   VincereSenalPlaza,
   VincereProyecto,
   VincereProyectoTipo,
@@ -81,6 +84,12 @@ interface VincereState {
 
   updateResumen: (proyectoId: string, patch: Partial<VincereResumen>) => void;
   updateDiagnostico: (proyectoId: string, patch: Partial<VincereDiagnostico>) => void;
+
+  updateMarca: (proyectoId: string, patch: Partial<Omit<VincereMarca, "puntosContacto">>) => void;
+  addPuntoContacto: (proyectoId: string, punto: Omit<VincerePuntoContacto, "id">) => void;
+  updatePuntoContacto: (proyectoId: string, puntoId: string, patch: Partial<VincerePuntoContacto>) => void;
+  deletePuntoContacto: (proyectoId: string, puntoId: string) => void;
+  setMarcaDiagnostico: (proyectoId: string, diagnostico: VincereMarcaDiagnostico | null) => void;
 
   addCancion: (proyectoId: string, cancion: Omit<VincereCancion, "id">) => void;
   updateCancion: (proyectoId: string, cancionId: string, patch: Partial<VincereCancion>) => void;
@@ -154,6 +163,18 @@ function mapProyecto(
   fn: (p: VincereProyecto) => VincereProyecto
 ): VincereProyecto[] {
   return proyectos.map((p) => (p.id === id ? fn(p) : p));
+}
+
+function marcaVacia(): VincereMarca {
+  return {
+    posicionamiento: "",
+    promesa: "",
+    atributos: [],
+    territorio: "",
+    antipatron: "",
+    puntosContacto: [],
+    actualizadoEn: new Date().toISOString(),
+  };
 }
 
 export const useVincereStore = create<VincereState>()(
@@ -245,6 +266,62 @@ export const useVincereStore = create<VincereState>()(
             ...p,
             diagnostico: { ...p.diagnostico, ...patch },
           })),
+        })),
+
+      // La marca puede no existir todavía: se crea vacía al primer trazo en
+      // vez de exigir un alta previa.
+      updateMarca: (proyectoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            marca: { ...marcaVacia(), ...(p.marca ?? {}), ...patch, actualizadoEn: new Date().toISOString() },
+          })),
+        })),
+      addPuntoContacto: (proyectoId, punto) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            const base = p.marca ?? marcaVacia();
+            return {
+              ...p,
+              marca: {
+                ...base,
+                puntosContacto: [...base.puntosContacto, { ...punto, id: genId("pc") }],
+                actualizadoEn: new Date().toISOString(),
+              },
+            };
+          }),
+        })),
+      updatePuntoContacto: (proyectoId, puntoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            if (!p.marca) return p;
+            return {
+              ...p,
+              marca: {
+                ...p.marca,
+                puntosContacto: p.marca.puntosContacto.map((pc) => (pc.id === puntoId ? { ...pc, ...patch } : pc)),
+                actualizadoEn: new Date().toISOString(),
+              },
+            };
+          }),
+        })),
+      deletePuntoContacto: (proyectoId, puntoId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            if (!p.marca) return p;
+            return {
+              ...p,
+              marca: {
+                ...p.marca,
+                puntosContacto: p.marca.puntosContacto.filter((pc) => pc.id !== puntoId),
+                actualizadoEn: new Date().toISOString(),
+              },
+            };
+          }),
+        })),
+      setMarcaDiagnostico: (proyectoId, diagnostico) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, marcaDiagnostico: diagnostico })),
         })),
 
       addCancion: (proyectoId, cancion) =>

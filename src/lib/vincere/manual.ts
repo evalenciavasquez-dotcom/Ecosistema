@@ -155,6 +155,16 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Declarar la marca y ver si la data la respalda",
+    pasos: [
+      "Marca → «Editar marca». Escribe el posicionamiento, la promesa, los atributos y el territorio.",
+      "Llena «Lo que NO es». Es el campo que casi nadie completa y el que más filo da: una marca que no excluye nada no distingue nada.",
+      "Añade los puntos de contacto —Spotify, Instagram, vivo— y marca en cada uno si está alineado, tibio o desalineado.",
+      "«Analizar marca». El sistema la contrasta contra el catálogo, la audiencia y las zonas, y devuelve dónde se abre la brecha entre lo que declaras y lo que la gente recibe.",
+      "Hazlo antes de analizar canciones: con la marca declarada, el análisis de cada tema juzga su coherencia contra algo concreto en vez de adivinarla.",
+    ],
+  },
+  {
     tarea: "Cargar una canción con su letra y su audio",
     pasos: [
       "Song Intelligence → «+ Agregar canción». Nombre y métricas (streams, retención, skip, playlist adds).",
@@ -380,6 +390,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Diagnóstico Maestro",
     cuandoUsarlo: "Al abrir un proyecto, y cuando algo estructural cambia de fase.",
     queCargar: "Fase actual, fortaleza núcleo, riesgo principal y prioridad #1 — texto de criterio, no números.",
+  },
+  {
+    motor: "Marca",
+    cuandoUsarlo: "Al abrir un proyecto, antes de juzgar canciones. Y cada vez que algo se sienta fuera de carril sin saber explicar por qué.",
+    queCargar: "Lo que el artista dice ser: posicionamiento, promesa, atributos, territorio y —sobre todo— lo que NO es. Más qué proyecta hoy cada canal (Spotify, redes, vivo).",
   },
   {
     motor: "Song Intelligence",

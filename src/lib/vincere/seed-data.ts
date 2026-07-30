@@ -32,6 +32,37 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
       riesgoPrincipal: "Dependencia de un solo tema para el 40% del streaming activo",
       prioridad: "Diversificar catálogo con al menos 2 lanzamientos en el próximo trimestre",
     },
+    // Marca declarada de ejemplo: deliberadamente tiene grietas contra la data
+    // de arriba (promete intimidad pero el tema que más suena es el de menor
+    // retención) para que el diagnóstico de brecha tenga de qué agarrarse.
+    marca: {
+      posicionamiento: "Pop urbano de madrugada: canciones de después de la fiesta, no de la fiesta",
+      promesa: "Quien lo pone a las 3 a.m. se siente acompañado, no animado",
+      atributos: ["íntimo", "nocturno", "melancólico", "sin épica"],
+      territorio: "Entre el pop urbano melódico y el R&B en español; referentes de tempo medio y voz cercana",
+      antipatron: "No es un artista de perreo ni de himno de estadio. No hace canciones para levantar una pista.",
+      puntosContacto: [
+        {
+          id: "pc-seed-1",
+          canal: "Spotify",
+          queProyecta: "La foto de perfil y el orden de temas populares abren con lo más bailable",
+          coherencia: "desalineado",
+        },
+        {
+          id: "pc-seed-2",
+          canal: "Instagram",
+          queProyecta: "Fotos nocturnas, paleta fría, textos cortos en minúscula",
+          coherencia: "alineado",
+        },
+        {
+          id: "pc-seed-3",
+          canal: "Vivo",
+          queProyecta: "Set corto con banda; cierra con el tema más movido",
+          coherencia: "tibio",
+        },
+      ],
+      actualizadoEn: "2026-01-15T00:00:00.000Z",
+    },
     canciones: [
       { id: "song-1", nombre: "Bajo Cero", streams: 890000, retencionPct: 68, skipPct: 22, playlistAdds: 340 },
       { id: "song-2", nombre: "Nadie Como Tú", streams: 640000, retencionPct: 74, skipPct: 15, playlistAdds: 510 },

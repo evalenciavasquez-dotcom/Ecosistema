@@ -48,7 +48,9 @@ export const songAnalysisResponseSchema = z.object({
     .describe("A qué audiencia le habla la letra y si cuadra con la que ya escucha al artista (usa la data de audiencia del contexto si está). 1-2 frases."),
   fitMarca: z
     .string()
-    .describe("Coherencia con la marca/identidad del artista — ¿suena a este artista o se sale del carril? 1-2 frases."),
+    .describe(
+      "Coherencia con la marca del artista. Si el contexto trae 'marcaDeclarada', júzgalo contra ESA marca — su posicionamiento, sus atributos y sobre todo lo que dice NO ser — y nómbralo. Si no la trae, dilo y juzga contra lo que el catálogo sugiere, con menos nivel de evidencia. 1-2 frases."
+    ),
   potencial: z
     .string()
     .describe("Lectura del potencial comercial de la canción, justificada — no solo una etiqueta. 1-2 frases."),
@@ -334,6 +336,45 @@ export const stressTestResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Qué tan completo estaba el plan y cuánta data del artista respalda esta evaluación"),
 });
 
+export const marcaResponseSchema = z.object({
+  coherencia: z
+    .string()
+    .describe("Si la marca declarada se sostiene contra la data real del artista. Directo: se sostiene, se sostiene a medias, o no se sostiene — y por qué. 2-4 frases"),
+  puntuacionCoherencia: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe("0-100: qué tanto coincide lo declarado con lo que la data muestra. No lo infles por cortesía — una marca declarada sin data que la respalde no pasa de 40"),
+  brechas: z
+    .array(
+      z.object({
+        declarado: z.string().describe("Lo que la marca dice ser en este punto concreto"),
+        recibido: z.string().describe("Lo que la data sugiere que la gente realmente recibe. Cita el dato: la canción que más retiene, el país que más escucha, el canal que dice otra cosa"),
+        lectura: z.string().describe("Por qué se abre la brecha y qué le cuesta al artista. Aquí está el valor del motor"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(5)
+    .describe("Las grietas entre lo declarado y lo recibido, de la más costosa a la menos. Si no hay data suficiente para sostener una brecha, no la inventes: mejor devolver dos con evidencia que cinco especulativas"),
+  diferenciacion: z
+    .string()
+    .describe("Si el posicionamiento distingue de verdad o es genérico. Sé duro: la mayoría de los posicionamientos de artista emergente son frases que le sirven a cualquiera. Di si esta lo es"),
+  senalesDeMarca: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué dice la data propia sobre la marca que el artista tiene HOY, se declare o no. Lo que el catálogo, la audiencia y las zonas revelan por sí solos"),
+  riesgos: z.array(z.string()).max(4).describe("Riesgos de marca concretos que se ven venir con esta data"),
+  movimientos: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué hacer, concreto y ejecutable ('reordenar los temas populares de Spotify para que abra Otra Vida'), nunca un deseo ('ser más coherente')"),
+  veredicto: z
+    .string()
+    .describe("La postura del director sobre la marca: sostenerla, afilarla, corregirla o replantearla — y por qué. Clara, nunca un 'depende'"),
+  nivelGlobal: nivelSchema.describe("Qué tan respaldada está esta lectura. Sin marca declarada o sin data del catálogo, no puede ser alto"),
+});
+
+export type MarcaResponse = z.infer<typeof marcaResponseSchema>;
 export type ResearchResponse = z.infer<typeof researchResponseSchema>;
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
 export type InformeResponse = z.infer<typeof informeResponseSchema>;

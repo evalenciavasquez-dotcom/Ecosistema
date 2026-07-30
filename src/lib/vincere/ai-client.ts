@@ -8,6 +8,7 @@ import {
   VincereIngestaResultado,
   VincereInvestigacion,
   VincereInvestigacionTipo,
+  VincereMarcaDiagnostico,
   VincereNivel,
   VincerePotencialCancion,
   VincerePrioridadPaso,
@@ -272,6 +273,43 @@ const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
 const IMPACTOS = ["alto", "medio", "bajo"] as const;
 
 // Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchMarca(input: { artista: unknown; nota?: string }): Promise<VincereMarcaDiagnostico> {
+  const res = await fetch("/api/vincere/marca", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  const puntuacion = typeof r.puntuacionCoherencia === "number" ? Math.round(r.puntuacionCoherencia) : 0;
+
+  return {
+    coherencia: r.coherencia ?? "",
+    puntuacionCoherencia: Math.min(100, Math.max(0, puntuacion)),
+    brechas: (Array.isArray(r.brechas) ? r.brechas : []).map(
+      (b: { declarado?: string; recibido?: string; lectura?: string; nivel?: number }) => ({
+        declarado: b.declarado ?? "",
+        recibido: b.recibido ?? "",
+        lectura: b.lectura ?? "",
+        nivel: clampNivel(b.nivel),
+      })
+    ),
+    diferenciacion: r.diferenciacion ?? "",
+    senalesDeMarca: textos(r.senalesDeMarca),
+    riesgos: textos(r.riesgos),
+    movimientos: textos(r.movimientos),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
 export async function fetchStressTest(input: {
   data?: string;
   mediaType?: string;

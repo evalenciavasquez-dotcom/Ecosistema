@@ -8,6 +8,7 @@ const CORE_SECTIONS: VincereSeccion[] = [
   "investigacion",
   "resumen",
   "diagnostico",
+  "marca",
   "song",
   "audiencia",
   "calor",
@@ -19,7 +20,6 @@ const CORE_SECTIONS: VincereSeccion[] = [
 
 // Secciones P1 del PRD — se activan una a una en fases posteriores.
 const PROXIMAMENTE = [
-  "Marca",
   "A&R y Colaboraciones",
   "Finanzas y Presupuesto",
   "Shows y Touring",

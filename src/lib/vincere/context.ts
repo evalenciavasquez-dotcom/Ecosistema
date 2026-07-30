@@ -106,6 +106,59 @@ export function investigacionExterna(
   };
 }
 
+// La marca declarada, en la forma en que la IA la necesita. Se marca
+// explícitamente como declaración y no como hecho: es lo que el artista DICE
+// ser, y todo el motor de Marca existe para contrastarlo, no para creerlo.
+export function marcaDeclarada(p: VincereProyecto): unknown | undefined {
+  const m = p.marca;
+  if (!m) return undefined;
+  const algo = m.posicionamiento.trim() || m.promesa.trim() || m.atributos.length || m.antipatron.trim();
+  if (!algo) return undefined;
+  return {
+    advertencia: "Esto es lo que el artista DECLARA ser, no un hecho verificado. Contrástalo contra la data.",
+    posicionamiento: m.posicionamiento || null,
+    promesa: m.promesa || null,
+    atributos: m.atributos.length ? m.atributos : null,
+    territorio: m.territorio || null,
+    loQueNoEs: m.antipatron || "no declarado — la marca no excluye nada",
+    puntosContacto: m.puntosContacto.length
+      ? m.puntosContacto.map((pc) => ({ canal: pc.canal, queProyecta: pc.queProyecta, coherencia: pc.coherencia }))
+      : null,
+  };
+}
+
+// Contexto del motor de Marca. A diferencia del resto de secciones —
+// deliberadamente estrechas — aquí se entrega ancho a propósito: una brecha de
+// marca solo se ve cruzando lo declarado con catálogo, audiencia y zonas.
+export function buildMarcaContext(p: VincereProyecto): unknown {
+  return {
+    artista: p.nombre,
+    genero: p.genero,
+    fase: p.fase,
+    marcaDeclarada:
+      marcaDeclarada(p) ??
+      "el artista NO ha declarado marca todavía: deduce de la data qué marca proyecta hoy sin saberlo",
+    diagnostico: p.diagnostico,
+    // El catálogo es donde la marca se verifica o se desmiente: lo que la gente
+    // realmente retiene dice más que cualquier declaración.
+    catalogo: p.canciones.length
+      ? p.canciones.map((c) => ({
+          nombre: c.nombre,
+          streams: c.streams,
+          retencionPct: c.retencionPct,
+          skipPct: c.skipPct,
+          playlistAdds: c.playlistAdds,
+          ...(c.analisis
+            ? { tema: c.analisis.tema, gancho: c.analisis.gancho, fitMarcaSegunAnalisisPrevio: c.analisis.fitMarca }
+            : {}),
+        }))
+      : "sin catálogo cargado",
+    audiencia: p.audiencia,
+    zonasCalor: p.zonasCalor.length ? p.zonasCalor : "sin zonas cargadas",
+    ...(investigacionExterna(p, "general", 3) ? { investigacionExterna: investigacionExterna(p, "general", 3) } : {}),
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -129,6 +182,22 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
       };
     case "diagnostico":
       return { ...base, diagnostico: p.diagnostico, ...conExterno("general") };
+    case "marca":
+      return {
+        ...base,
+        marcaDeclarada: marcaDeclarada(p) ?? "el artista todavía no ha declarado su marca",
+        ...(p.marcaDiagnostico
+          ? {
+              diagnosticoDeMarcaYaGenerado: {
+                coherencia: p.marcaDiagnostico.coherencia,
+                puntuacion: p.marcaDiagnostico.puntuacionCoherencia,
+                brechas: p.marcaDiagnostico.brechas.map((b) => `${b.declarado} → ${b.recibido}`),
+                veredicto: p.marcaDiagnostico.veredicto,
+              },
+            }
+          : {}),
+        ...conExterno("general"),
+      };
     case "song":
       return {
         ...base,
@@ -208,6 +277,21 @@ export function buildInformeContext(p: VincereProyecto): unknown {
       serieStreamsMiles: sinData(p.resumen.serie),
     },
     diagnostico: p.diagnostico,
+    marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca en la plataforma",
+    diagnosticoDeMarca: p.marcaDiagnostico
+      ? {
+          coherenciaDeclaradoVsRecibido: p.marcaDiagnostico.coherencia,
+          puntuacion: p.marcaDiagnostico.puntuacionCoherencia,
+          brechas: p.marcaDiagnostico.brechas.map((b) => ({
+            declara: b.declarado,
+            recibe: b.recibido,
+            lectura: b.lectura,
+            nivel: b.nivel,
+          })),
+          diferenciacion: p.marcaDiagnostico.diferenciacion,
+          veredicto: p.marcaDiagnostico.veredicto,
+        }
+      : "no se ha contrastado la marca contra la data todavía",
     canciones: p.canciones.length
       ? p.canciones.map((c) => ({
           nombre: c.nombre,

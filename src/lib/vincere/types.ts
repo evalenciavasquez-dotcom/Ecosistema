@@ -15,6 +15,7 @@ export const VINCERE_NIVEL_LABEL: Record<VincereNivel, string> = {
 export type VincereSeccion =
   | "resumen"
   | "diagnostico"
+  | "marca"
   | "song"
   | "audiencia"
   | "calor"
@@ -30,6 +31,7 @@ export type VincereSeccion =
 export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   resumen: "Resumen · Momentum",
   diagnostico: "Diagnóstico Maestro",
+  marca: "Marca",
   song: "Song Intelligence",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
@@ -299,6 +301,67 @@ export interface VincereStressTest {
   creadoEn: string;
 }
 
+// --- Marca ---
+// El resto de la plataforma mide lo que el artista PRODUCE. Este motor declara
+// lo que el artista DICE SER, y ese es su único propósito: sin una marca
+// declarada, "coherencia con la marca" es una frase que no se puede verificar
+// contra nada. El análisis de canción ya venía juzgando ese fit a ciegas.
+//
+// La pieza que hace útil al motor no es la declaración sino la BRECHA: lo que
+// se declara contra lo que la data muestra que la gente realmente recibe.
+
+export type VincereCoherencia = "alineado" | "tibio" | "desalineado";
+
+export const VINCERE_COHERENCIA_LABEL: Record<VincereCoherencia, string> = {
+  alineado: "Alineado",
+  tibio: "Tibio",
+  desalineado: "Desalineado",
+};
+
+// Dónde la marca se toca de verdad: el perfil de Spotify, el feed, el vivo.
+// Un artista puede tener un posicionamiento impecable escrito y tres canales
+// diciendo cosas distintas.
+export interface VincerePuntoContacto {
+  id: string;
+  canal: string; // Spotify, Instagram, TikTok, vivo, prensa…
+  queProyecta: string; // Qué dice hoy ese canal sobre quién es el artista.
+  coherencia: VincereCoherencia;
+}
+
+// La marca declarada — la escribe Eduardo, no la IA.
+export interface VincereMarca {
+  posicionamiento: string; // La frase que define qué es este artista.
+  promesa: string; // Qué recibe quien lo escucha.
+  atributos: string[]; // Los rasgos que lo definen: crudo, íntimo, bailable…
+  territorio: string; // Territorio sonoro y referentes donde se ubica.
+  // Lo que el artista NO es. Es el campo que casi nadie llena y el que más
+  // filo da: una marca que no excluye nada no distingue nada.
+  antipatron: string;
+  puntosContacto: VincerePuntoContacto[];
+  actualizadoEn: string;
+}
+
+// Una grieta concreta entre lo declarado y lo recibido.
+export interface VincereBrechaMarca {
+  declarado: string; // Lo que la marca dice ser en este punto.
+  recibido: string; // Lo que la data sugiere que llega realmente.
+  lectura: string; // Por qué se abre la brecha y qué cuesta.
+  nivel: VincereNivel;
+}
+
+export interface VincereMarcaDiagnostico {
+  coherencia: string; // Si la marca declarada se sostiene contra la data.
+  puntuacionCoherencia: number; // 0-100, para poder verlo de un vistazo.
+  brechas: VincereBrechaMarca[];
+  diferenciacion: string; // Si el posicionamiento distingue o es genérico.
+  senalesDeMarca: string[]; // Qué dice la data propia sobre la marca, se declare o no.
+  riesgos: string[];
+  movimientos: string[]; // Qué hacer, concreto.
+  veredicto: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
 // --- Histórico: que el sistema acumule en vez de sobrescribir ---
 // Cada vez que entra data nueva se guarda una foto de los indicadores. Sin
 // esto la plataforma solo sabe cómo está la carrera hoy, nunca cómo llegó
@@ -434,6 +497,8 @@ export interface VincereProyecto {
   tipo: VincereProyectoTipo;
   resumen: VincereResumen;
   diagnostico: VincereDiagnostico;
+  marca?: VincereMarca | null;
+  marcaDiagnostico?: VincereMarcaDiagnostico | null;
   canciones: VincereCancion[];
   audiencia: VincereAudiencia;
   zonasCalor: VincereZonaCalor[];

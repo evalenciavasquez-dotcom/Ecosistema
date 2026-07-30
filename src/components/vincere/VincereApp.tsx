@@ -5,6 +5,7 @@ import VincereHeader from "./VincereHeader";
 import VincereNav from "./VincereNav";
 import ResumenSection from "./sections/ResumenSection";
 import DiagnosticoSection from "./sections/DiagnosticoSection";
+import MarcaSection from "./sections/MarcaSection";
 import SongSection from "./sections/SongSection";
 import AudienciaSection from "./sections/AudienciaSection";
 import CalorSection from "./sections/CalorSection";
@@ -75,6 +76,8 @@ function SectionRouter({
       return <ResumenSection proyecto={proyecto} />;
     case "diagnostico":
       return <DiagnosticoSection proyecto={proyecto} />;
+    case "marca":
+      return <MarcaSection proyecto={proyecto} />;
     case "song":
       return <SongSection proyecto={proyecto} />;
     case "audiencia":

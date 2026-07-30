@@ -9,7 +9,7 @@ import {
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import { fetchSongAnalysis } from "@/lib/vincere/ai-client";
-import { investigacionExterna } from "@/lib/vincere/context";
+import { investigacionExterna, marcaDeclarada } from "@/lib/vincere/context";
 import { analizarLetra } from "@/lib/vincere/metrica";
 import { formatStreams } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
@@ -233,6 +233,10 @@ function SongDetail({
       fase: proyecto.fase,
       audiencia: proyecto.audiencia,
       diagnostico: proyecto.diagnostico,
+      // Sin esto, el campo 'fitMarca' del análisis se juzgaba contra nada: la
+      // IA tenía que adivinar cuál era la marca del artista a partir de sus
+      // propias canciones, que es exactamente lo que se le pide evaluar.
+      marcaDeclarada: marcaDeclarada(proyecto),
       catalogo: proyecto.canciones.map((c) => ({
         nombre: c.nombre,
         streams: c.streams,
