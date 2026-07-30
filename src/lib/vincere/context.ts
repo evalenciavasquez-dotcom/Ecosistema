@@ -159,6 +159,57 @@ export function buildMarcaContext(p: VincereProyecto): unknown {
   };
 }
 
+// Los shows con su conversión calculada. El porcentaje se hace acá y no se le
+// pide a la IA: dividir asistencia entre aforo es aritmética exacta, y un
+// modelo de lenguaje la falla lo justo como para arruinar la lectura.
+function showsConConversion(p: VincereProyecto) {
+  const shows = p.shows ?? [];
+  if (!shows.length) return undefined;
+  return shows.map((s) => ({
+    ciudad: s.ciudad,
+    fecha: s.fecha,
+    sala: s.sala,
+    aforo: s.aforo,
+    asistencia: s.asistencia,
+    conversionPct: s.aforo > 0 ? Math.round((s.asistencia / s.aforo) * 100) : null,
+    ...(s.ingresoNeto != null ? { ingresoNeto: s.ingresoNeto, moneda: s.moneda } : {}),
+    ...(s.nota.trim() ? { nota: s.nota.trim() } : {}),
+  }));
+}
+
+// Contexto de Shows y Touring. Cruza tres cosas que hoy viven separadas: dónde
+// escuchan (zonas de calor), quién de verdad fue a un show (conversión) y qué
+// se sabe de la escena de esa plaza (investigación).
+export function buildTouringContext(p: VincereProyecto): unknown {
+  const shows = showsConConversion(p);
+  return {
+    artista: p.nombre,
+    genero: p.genero,
+    fase: p.fase,
+    momentum: {
+      streamsMes: p.resumen.streamsMes,
+      streamsMesLegible: formatStreams(p.resumen.streamsMes),
+      seguidores: p.resumen.seguidores,
+      seguidoresLegible: formatFollowers(p.resumen.seguidores),
+    },
+    // Dónde escuchan. Es la señal de interés, NO de convocatoria.
+    zonasCalor: p.zonasCalor.length
+      ? {
+          advertencia:
+            "El calor mide escucha, no asistencia. Una plaza caliente puede vender cero entradas: no lo trates como convocatoria.",
+          ciudades: p.zonasCalor,
+        }
+      : "sin zonas de calor cargadas",
+    // La única evidencia dura de conversión que existe en el sistema.
+    showsPrevios:
+      shows ??
+      "no hay shows registrados: no existe conversión medida y todo lo que digas sobre convocatoria es estimación desde streaming, no dato",
+    audiencia: p.audiencia,
+    ...(marcaDeclarada(p) ? { marcaDeclarada: marcaDeclarada(p) } : {}),
+    ...(investigacionExterna(p, "plazas", 3) ? { investigacionExterna: investigacionExterna(p, "plazas", 3) } : {}),
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -224,7 +275,30 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
     case "audiencia":
       return { ...base, audiencia: p.audiencia, ...conExterno("general") };
     case "calor":
-      return { ...base, zonasCalor: p.zonasCalor, ...conExterno("plazas") };
+      return {
+        ...base,
+        zonasCalor: p.zonasCalor,
+        // Si ya se tocó en alguna de estas ciudades, el calor deja de leerse
+        // solo: se puede contrastar contra quién fue de verdad.
+        ...(showsConConversion(p) ? { showsPrevios: showsConConversion(p) } : {}),
+        ...conExterno("plazas"),
+      };
+    case "touring":
+      return {
+        ...base,
+        zonasCalor: p.zonasCalor,
+        showsPrevios: showsConConversion(p) ?? "sin shows registrados",
+        ...(p.touringDiagnostico
+          ? {
+              diagnosticoYaGenerado: {
+                listoParaGira: p.touringDiagnostico.listoParaGira,
+                plazas: p.touringDiagnostico.plazas.map((pl) => `${pl.ciudad}: ${pl.veredicto}`),
+                veredicto: p.touringDiagnostico.veredicto,
+              },
+            }
+          : {}),
+        ...conExterno("plazas"),
+      };
     case "management":
       return { ...base, decisiones: p.decisiones, ...conExterno("general") };
     case "kpis":
@@ -322,6 +396,21 @@ export function buildInformeContext(p: VincereProyecto): unknown {
       paises: sinData(p.audiencia.paises),
     },
     zonasCalor: sinData(p.zonasCalor),
+    shows: showsConConversion(p) ?? "sin shows registrados",
+    diagnosticoDeTouring: p.touringDiagnostico
+      ? {
+          listoParaGira: p.touringDiagnostico.listoParaGira,
+          lectura: p.touringDiagnostico.lecturaGeneral,
+          plazas: p.touringDiagnostico.plazas.map((pl) => ({
+            ciudad: pl.ciudad,
+            veredicto: pl.veredicto,
+            conversion: pl.senalDeConversion,
+            nivel: pl.nivel,
+          })),
+          trampas: p.touringDiagnostico.trampas,
+          veredicto: p.touringDiagnostico.veredicto,
+        }
+      : "no se ha evaluado dónde tocar todavía",
     decisiones: sinData(p.decisiones),
     kpis: sinData(p.kpis),
     lecturasVincerePrevias: lecturasPrevias.length ? lecturasPrevias : "todavía no se han generado lecturas por sección",

@@ -182,7 +182,7 @@ export const GUIA_TAREAS: ManualTarea[] = [
       "Pulsa «Investigar los artistas similares →». Salta a Investigación con la consulta ya escrita.",
       "Revísala y ajústala si quieres — no se lanza sola.",
       "«Investigar». El sistema sale a la web a averiguar quiénes son, en qué fase están y qué plazas pisan.",
-      "Si aparecen ciudades, llévalas a Zonas de Calor. Ese es el recorrido completo: de cómo suena la canción a dónde tocar.",
+      "Si aparecen ciudades, llévalas a Zonas de Calor y luego pasa a Shows y Touring: ahí el mapa se convierte en una decisión de dónde tocar. Ese es el recorrido completo, de cómo suena la canción a qué fecha firmar.",
     ],
   },
   {
@@ -193,6 +193,16 @@ export const GUIA_TAREAS: ManualTarea[] = [
       "Vuelve arriba y pulsa «Generar lectura VINCERE» del catálogo completo.",
       "Ahí es donde aparece el patrón: qué tempo, qué energía y qué momento de gancho comparten las que retuvieron, frente a las que se saltaron.",
       "Esa lectura es el material para decidir cómo se produce lo próximo, no solo cuál se empuja.",
+    ],
+  },
+  {
+    tarea: "Decidir dónde tocar",
+    pasos: [
+      "Shows y Touring → «+ Registrar show» por cada fecha que ya hiciste: ciudad, sala, aforo y cuánta gente fue.",
+      "Escribe la nota de cada noche. «Agotado con dos semanas de anticipación» y «mucha reventa sin vender» son dos historias distintas, y el sistema las lee.",
+      "«Evaluar plazas». Cruza el mapa de calor, la conversión real de esos shows y lo que se haya investigado de cada ciudad.",
+      "Lee primero las plazas trampa: son las ciudades que la data hace ver bien y no lo están. Ahí es donde se pierde dinero.",
+      "El tamaño de sala sugerido importa tanto como la ciudad. Media sala llena se ve peor que una sala chica agotada, y el agotado construye la próxima fecha.",
     ],
   },
   {
@@ -442,6 +452,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Zonas de Calor",
     cuandoUsarlo: "Para decidir gira, shows y dónde expandir con menos riesgo.",
     queCargar: "Ciudades con su intensidad de escucha (0-100).",
+  },
+  {
+    motor: "Shows y Touring",
+    cuandoUsarlo: "Antes de aceptar una fecha o de armar una serie. Y cada vez que el mapa de calor tiente a tocar en la ciudad de más streams.",
+    queCargar: "Los shows que ya hiciste: ciudad, sala, aforo, cuánta gente fue de verdad y cómo estuvo la noche. Esa relación entre asistencia y aforo es la única evidencia real de convocatoria que tiene el sistema.",
   },
   {
     motor: "Management / Decisiones",

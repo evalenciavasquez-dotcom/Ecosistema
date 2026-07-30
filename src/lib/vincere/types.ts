@@ -17,6 +17,7 @@ export type VincereSeccion =
   | "diagnostico"
   | "marca"
   | "song"
+  | "touring"
   | "audiencia"
   | "calor"
   | "management"
@@ -33,6 +34,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   diagnostico: "Diagnóstico Maestro",
   marca: "Marca",
   song: "Song Intelligence",
+  touring: "Shows y Touring",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
   management: "Management / Decisiones",
@@ -362,6 +364,70 @@ export interface VincereMarcaDiagnostico {
   generadoEn: string;
 }
 
+// --- Shows y Touring ---
+// Zonas de Calor dice dónde te escuchan. Este motor responde la pregunta que
+// esa data insinúa pero no contesta: dónde conviene tocar. La Guía del Usuario
+// ya prometía ese recorrido ("de cómo suena la canción a dónde tocar") y se
+// cortaba en el mapa.
+//
+// La distinción que sostiene el motor: escuchar es gratis, ir a un show no.
+// Una plaza con muchos streams puede vender cero entradas, y esa trampa es
+// justo la que arruina una gira de artista emergente.
+
+export type VincereVeredictoPlaza = "ir" | "probar" | "esperar" | "no";
+
+export const VINCERE_VEREDICTO_PLAZA_LABEL: Record<VincereVeredictoPlaza, string> = {
+  ir: "Ir",
+  probar: "Probar en chico",
+  esperar: "Esperar",
+  no: "No ir",
+};
+
+// Un show que ya ocurrió. Es la única evidencia dura de que una plaza responde:
+// los streams dicen quién escucha, esto dice quién pagó y se movió.
+export interface VincereShow {
+  id: string;
+  ciudad: string;
+  fecha: string; // YYYY-MM-DD
+  sala: string;
+  aforo: number; // Capacidad de la sala.
+  asistencia: number; // Cuántos fueron de verdad.
+  ingresoNeto: number | null; // Lo que quedó, si se sabe. null = no registrado.
+  moneda: string;
+  nota: string;
+}
+
+export interface VincerePlazaEvaluada {
+  ciudad: string;
+  veredicto: VincereVeredictoPlaza;
+  tamanoSala: string; // Aforo que aguanta hoy, con su razón.
+  lectura: string; // Por qué este veredicto, citando la data.
+  // Distancia entre lo que la plaza escucha y lo que se puede esperar que
+  // asista. Es el número que ningún dashboard de streaming da.
+  senalDeConversion: string;
+  nivel: VincereNivel;
+}
+
+export interface VincereTramoRuta {
+  orden: number;
+  ciudad: string;
+  porQueVaAqui: string;
+}
+
+export interface VincereTouringDiagnostico {
+  lecturaGeneral: string; // Si este artista está para salir de gira o todavía no.
+  listoParaGira: boolean;
+  plazas: VincerePlazaEvaluada[];
+  ruta: VincereTramoRuta[]; // Orden sugerido, con la lógica de cada salto.
+  // Plazas que la data hace ver bien y no lo están. La pieza más valiosa:
+  // evita el show con sala vacía en la ciudad de más streams.
+  trampas: string[];
+  queFaltaSaber: string[]; // Lo que hay que averiguar antes de reservar.
+  veredicto: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
 // --- Histórico: que el sistema acumule en vez de sobrescribir ---
 // Cada vez que entra data nueva se guarda una foto de los indicadores. Sin
 // esto la plataforma solo sabe cómo está la carrera hoy, nunca cómo llegó
@@ -502,6 +568,8 @@ export interface VincereProyecto {
   canciones: VincereCancion[];
   audiencia: VincereAudiencia;
   zonasCalor: VincereZonaCalor[];
+  shows?: VincereShow[];
+  touringDiagnostico?: VincereTouringDiagnostico | null;
   decisiones: VincereDecision[];
   kpis: VincereKpi[];
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;
