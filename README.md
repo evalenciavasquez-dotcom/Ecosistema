@@ -29,7 +29,9 @@ cp .env.example .env.local
 # edita .env.local y define APP_PASSWORD
 ```
 
-Si no defines `APP_PASSWORD`, se usa el valor por defecto `cco-ev-2026` — **cámbialo antes de compartir la app**.
+**`APP_PASSWORD` es obligatoria.** No hay contraseña de respaldo: si la variable no está definida, todo intento de acceso falla y el login lo dice con esas palabras ("El servidor no tiene APP_PASSWORD configurada"). Es deliberado — este repositorio es público, así que un valor por defecto en el código equivaldría a no tener contraseña.
+
+La sesión dura 30 días y ese vencimiento va firmado dentro de la propia cookie, no solo en su `Max-Age`: un token copiado a mano tampoco sobrevive al plazo. Cambiar `APP_PASSWORD` invalida todas las sesiones abiertas de inmediato.
 
 ### Motor de análisis estratégico (IA real)
 
