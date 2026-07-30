@@ -14,6 +14,8 @@ import {
   VincerePrioridadPaso,
   VincereSeccion,
   VincereStressTest,
+  VincereTouringDiagnostico,
+  VincereVeredictoPlaza,
   VINCERE_ESCENARIOS_PLAN,
 } from "./types";
 
@@ -273,6 +275,64 @@ const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
 const IMPACTOS = ["alto", "medio", "bajo"] as const;
 
 // Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchTouring(input: {
+  artista: unknown;
+  nota?: string;
+}): Promise<VincereTouringDiagnostico> {
+  const res = await fetch("/api/vincere/touring", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  const VEREDICTOS: VincereVeredictoPlaza[] = ["ir", "probar", "esperar", "no"];
+
+  return {
+    lecturaGeneral: r.lecturaGeneral ?? "",
+    listoParaGira: r.listoParaGira === true,
+    plazas: (Array.isArray(r.plazas) ? r.plazas : []).map(
+      (p: {
+        ciudad?: string;
+        veredicto?: string;
+        tamanoSala?: string;
+        lectura?: string;
+        senalDeConversion?: string;
+        nivel?: number;
+      }) => ({
+        ciudad: p.ciudad ?? "",
+        veredicto: VEREDICTOS.includes(p.veredicto as VincereVeredictoPlaza)
+          ? (p.veredicto as VincereVeredictoPlaza)
+          : "esperar",
+        tamanoSala: p.tamanoSala ?? "",
+        lectura: p.lectura ?? "",
+        senalDeConversion: p.senalDeConversion ?? "",
+        nivel: clampNivel(p.nivel),
+      })
+    ),
+    // Se reordena por si el modelo devuelve los tramos desordenados: la ruta
+    // solo significa algo si se lee en orden.
+    ruta: (Array.isArray(r.ruta) ? r.ruta : [])
+      .map((t: { orden?: number; ciudad?: string; porQueVaAqui?: string }, i: number) => ({
+        orden: typeof t.orden === "number" ? t.orden : i + 1,
+        ciudad: t.ciudad ?? "",
+        porQueVaAqui: t.porQueVaAqui ?? "",
+      }))
+      .sort((a: { orden: number }, b: { orden: number }) => a.orden - b.orden),
+    trampas: textos(r.trampas),
+    queFaltaSaber: textos(r.queFaltaSaber),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
 export async function fetchMarca(input: { artista: unknown; nota?: string }): Promise<VincereMarcaDiagnostico> {
   const res = await fetch("/api/vincere/marca", {
     method: "POST",

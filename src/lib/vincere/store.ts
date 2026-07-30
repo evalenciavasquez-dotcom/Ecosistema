@@ -22,6 +22,8 @@ import {
   VincereMarcaDiagnostico,
   VincerePuntoContacto,
   VincereSenalPlaza,
+  VincereShow,
+  VincereTouringDiagnostico,
   VincereProyecto,
   VincereProyectoTipo,
   VincereQAEntry,
@@ -108,6 +110,11 @@ interface VincereState {
   addZonaCalor: (proyectoId: string, zona: Omit<VincereZonaCalor, "id">) => void;
   updateZonaCalor: (proyectoId: string, zonaId: string, patch: Partial<VincereZonaCalor>) => void;
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
+
+  addShow: (proyectoId: string, show: Omit<VincereShow, "id">) => void;
+  updateShow: (proyectoId: string, showId: string, patch: Partial<VincereShow>) => void;
+  deleteShow: (proyectoId: string, showId: string) => void;
+  setTouringDiagnostico: (proyectoId: string, diagnostico: VincereTouringDiagnostico | null) => void;
 
   addDecision: (proyectoId: string, texto: string) => void;
   setDecisionEstado: (proyectoId: string, decisionId: string, estado: VincereDecisionEstado) => void;
@@ -407,6 +414,38 @@ export const useVincereStore = create<VincereState>()(
             ...p,
             zonasCalor: p.zonasCalor.filter((z) => z.id !== zonaId),
           })),
+        })),
+
+      // Los shows se guardan del más reciente al más antiguo: la conversión de
+      // hace tres años dice poco, la del mes pasado lo dice todo.
+      addShow: (proyectoId, show) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            shows: [{ ...show, id: genId("show") }, ...(p.shows ?? [])].sort((a, b) =>
+              b.fecha.localeCompare(a.fecha)
+            ),
+          })),
+        })),
+      updateShow: (proyectoId, showId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            shows: (p.shows ?? [])
+              .map((sh) => (sh.id === showId ? { ...sh, ...patch } : sh))
+              .sort((a, b) => b.fecha.localeCompare(a.fecha)),
+          })),
+        })),
+      deleteShow: (proyectoId, showId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            shows: (p.shows ?? []).filter((sh) => sh.id !== showId),
+          })),
+        })),
+      setTouringDiagnostico: (proyectoId, diagnostico) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, touringDiagnostico: diagnostico })),
         })),
 
       addDecision: (proyectoId, texto) =>

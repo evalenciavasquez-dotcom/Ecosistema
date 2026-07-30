@@ -12,6 +12,7 @@ const CORE_SECTIONS: VincereSeccion[] = [
   "song",
   "audiencia",
   "calor",
+  "touring",
   "management",
   "kpis",
   "triage",
@@ -22,7 +23,6 @@ const CORE_SECTIONS: VincereSeccion[] = [
 const PROXIMAMENTE = [
   "A&R y Colaboraciones",
   "Finanzas y Presupuesto",
-  "Shows y Touring",
   "Monetización",
   "Valoración de Carrera",
   "Legal y Derechos",

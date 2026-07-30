@@ -101,6 +101,45 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
       { id: "city-6", ciudad: "Buenos Aires", calor: 44 },
       { id: "city-7", ciudad: "Miami", calor: 39 },
     ],
+    // Historial con la trampa metida a propósito: CDMX es la plaza de más
+    // calor (92) y sin embargo llenó a la mitad, mientras Guadalajara, con
+    // menos escucha, agotó. Es el caso exacto que el motor debe cazar —
+    // streams altos no son entradas vendidas.
+    shows: [
+      {
+        id: "show-1",
+        ciudad: "Guadalajara",
+        fecha: "2026-05-17",
+        sala: "C3 Stage",
+        aforo: 350,
+        asistencia: 350,
+        ingresoNeto: 41000,
+        moneda: "MXN",
+        nota: "Agotado con dos semanas de anticipación. Público cantando la letra.",
+      },
+      {
+        id: "show-2",
+        ciudad: "Ciudad de México",
+        fecha: "2026-03-08",
+        sala: "Foro Indie Rocks",
+        aforo: 600,
+        asistencia: 310,
+        ingresoNeto: 22000,
+        moneda: "MXN",
+        nota: "Sala grande para la convocatoria real. Mucha reventa sin vender.",
+      },
+      {
+        id: "show-3",
+        ciudad: "Monterrey",
+        fecha: "2025-11-22",
+        sala: "Café Iguana",
+        aforo: 250,
+        asistencia: 190,
+        ingresoNeto: 14500,
+        moneda: "MXN",
+        nota: "Primera vez en la plaza, sin prensa local.",
+      },
+    ],
     decisiones: [
       { id: "dec-1", texto: "Lanzar EP en octubre vs diciembre", estado: "Pendiente", creadoEn: "2026-07-01" },
       { id: "dec-2", texto: "Firmar con booking agency regional", estado: "Pendiente", creadoEn: "2026-07-05" },

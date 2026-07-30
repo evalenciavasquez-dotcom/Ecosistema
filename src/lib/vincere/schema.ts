@@ -374,6 +374,57 @@ export const marcaResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Qué tan respaldada está esta lectura. Sin marca declarada o sin data del catálogo, no puede ser alto"),
 });
 
+export const touringResponseSchema = z.object({
+  lecturaGeneral: z
+    .string()
+    .describe("Si este artista está para salir a tocar hoy o todavía no, y por qué. Directo. 2-4 frases"),
+  listoParaGira: z
+    .boolean()
+    .describe("true solo si la data sostiene una serie de fechas. Un artista con streams pero sin ningún show con buena conversión NO está listo: eso es false y se explica arriba"),
+  plazas: z
+    .array(
+      z.object({
+        ciudad: z.string().describe("Ciudad evaluada. Solo ciudades presentes en el contexto — zonas de calor, shows previos o señales de investigación"),
+        veredicto: z
+          .enum(["ir", "probar", "esperar", "no"])
+          .describe("ir: hay evidencia para agendar. probar: solo en sala chica y sin riesgo. esperar: la plaza aún no está. no: hoy sería un error"),
+        tamanoSala: z
+          .string()
+          .describe("Aforo que la convocatoria real aguanta hoy, con su razón. Concreto ('150-250, la mitad de lo que sugiere el calor'), no 'sala mediana'"),
+        lectura: z.string().describe("Por qué este veredicto, citando el dato: el calor, la asistencia del show anterior, la señal de investigación"),
+        senalDeConversion: z
+          .string()
+          .describe("La distancia entre lo que la plaza escucha y lo que se puede esperar que asista. Si hubo show previo, usa la asistencia real contra el aforo. Si no lo hubo, dilo y baja el nivel — sin show, la conversión es estimación, no dato"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(8)
+    .describe("Las plazas evaluadas, de la más lista a la menos. No inventes ciudades que no estén en el contexto"),
+  ruta: z
+    .array(
+      z.object({
+        orden: z.number().int().min(1),
+        ciudad: z.string(),
+        porQueVaAqui: z.string().describe("Por qué esta ciudad ocupa este lugar: arrancar donde hay certeza, cerrar donde hay riesgo, aprovechar cercanía o un momento concreto"),
+      })
+    )
+    .max(6)
+    .describe("Orden sugerido de fechas. Vacío si el artista todavía no está para una ruta — no la inventes por completar"),
+  trampas: z
+    .array(z.string())
+    .max(4)
+    .describe("Plazas que la data hace ver bien y no lo están: mucho streaming y poca conversión esperable, escucha pasiva, o un solo show malo que se está leyendo como plaza muerta cuando fue la sala equivocada. Es la parte más valiosa — evita el show con sala vacía en la ciudad de más streams"),
+  queFaltaSaber: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué averiguar antes de reservar: si hay escena local, quién programa, si el público de esa plaza paga entrada, qué sala corresponde al aforo real"),
+  veredicto: z
+    .string()
+    .describe("La postura del director: salir ahora, salir con estas dos fechas y nada más, o esperar y qué tiene que pasar antes. Clara, nunca un 'depende'"),
+  nivelGlobal: nivelSchema.describe("Sin shows previos registrados esto no puede pasar de 2: sin conversión medida, todo es estimación desde streaming"),
+});
+
+export type TouringResponse = z.infer<typeof touringResponseSchema>;
 export type MarcaResponse = z.infer<typeof marcaResponseSchema>;
 export type ResearchResponse = z.infer<typeof researchResponseSchema>;
 export type InterpretResponse = z.infer<typeof interpretResponseSchema>;
