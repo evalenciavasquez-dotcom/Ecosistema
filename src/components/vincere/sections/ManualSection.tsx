@@ -9,6 +9,7 @@ import {
   GUIA_PRIMEROS_PASOS,
   GUIA_PROBLEMAS,
   GUIA_REGLA_ORO,
+  GUIA_RESPALDO,
   GUIA_TAREAS,
   ManualBloque,
   SISTEMA_ALCANCE,
@@ -167,6 +168,7 @@ function GuiaUsuario() {
 
       <BloqueDoc bloque={GUIA_EVIDENCIA} />
       <BloqueDoc bloque={GUIA_CADENCIA} />
+      <BloqueDoc bloque={GUIA_RESPALDO} />
       <BloqueDoc bloque={GUIA_PROBLEMAS} />
 
       <Cierre label="La regla de oro" texto={GUIA_REGLA_ORO} />

@@ -314,6 +314,38 @@ export const GUIA_PROBLEMAS: ManualBloque = {
       termino: "Perdí lo que había editado en el informe",
       texto: "«Volver a emitir» descarta la edición y pide un borrador nuevo. Si vas a regenerar, descarga antes la versión trabajada.",
     },
+    {
+      termino: "Me pide entrar de nuevo sin haber hecho nada",
+      texto: "La sesión venció — duran 30 días — o se cambió la contraseña del sistema. Entra otra vez y sigue donde estabas: no se pierde nada, la data no vive en la sesión.",
+    },
+    {
+      termino: "Dice «Contraseña incorrecta» y estoy seguro de la contraseña",
+      texto: "Si de verdad es la correcta, revisa que no haya un espacio de más al pegarla. Si el mensaje en cambio dice que falta APP_PASSWORD, el problema no eres tú: esa variable no está puesta en el servidor y nadie puede entrar hasta definirla.",
+    },
+    {
+      termino: "«Demasiados intentos fallidos»",
+      texto: "Bloqueo temporal tras varios intentos seguidos. Se levanta solo en unos minutos; no hay que hacer nada.",
+    },
+  ],
+};
+
+// Respaldos. Va en la guía y no en el manual técnico a propósito: es lo único
+// de esta sección que, si no se hace, se paga con trabajo perdido.
+export const GUIA_RESPALDO: ManualBloque = {
+  titulo: "Cómo respaldar tu trabajo",
+  puntos: [
+    {
+      termino: "Dónde está el respaldo completo",
+      texto: "Fuera de VINCERE, en el C.C.O. → Configuración → «Exportar todos los datos». Descarga un JSON con todo: el C.C.O. entero y VINCERE entero — proyectos de artistas, canciones con su letra y su análisis, marca, investigaciones, stress-tests, informes y triage.",
+    },
+    {
+      termino: "El botón «Exportar» del Informe Final no es un respaldo",
+      texto: "Ese baja un solo informe en Markdown, para mandárselo a alguien. No incluye el resto del proyecto.",
+    },
+    {
+      termino: "Cada cuánto",
+      texto: "Si el encabezado dice «Guardado», tu data está en la base de datos y el respaldo es una segunda red. Si dice «Solo este dispositivo», el trabajo vive únicamente en este navegador: exporta cada vez que cargues data seria, porque borrar los datos del navegador lo borra sin vuelta atrás.",
+    },
   ],
 };
 
