@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
+import { useVincereStore } from "@/lib/vincere/store";
 import { fetchServerState, initDbSchema, migrateAllToServer } from "@/lib/db/sync";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -307,7 +308,28 @@ export default function ConfiguracionPage() {
   function handleExport() {
     const state = useAppStore.getState();
     const { proyectos, personas, acciones, decisiones, movimientos, evidencias, bandeja, agenda, historial } = state;
-    const data = { proyectos, personas, acciones, decisiones, movimientos, evidencias, bandeja, agenda, historial };
+    // VINCERE vive en su propio store y no compartía nada con esta exportación:
+    // el respaldo dejaba fuera proyectos, canciones, marca y análisis, y lo
+    // único rescatable era el Informe Final en Markdown. Va incluido aquí
+    // porque es el único punto del sistema que baja todo de una vez.
+    const v = useVincereStore.getState();
+    const data = {
+      version: 2,
+      exportadoEn: new Date().toISOString(),
+      cco: { proyectos, personas, acciones, decisiones, movimientos, evidencias, bandeja, agenda, historial },
+      vincere: { proyectos: v.proyectos, triageCasos: v.triageCasos, comparaciones: v.comparaciones },
+      // Se conservan las claves antiguas en la raíz para que un respaldo nuevo
+      // siga siendo legible por cualquier cosa que esperara el formato v1.
+      proyectos,
+      personas,
+      acciones,
+      decisiones,
+      movimientos,
+      evidencias,
+      bandeja,
+      agenda,
+      historial,
+    };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -453,7 +475,10 @@ export default function ConfiguracionPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-medium">Exportar todos los datos</div>
-              <div className="text-xs text-muted mt-0.5">Descarga un JSON con proyectos, acciones, decisiones y más.</div>
+              <div className="text-xs text-muted mt-0.5">
+                Un JSON con todo el C.C.O. (proyectos, acciones, decisiones, movimientos, agenda) y todo VINCERE
+                (proyectos de artistas, canciones, marca, análisis y triage). Es el respaldo completo del sistema.
+              </div>
             </div>
             <button onClick={handleExport} className="rounded-full bg-surface-2 border border-border-subtle px-4 py-2 text-sm shrink-0">
               Exportar

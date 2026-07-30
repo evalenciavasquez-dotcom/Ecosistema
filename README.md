@@ -67,6 +67,63 @@ Si `DATABASE_URL` no está configurada, esta sección de Configuración simpleme
 3. (Opcional, para sincronizar entre dispositivos) Añade Neon Postgres desde la pestaña "Storage" — ver sección anterior.
 4. Deploy.
 
+### Usar un dominio propio
+
+No hay ninguna URL fija en el código, así que no se toca nada del proyecto:
+
+1. Compra el dominio donde prefieras.
+2. En Vercel → proyecto → **Settings** → **Domains** → "Add", escribe el dominio.
+3. Vercel entrega los registros DNS a copiar en el panel de tu proveedor.
+4. La propagación tarda de minutos a unas horas. El certificado HTTPS lo emite Vercel solo.
+
+**Lo único que se rompe al cambiar de dominio es Google.** `GOOGLE_REDIRECT_URI` apunta al dominio anterior, y hay que actualizarla en dos sitios o el botón "Conectar con Google" falla (el resto de la app sigue funcionando):
+
+- Variables de entorno de Vercel: `GOOGLE_REDIRECT_URI=https://tu-dominio.com/api/google/callback`
+- Google Cloud Console → Credenciales → tu ID de cliente OAuth → "URIs de redirección autorizados": el mismo valor, exacto.
+
+Todo lo demás —login, base de datos, VINCERE, las llamadas a Claude— es indiferente al dominio.
+
+## Operar el sistema
+
+### Cambiar la contraseña
+
+Se cambia `APP_PASSWORD` en las variables de entorno de Vercel y se vuelve a desplegar. **Cambiarla cierra todas las sesiones abiertas de inmediato**, en todos los dispositivos: las sesiones van firmadas con la contraseña, así que al cambiarla dejan de validar. Es también la forma de expulsar a alguien que tuviera acceso.
+
+### Si no puedes entrar
+
+La app responde distinto según el problema, y el mensaje dice cuál es:
+
+| Lo que ves | Qué pasa |
+| :--- | :--- |
+| "Contraseña incorrecta" | La contraseña no coincide. `APP_PASSWORD` sí está configurada. |
+| "El servidor no tiene APP_PASSWORD configurada" | Falta la variable en Vercel. Nadie puede entrar hasta definirla. |
+| "Demasiados intentos fallidos" | Bloqueo temporal por intentos seguidos. Se levanta solo en unos minutos. |
+| Te pide entrar de nuevo sin motivo | La sesión venció (duran 30 días) o se cambió `APP_PASSWORD`. |
+
+No hay recuperación de contraseña ni correo de reseteo: la contraseña es la variable de entorno, y quien controla el proyecto de Vercel puede cambiarla cuando quiera.
+
+### Copias de seguridad
+
+**Configuración → "Exportar todos los datos"** descarga un JSON con el sistema completo: el C.C.O. (proyectos, acciones, decisiones, movimientos, evidencias, bandeja, agenda, histórico) y VINCERE (proyectos de artistas, canciones con su letra y análisis, marca, investigaciones, stress-tests, informes y triage).
+
+Es el único punto que baja todo de una vez. El botón "Exportar" del Informe Final, dentro de VINCERE, baja solo ese informe en Markdown para compartirlo — no sirve como respaldo.
+
+Dónde vive la información, en orden de fiabilidad:
+
+1. **Postgres (Neon)**, si `DATABASE_URL` está configurada. Es la fuente real y sobrevive a cambiar de equipo o de navegador.
+2. **`localStorage` del navegador** (claves `cco-ev-storage` y `vincere-storage`). Sin `DATABASE_URL` es lo único que hay: borrar los datos del navegador borra el trabajo, sin vuelta atrás.
+3. **El JSON exportado**, donde lo guardes.
+
+Sin base de datos configurada, exportar cada tanto no es opcional.
+
+### Qué cuesta usarlo
+
+Vercel y Neon tienen plan gratuito suficiente para un usuario. Lo que se paga es Anthropic, por uso y solo cuando pulsas un botón de análisis — la app nunca llama a la IA por su cuenta.
+
+Órdenes de magnitud con Sonnet 5: una lectura por sección o una pregunta abierta cuesta centavos; el Informe Final, el Stress-Test y el diagnóstico de Marca son más caros porque cruzan todos los motores a la vez. El gasto real se ve en [console.anthropic.com](https://console.anthropic.com) → Usage, donde también se puede fijar un límite mensual para no llevarse sorpresas.
+
+Sin `ANTHROPIC_API_KEY` la plataforma funciona igual: los motores de IA se muestran como no configurados y todo lo demás —cargar data, editar, exportar— sigue disponible.
+
 ## Estructura
 
 ```
