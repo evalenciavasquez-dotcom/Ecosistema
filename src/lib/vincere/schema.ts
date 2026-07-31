@@ -424,6 +424,54 @@ export const touringResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Sin shows previos registrados esto no puede pasar de 2: sin conversión medida, todo es estimación desde streaming"),
 });
 
+export const arResponseSchema = z.object({
+  lecturaGeneral: z
+    .string()
+    .describe("Qué necesita hoy este artista de una colaboración, y si los candidatos que tiene sobre la mesa responden a eso. 2-4 frases"),
+  candidatos: z
+    .array(
+      z.object({
+        nombre: z.string().describe("Nombre exacto del candidato, tal como viene en el contexto. No inventes candidatos"),
+        veredicto: z
+          .enum(["perseguir", "explorar", "esperar", "descartar"])
+          .describe("perseguir: vale la pena ir tras esto ya. explorar: hay algo pero falta averiguar. esperar: buena idea en otra fase. descartar: hoy resta más de lo que suma"),
+        fitMarca: z
+          .string()
+          .describe("Coherencia con la marca declarada, y sobre todo con su antipatrón — lo que el artista dijo que NO es. Si la colaboración lo contradice, dilo aunque el candidato sea grande: ahí es donde el tamaño hace tomar malas decisiones"),
+        solapamiento: z
+          .string()
+          .describe("Si la audiencia del candidato ya es la del artista o le abre una nueva. Es la trampa más común del feature: colaborar con alguien que comparte tu mismo público no trae gente nueva, se paga por llegar a quien ya escucha. Usa la data de audiencia y zonas si está"),
+        asimetria: z
+          .string()
+          .describe("Quién gana más según la diferencia de tamaño. Muy por encima: el artista queda de invitado en su propia canción y el tráfico vuelve al grande. Muy por debajo: le está haciendo un favor sin retorno. El punto dulce es cerca o un escalón arriba"),
+        queGana: z.string().describe("Qué gana concretamente el artista si esto sale bien"),
+        queArriesga: z.string().describe("Qué pone en juego: marca, tiempo, dinero, posición frente a su audiencia"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(8)
+    .describe("Un objeto por candidato del contexto, del más recomendable al menos. Solo candidatos que estén en el contexto"),
+  primeroPerseguir: z
+    .string()
+    .describe("A quién ir primero y por qué. Uno solo — elegir es el trabajo. Si ninguno vale la pena hoy, dilo con esas palabras"),
+  senalesDeAlerta: z
+    .array(z.string())
+    .max(4)
+    .describe("Colaboraciones que se ven bien y no lo son: el nombre grande que rompe la marca, el amigo del circuito que comparte el mismo público, el productor de moda que no encaja con lo que a este artista le funciona"),
+  perfilQueFalta: z
+    .string()
+    .describe("Qué tipo de colaborador le falta a este artista hoy, mire o no la lista actual. Descríbelo por lo que aportaría —audiencia de otra plaza, voz que contraste, producción que refuerce lo que ya retiene— no con nombres inventados"),
+  queFaltaSaber: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué averiguar antes de mover: tamaño real y solapamiento de audiencia del candidato, si está disponible, qué pide, cómo quedan los splits"),
+  veredicto: z
+    .string()
+    .describe("La postura del director sobre la estrategia de colaboraciones de este artista ahora. Clara, nunca un 'depende'"),
+  nivelGlobal: nivelSchema.describe("Sin marca declarada o sin investigación de los candidatos esto no puede ser alto: el solapamiento de audiencia sería suposición"),
+});
+
+export type ARResponse = z.infer<typeof arResponseSchema>;
 export type TouringResponse = z.infer<typeof touringResponseSchema>;
 export type MarcaResponse = z.infer<typeof marcaResponseSchema>;
 export type ResearchResponse = z.infer<typeof researchResponseSchema>;

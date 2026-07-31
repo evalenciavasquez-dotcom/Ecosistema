@@ -17,6 +17,8 @@ import {
   VincereInforme,
   VincereInsight,
   VincereInvestigacion,
+  VincereARDiagnostico,
+  VincereCandidato,
   VincereKpi,
   VincereMarca,
   VincereMarcaDiagnostico,
@@ -110,6 +112,11 @@ interface VincereState {
   addZonaCalor: (proyectoId: string, zona: Omit<VincereZonaCalor, "id">) => void;
   updateZonaCalor: (proyectoId: string, zonaId: string, patch: Partial<VincereZonaCalor>) => void;
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
+
+  addCandidato: (proyectoId: string, candidato: Omit<VincereCandidato, "id" | "creadoEn">) => void;
+  updateCandidato: (proyectoId: string, candidatoId: string, patch: Partial<VincereCandidato>) => void;
+  deleteCandidato: (proyectoId: string, candidatoId: string) => void;
+  setARDiagnostico: (proyectoId: string, diagnostico: VincereARDiagnostico | null) => void;
 
   addShow: (proyectoId: string, show: Omit<VincereShow, "id">) => void;
   updateShow: (proyectoId: string, showId: string, patch: Partial<VincereShow>) => void;
@@ -414,6 +421,35 @@ export const useVincereStore = create<VincereState>()(
             ...p,
             zonasCalor: p.zonasCalor.filter((z) => z.id !== zonaId),
           })),
+        })),
+
+      addCandidato: (proyectoId, candidato) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            candidatos: [
+              { ...candidato, id: genId("cand"), creadoEn: new Date().toISOString().slice(0, 10) },
+              ...(p.candidatos ?? []),
+            ],
+          })),
+        })),
+      updateCandidato: (proyectoId, candidatoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            candidatos: (p.candidatos ?? []).map((c) => (c.id === candidatoId ? { ...c, ...patch } : c)),
+          })),
+        })),
+      deleteCandidato: (proyectoId, candidatoId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            candidatos: (p.candidatos ?? []).filter((c) => c.id !== candidatoId),
+          })),
+        })),
+      setARDiagnostico: (proyectoId, diagnostico) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, arDiagnostico: diagnostico })),
         })),
 
       // Los shows se guardan del más reciente al más antiguo: la conversión de

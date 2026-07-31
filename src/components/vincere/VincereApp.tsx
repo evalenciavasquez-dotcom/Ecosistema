@@ -7,6 +7,7 @@ import ResumenSection from "./sections/ResumenSection";
 import DiagnosticoSection from "./sections/DiagnosticoSection";
 import MarcaSection from "./sections/MarcaSection";
 import TouringSection from "./sections/TouringSection";
+import ARSection from "./sections/ARSection";
 import SongSection from "./sections/SongSection";
 import AudienciaSection from "./sections/AudienciaSection";
 import CalorSection from "./sections/CalorSection";
@@ -81,6 +82,8 @@ function SectionRouter({
       return <MarcaSection proyecto={proyecto} />;
     case "touring":
       return <TouringSection proyecto={proyecto} />;
+    case "ar":
+      return <ARSection proyecto={proyecto} />;
     case "song":
       return <SongSection proyecto={proyecto} />;
     case "audiencia":
