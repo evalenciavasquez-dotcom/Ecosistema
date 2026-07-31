@@ -1,6 +1,8 @@
 import {
   VincereAlerta,
   VincereAlertaSeveridad,
+  VincereARDiagnostico,
+  VincereVeredictoColab,
   VincereCancion,
   VincereCancionAnalisis,
   VincereInforme,
@@ -275,6 +277,57 @@ const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
 const IMPACTOS = ["alto", "medio", "bajo"] as const;
 
 // Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchAR(input: { artista: unknown; nota?: string }): Promise<VincereARDiagnostico> {
+  const res = await fetch("/api/vincere/ar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  const VEREDICTOS: VincereVeredictoColab[] = ["perseguir", "explorar", "esperar", "descartar"];
+
+  return {
+    lecturaGeneral: r.lecturaGeneral ?? "",
+    candidatos: (Array.isArray(r.candidatos) ? r.candidatos : []).map(
+      (c: {
+        nombre?: string;
+        veredicto?: string;
+        fitMarca?: string;
+        solapamiento?: string;
+        asimetria?: string;
+        queGana?: string;
+        queArriesga?: string;
+        nivel?: number;
+      }) => ({
+        nombre: c.nombre ?? "",
+        veredicto: VEREDICTOS.includes(c.veredicto as VincereVeredictoColab)
+          ? (c.veredicto as VincereVeredictoColab)
+          : "explorar",
+        fitMarca: c.fitMarca ?? "",
+        solapamiento: c.solapamiento ?? "",
+        asimetria: c.asimetria ?? "",
+        queGana: c.queGana ?? "",
+        queArriesga: c.queArriesga ?? "",
+        nivel: clampNivel(c.nivel),
+      })
+    ),
+    primeroPerseguir: r.primeroPerseguir ?? "",
+    senalesDeAlerta: textos(r.senalesDeAlerta),
+    perfilQueFalta: r.perfilQueFalta ?? "",
+    queFaltaSaber: textos(r.queFaltaSaber),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
 export async function fetchTouring(input: {
   artista: unknown;
   nota?: string;

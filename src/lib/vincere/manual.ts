@@ -196,6 +196,16 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Decidir si un feature conviene",
+    pasos: [
+      "Declara la marca primero, con su antipatrón. Sin eso el motor no puede señalar el nombre grande que rompe la identidad, que es justo para lo que sirve.",
+      "A&R y Colaboraciones → «+ Añadir candidato». Nombre, tipo, qué se supone que aporta y quién lo propuso.",
+      "Pulsa «Investigar a [nombre] →» en cada candidato. Sin investigación, el solapamiento de audiencia es suposición y el motor lo dirá con nivel bajo.",
+      "«Evaluar candidatos». Devuelve, por cada uno, fit de marca, si su audiencia ya es la tuya, y quién gana según la diferencia de tamaño.",
+      "Lee «A quién ir primero»: el motor elige uno solo a propósito. Una lista de tres no es una decisión.",
+    ],
+  },
+  {
     tarea: "Decidir dónde tocar",
     pasos: [
       "Shows y Touring → «+ Registrar show» por cada fecha que ya hiciste: ciudad, sala, aforo y cuánta gente fue.",
@@ -452,6 +462,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Zonas de Calor",
     cuandoUsarlo: "Para decidir gira, shows y dónde expandir con menos riesgo.",
     queCargar: "Ciudades con su intensidad de escucha (0-100).",
+  },
+  {
+    motor: "A&R y Colaboraciones",
+    cuandoUsarlo: "Cuando aparece un feature, un productor o un nombre que alguien empuja. Y sobre todo cuando el nombre es grande y cuesta decir que no.",
+    queCargar: "Los candidatos sobre la mesa: nombre, si es artista, productor o compositor, qué se supone que aporta y quién lo propuso. Declara la marca primero — el motor juzga sobre todo contra el antipatrón.",
   },
   {
     motor: "Shows y Touring",

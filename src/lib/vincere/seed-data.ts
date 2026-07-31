@@ -101,6 +101,48 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
       { id: "city-6", ciudad: "Buenos Aires", calor: 44 },
       { id: "city-7", ciudad: "Miami", calor: 39 },
     ],
+    // Candidatos con las dos trampas del motor montadas: uno grande que viola
+    // el antipatrón declarado en Marca (no es artista de perreo), y uno que
+    // suena ideal pero comparte exactamente la misma audiencia — colaborar con
+    // él no trae un solo oyente nuevo.
+    candidatos: [
+      {
+        id: "cand-1",
+        nombre: "DVKE",
+        tipo: "artista",
+        queAporta: "12M de oyentes mensuales y entrada directa a playlists grandes de reggaetón",
+        origen: "Lo propuso el manager tras una reunión de sello",
+        estado: "descartado",
+        creadoEn: "2026-06-02",
+      },
+      {
+        id: "cand-2",
+        nombre: "Marea Baja",
+        tipo: "artista",
+        queAporta: "Mismo circuito indie, tocan las mismas salas y comparten público en GDL",
+        origen: "Se conocen del circuito",
+        estado: "propuesto",
+        creadoEn: "2026-06-20",
+      },
+      {
+        id: "cand-3",
+        nombre: "Renata Solís",
+        tipo: "artista",
+        queAporta: "Voz femenina de R&B en español, audiencia en Bogotá y Madrid donde SETTE es débil",
+        origen: "Salió de una investigación de artistas similares",
+        estado: "conversando",
+        creadoEn: "2026-07-04",
+      },
+      {
+        id: "cand-4",
+        nombre: "Tomás Ferrer",
+        tipo: "productor",
+        queAporta: "Produce el tipo de tema de tempo medio y voz cercana que a SETTE mejor le retiene",
+        origen: "Recomendación del ingeniero de mezcla",
+        estado: "propuesto",
+        creadoEn: "2026-07-11",
+      },
+    ],
     // Historial con la trampa metida a propósito: CDMX es la plaza de más
     // calor (92) y sin embargo llenó a la mitad, mientras Guadalajara, con
     // menos escucha, agotó. Es el caso exacto que el motor debe cazar —

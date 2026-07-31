@@ -17,6 +17,7 @@ export type VincereSeccion =
   | "diagnostico"
   | "marca"
   | "song"
+  | "ar"
   | "touring"
   | "audiencia"
   | "calor"
@@ -34,6 +35,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   diagnostico: "Diagnóstico Maestro",
   marca: "Marca",
   song: "Song Intelligence",
+  ar: "A&R y Colaboraciones",
   touring: "Shows y Touring",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
@@ -364,6 +366,80 @@ export interface VincereMarcaDiagnostico {
   generadoEn: string;
 }
 
+// --- A&R y Colaboraciones ---
+// La app ya registraba una decisión tomada — "rechazar feature con artista de
+// bajo fit de marca" — sin ningún motor que la tomara. Y el motor de
+// Investigación ya recoge de un artista "en qué se solapa o se diferencia del
+// nuestro", que es exactamente la pregunta de una colaboración, sin que nada
+// lo convirtiera en veredicto.
+//
+// Las dos ideas que sostienen el motor: una colaboración con alguien cuya
+// audiencia YA es la tuya no te da audiencia nueva, y la diferencia de tamaño
+// decide quién de los dos gana de verdad.
+
+export type VincereCandidatoTipo = "artista" | "productor" | "compositor";
+
+export const VINCERE_CANDIDATO_TIPO_LABEL: Record<VincereCandidatoTipo, string> = {
+  artista: "Artista",
+  productor: "Productor",
+  compositor: "Compositor",
+};
+
+export type VincereCandidatoEstado = "propuesto" | "conversando" | "cerrado" | "descartado";
+
+export const VINCERE_CANDIDATO_ESTADO_LABEL: Record<VincereCandidatoEstado, string> = {
+  propuesto: "Propuesto",
+  conversando: "En conversación",
+  cerrado: "Cerrado",
+  descartado: "Descartado",
+};
+
+export interface VincereCandidato {
+  id: string;
+  nombre: string;
+  tipo: VincereCandidatoTipo;
+  queAporta: string; // Qué se supone que suma esta colaboración.
+  origen: string; // De dónde salió: quién lo propuso, o si salió de Investigación.
+  estado: VincereCandidatoEstado;
+  creadoEn: string;
+}
+
+export type VincereVeredictoColab = "perseguir" | "explorar" | "esperar" | "descartar";
+
+export const VINCERE_VEREDICTO_COLAB_LABEL: Record<VincereVeredictoColab, string> = {
+  perseguir: "Perseguir",
+  explorar: "Explorar",
+  esperar: "Esperar",
+  descartar: "Descartar",
+};
+
+export interface VincereCandidatoEvaluado {
+  nombre: string;
+  veredicto: VincereVeredictoColab;
+  fitMarca: string; // Contra la marca declarada y, sobre todo, su antipatrón.
+  // Si la audiencia ya se solapa, la colaboración no trae gente nueva: se
+  // paga por llegar a quien ya escucha. Es la trampa más común del feature.
+  solapamiento: string;
+  // Quién gana más según la diferencia de tamaño. Muy arriba: eres invitado en
+  // tu propia canción. Muy abajo: le estás haciendo un favor.
+  asimetria: string;
+  queGana: string;
+  queArriesga: string;
+  nivel: VincereNivel;
+}
+
+export interface VincereARDiagnostico {
+  lecturaGeneral: string;
+  candidatos: VincereCandidatoEvaluado[];
+  primeroPerseguir: string; // A quién ir primero y por qué.
+  senalesDeAlerta: string[]; // Colaboraciones que se ven bien y no lo son.
+  perfilQueFalta: string; // Qué tipo de colaborador le falta a este artista hoy.
+  queFaltaSaber: string[];
+  veredicto: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
 // --- Shows y Touring ---
 // Zonas de Calor dice dónde te escuchan. Este motor responde la pregunta que
 // esa data insinúa pero no contesta: dónde conviene tocar. La Guía del Usuario
@@ -570,6 +646,8 @@ export interface VincereProyecto {
   zonasCalor: VincereZonaCalor[];
   shows?: VincereShow[];
   touringDiagnostico?: VincereTouringDiagnostico | null;
+  candidatos?: VincereCandidato[];
+  arDiagnostico?: VincereARDiagnostico | null;
   decisiones: VincereDecision[];
   kpis: VincereKpi[];
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;

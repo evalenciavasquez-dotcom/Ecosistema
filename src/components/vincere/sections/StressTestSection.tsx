@@ -75,6 +75,30 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
     })),
     audiencia: proyecto.audiencia,
     zonasCalor: proyecto.zonasCalor,
+    // Muchas propuestas de terceros son fechas o giras. Sin esto, el
+    // stress-test evaluaba una oferta para una plaza sobre la que el propio
+    // sistema ya se había pronunciado, y podía contradecirse consigo mismo.
+    ...(proyecto.touringDiagnostico
+      ? {
+          loQueYaDijoTouring: {
+            listoParaGira: proyecto.touringDiagnostico.listoParaGira,
+            plazas: proyecto.touringDiagnostico.plazas.map((pl) => ({
+              ciudad: pl.ciudad,
+              veredicto: pl.veredicto,
+              salaQueAguanta: pl.tamanoSala,
+            })),
+            trampas: proyecto.touringDiagnostico.trampas,
+          },
+        }
+      : {}),
+    ...(proyecto.arDiagnostico
+      ? {
+          loQueYaDijoAR: {
+            primeroPerseguir: proyecto.arDiagnostico.primeroPerseguir,
+            senalesDeAlerta: proyecto.arDiagnostico.senalesDeAlerta,
+          },
+        }
+      : {}),
     kpis: proyecto.kpis,
     decisionesAbiertas: proyecto.decisiones.filter((d) => d.estado === "Pendiente").map((d) => d.texto),
     historial: (proyecto.historial ?? []).slice(-6),

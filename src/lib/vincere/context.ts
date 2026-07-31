@@ -177,6 +177,53 @@ function showsConConversion(p: VincereProyecto) {
   }));
 }
 
+// Contexto de A&R. La pregunta central —¿esta colaboración trae gente nueva?—
+// solo se puede responder sabiendo quién escucha hoy y qué dice el artista ser,
+// así que van audiencia, zonas y marca junto a los candidatos.
+export function buildARContext(p: VincereProyecto): unknown {
+  const candidatos = p.candidatos ?? [];
+  return {
+    artista: p.nombre,
+    genero: p.genero,
+    fase: p.fase,
+    momentum: {
+      streamsMes: p.resumen.streamsMes,
+      streamsMesLegible: formatStreams(p.resumen.streamsMes),
+      seguidores: p.resumen.seguidores,
+      seguidoresLegible: formatFollowers(p.resumen.seguidores),
+      nota: "Este es el tamaño del artista. La asimetría con cada candidato se juzga contra estas cifras.",
+    },
+    // El antipatrón es lo que decide cuando un nombre grande tienta.
+    marcaDeclarada:
+      marcaDeclarada(p) ??
+      "el artista no ha declarado su marca: no se puede juzgar fit ni antipatrón con solidez, dilo y baja el nivel",
+    candidatos: candidatos.length
+      ? candidatos.map((c) => ({
+          nombre: c.nombre,
+          tipo: c.tipo,
+          queAporta: c.queAporta,
+          origen: c.origen,
+          estado: c.estado,
+        }))
+      : "todavía no hay candidatos cargados: trabaja solo sobre perfilQueFalta y dilo",
+    // Quién escucha hoy — la única forma de estimar si un candidato aporta
+    // audiencia nueva o la misma de siempre.
+    audienciaActual: p.audiencia,
+    zonasCalor: p.zonasCalor.length ? p.zonasCalor : "sin zonas cargadas",
+    // Qué le funciona de verdad al artista: el criterio para juzgar productores.
+    catalogo: p.canciones.length
+      ? p.canciones.map((c) => ({
+          nombre: c.nombre,
+          streams: c.streams,
+          retencionPct: c.retencionPct,
+          skipPct: c.skipPct,
+          ...(c.audio ? { audio: resumenAudio(c.audio) } : {}),
+        }))
+      : "sin catálogo cargado",
+    ...(investigacionExterna(p, "general", 4) ? { investigacionExterna: investigacionExterna(p, "general", 4) } : {}),
+  };
+}
+
 // Contexto de Shows y Touring. Cruza tres cosas que hoy viven separadas: dónde
 // escuchan (zonas de calor), quién de verdad fue a un show (conversión) y qué
 // se sabe de la escena de esa plaza (investigación).
@@ -282,6 +329,14 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         // solo: se puede contrastar contra quién fue de verdad.
         ...(showsConConversion(p) ? { showsPrevios: showsConConversion(p) } : {}),
         ...conExterno("plazas"),
+      };
+    case "ar":
+      return {
+        ...base,
+        candidatos: p.candidatos ?? "sin candidatos cargados",
+        marcaDeclarada: marcaDeclarada(p) ?? "el artista todavía no ha declarado su marca",
+        audienciaActual: p.audiencia,
+        ...conExterno("general"),
       };
     case "touring":
       return {
@@ -397,6 +452,18 @@ export function buildInformeContext(p: VincereProyecto): unknown {
     },
     zonasCalor: sinData(p.zonasCalor),
     shows: showsConConversion(p) ?? "sin shows registrados",
+    colaboraciones: (p.candidatos ?? []).length
+      ? {
+          candidatos: (p.candidatos ?? []).map((c) => ({ nombre: c.nombre, tipo: c.tipo, estado: c.estado })),
+          ...(p.arDiagnostico
+            ? {
+                primeroPerseguir: p.arDiagnostico.primeroPerseguir,
+                veredicto: p.arDiagnostico.veredicto,
+                senalesDeAlerta: p.arDiagnostico.senalesDeAlerta,
+              }
+            : {}),
+        }
+      : "sin candidatos de colaboración cargados",
     diagnosticoDeTouring: p.touringDiagnostico
       ? {
           listoParaGira: p.touringDiagnostico.listoParaGira,
