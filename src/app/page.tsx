@@ -1,39 +1,81 @@
 import type { Metadata } from "next";
-import { Newsreader } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["italic", "normal"],
-});
 
 export const metadata: Metadata = {
   title: "Panel — Eduardo",
   description: "Puerta de entrada privada a C.C.O. E.V. y VINCERE.",
 };
 
-const SISTEMAS = [
+// Recreación en SVG del logo real de VINCERE (Eduardo lo pasó como imagen,
+// pero no llegó como archivo utilizable) — la V con la muesca bordó y el
+// wordmark, sobre el mismo verde oliva oscuro de la marca original.
+function VincereLogo() {
+  return (
+    <svg viewBox="0 0 340 210" className="w-full h-auto rounded-xl" role="img" aria-label="VINCERE Music">
+      <rect width="340" height="210" rx="14" fill="#2b2f28" />
+      <polygon points="138,44 168,44 170,112" fill="#f2ede1" />
+      <polygon points="202,44 172,44 170,112" fill="#f2ede1" />
+      <polygon points="167,44 173,44 170,60" fill="#7c2430" />
+      <text
+        x="170"
+        y="146"
+        textAnchor="middle"
+        fontFamily="var(--font-sans), Arial, sans-serif"
+        fontSize="26"
+        fontWeight="500"
+        letterSpacing="6"
+        fill="#f2ede1"
+      >
+        VINCERE
+      </text>
+      <line x1="132" y1="171" x2="150" y2="171" stroke="#f2ede1" strokeWidth="1" opacity="0.7" />
+      <text
+        x="170"
+        y="175"
+        textAnchor="middle"
+        fontFamily="var(--font-sans), Arial, sans-serif"
+        fontSize="10"
+        letterSpacing="3"
+        fill="#f2ede1"
+        opacity="0.85"
+      >
+        MUSIC
+      </text>
+      <line x1="190" y1="171" x2="208" y2="171" stroke="#f2ede1" strokeWidth="1" opacity="0.7" />
+    </svg>
+  );
+}
+
+const SISTEMAS: {
+  href: string;
+  nombre: string;
+  icono: string | null;
+  logo: React.ReactNode | null;
+  tagline: string | null;
+  detalle: string;
+  accent: string;
+  accentDim: string;
+}[] = [
   {
     href: "/inicio",
     nombre: "C.C.O. E.V.",
     icono: "/icons/icon-192.png",
+    logo: null,
     tagline: "Centro de Control Operativo y Estratégico",
     detalle: "Proyectos, decisiones, economía y goals — tu realidad analizada.",
     accent: "#5b8dee",
     accentDim: "rgba(91, 141, 238, 0.14)",
-    wordmarkClass: "font-sans font-bold tracking-tight",
   },
   {
     href: "/vincere",
     nombre: "VINCERE",
-    icono: null as string | null,
-    tagline: "Intelligence Platform",
+    icono: null,
+    logo: <VincereLogo />,
+    tagline: null,
     detalle: "Dirección estratégica musical — A&R, touring, marca y oportunidad.",
-    accent: "#e0483a",
-    accentDim: "rgba(224, 72, 58, 0.14)",
-    wordmarkClass: `${newsreader.className} italic tracking-tight`,
+    accent: "#a13a44",
+    accentDim: "rgba(161, 58, 68, 0.16)",
   },
 ];
 
@@ -60,21 +102,21 @@ export default function HubPage() {
                   aria-hidden
                 />
                 <div className="relative">
-                  <div className="flex items-center gap-3">
-                    {s.icono && (
-                      <Image
-                        src={s.icono}
-                        alt=""
-                        width={36}
-                        height={36}
-                        className="rounded-[9px] shrink-0"
-                      />
-                    )}
-                    <div className={`text-[26px] leading-none ${s.wordmarkClass}`} style={{ color: s.accent }}>
-                      {s.nombre}
+                  {s.logo ? (
+                    <div className="w-40 max-w-full mb-1">{s.logo}</div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      {s.icono && (
+                        <Image src={s.icono} alt="" width={36} height={36} className="rounded-[9px] shrink-0" />
+                      )}
+                      <div className="text-[26px] leading-none font-sans font-bold tracking-tight" style={{ color: s.accent }}>
+                        {s.nombre}
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[#8a8d94]">{s.tagline}</div>
+                  )}
+                  {s.tagline && (
+                    <div className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[#8a8d94]">{s.tagline}</div>
+                  )}
                   <p className="mt-4 text-sm leading-relaxed text-[#b4b6bc]">{s.detalle}</p>
                   <div
                     className="mt-6 inline-flex items-center gap-1.5 text-xs font-medium transition-transform group-hover:translate-x-0.5"
