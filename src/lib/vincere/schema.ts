@@ -553,6 +553,69 @@ export const oportunidadResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Con poca data del artista esto no puede ser alto, por convincente que suene la lectura"),
 });
 
+export const pitchResponseSchema = z.object({
+  titular: z
+    .string()
+    .describe("La primera frase, y lo único que tienes garantizado que van a leer. Una afirmación con filo, no un saludo ni una descripción. Máximo ~15 palabras"),
+  apertura: z
+    .string()
+    .describe("Para disquera y marca: la TESIS DE MERCADO — el hueco o el movimiento que existe, con el artista como respuesta. Nunca empieces por la biografía ('X es un artista de 24 años de...'): eso se lee en todos los pitches y no dice nada. Para DSP: por qué este tema, ahora. 2-4 frases"),
+  bloques: z
+    .array(
+      z.object({
+        titulo: z.string().describe("Título corto del bloque"),
+        contenido: z.string().describe("El contenido, redactado para leerse tal cual — no notas para desarrollar después"),
+      })
+    )
+    .min(2)
+    .max(6)
+    .describe("El cuerpo. Los bloques cambian según el destino: un DSP quiere el tema, el momento y el apoyo detrás; una disquera quiere mercado, tracción, plan y economía; una marca quiere audiencia, encaje y activación. Elige los que correspondan a ESTE destino, no una plantilla fija"),
+  evidencia: z
+    .array(
+      z.object({
+        dato: z.string().describe("El dato concreto, con su cifra si la hay"),
+        deDondeSale: z.string().describe("De dónde sale: plataforma, taquilla de un show, investigación externa"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(6)
+    .describe("Los datos que sostienen el pitch, cada uno con su nivel de evidencia. Ir con el nivel declarado es deliberado: en una sala donde todos llevan números buenos, quien marca cuáles son sólidos y cuáles no es al único que le creen el resto"),
+  riesgoQueNombramos: z
+    .string()
+    .describe("El punto débil real de este caso, dicho por nosotros antes de que lo encuentren ellos. Tiene que ser el riesgo DE VERDAD, no uno cómodo: si eliges uno menor para quedar bien, el movimiento pierde todo su efecto y se nota"),
+  porQueIgualFunciona: z
+    .string()
+    .describe("Por qué, sabiendo ese riesgo, esto sigue valiendo la pena. Es la otra mitad del movimiento: nombrar el riesgo sin sostener la tesis es solo pesimismo"),
+  elPedido: z
+    .string()
+    .describe("Qué se pide exactamente y en una frase. Un pitch sin pedido concreto es una charla agradable que no lleva a nada. Para DSP: la consideración editorial para tal playlist o momento. Para disquera: la estructura y el alcance. Para marca: la activación"),
+  queDamosACambio: z.string().describe("Qué recibe la otra parte, concreto"),
+  queNoDecir: z
+    .array(z.string())
+    .max(4)
+    .describe("Qué conviene NO mencionar en esta sala. No es ocultar el riesgo —ese ya se declara arriba— sino no debilitarse con información que no aporta a esta conversación en particular: una cifra floja de otra área, un plan que todavía no existe, una comparación que invita a un mal referente"),
+  pitchCorto: z
+    .string()
+    .nullable()
+    .describe("SOLO si el destino es dsp: el texto literal para pegar en el formulario de Spotify for Artists, máximo 500 caracteres, en tercera persona y sin superlativos vacíos. En cualquier otro destino, null"),
+  etiquetas: z
+    .array(z.string())
+    .max(10)
+    .describe("Solo para dsp: géneros, moods y descriptores que ayudan a ubicar el tema en playlists. Vacío en otros destinos"),
+  destinatarioSugerido: z
+    .string()
+    .nullable()
+    .describe("Solo para disquera o marca: a qué tipo de sello o marca conviene llevar esto, descrito por su perfil. Si el contexto trae contactos propios que encajan, puedes nombrar la empresa que aparece ahí. NUNCA inventes nombres de sellos o marcas que no estén en el contexto"),
+  porQueEseDestinatario: z.string().nullable().describe("Por qué ese perfil y no otro. null si el destino es dsp"),
+  contactosRelevantes: z
+    .array(z.string())
+    .max(5)
+    .describe("Contactos propios del contexto que sirven de puente hacia ese destinatario, con por qué sirven ('Ana Ruiz — A&R en X, relación tibia, último contacto hace 4 meses'). Vacío si el contexto no trae contactos o ninguno encaja. Jamás inventes personas"),
+  siguientePaso: z.string().describe("La acción concreta e inmediata después de mandar esto"),
+  nivelGlobal: nivelSchema.describe("Qué tan respaldado va este pitch. Con poca data del artista no puede ser alto"),
+});
+
+export type PitchResponse = z.infer<typeof pitchResponseSchema>;
 export type OportunidadResponse = z.infer<typeof oportunidadResponseSchema>;
 export type ARResponse = z.infer<typeof arResponseSchema>;
 export type TouringResponse = z.infer<typeof touringResponseSchema>;

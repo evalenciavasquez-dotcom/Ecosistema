@@ -196,6 +196,17 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Presentar el artista a un DSP o a una disquera",
+    pasos: [
+      "Pitch y Presentación → elige el destino. Son tres documentos distintos: un editor de DSP lee cientos por semana y descarta el largo; una disquera espera una tesis de negocio; una marca compra audiencia, no artista.",
+      "Escribe qué quieres conseguir, concreto. «Una oportunidad» no es un pedido y produce un pitch igual de vago.",
+      "«Generar pitch». Sale texto final, listo para mandar — no un borrador con huecos para completar.",
+      "Si es DSP, el bloque «Para pegar en Spotify for Artists» trae el texto con su contador de 500 caracteres y un botón de copiar.",
+      "Si es sello o marca, revisa «Puentes que ya tienes»: cruza el destinatario con tus Personas del C.C.O. y te dice a quién conoces adentro.",
+      "No borres el bloque de riesgo antes de mandarlo. Es lo que hace que te crean el resto: todos llegan con números buenos, y quien nombra su punto débil es el único que no suena a vendedor.",
+    ],
+  },
+  {
     tarea: "Decidir si sumarte a un artista",
     pasos: [
       "Carga lo que tengas del artista en los motores que apliquen. El puntaje se sostiene en data: con un proyecto vacío, el motor lo dice y no infla la confianza.",
@@ -493,6 +504,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Ejecución / KPIs",
     cuandoUsarlo: "Para ver si el trimestre va a cerrar en meta y si el gasto va al ritmo correcto.",
     queCargar: "Métrica, valor actual, meta y una nota de contexto.",
+  },
+  {
+    motor: "Pitch y Presentación",
+    cuandoUsarlo: "Cuando hay que presentar el artista afuera: pitchear un tema a los editores de un DSP, proponer un acuerdo a un sello, o buscar una marca.",
+    queCargar: "Nada nuevo: usa lo cargado. Escribe qué quieres conseguir con ese pitch — un pedido vago produce un documento vago. Para sello o marca, tener Personas cargadas en el C.C.O. permite que señale qué contactos tienes de puente.",
   },
   {
     motor: "Oportunidad de Negocio",

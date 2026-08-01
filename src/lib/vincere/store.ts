@@ -23,6 +23,7 @@ import {
   VincereMarca,
   VincereMarcaDiagnostico,
   VincereOportunidad,
+  VincerePitch,
   VincerePuntoContacto,
   VincereSenalPlaza,
   VincereShow,
@@ -115,6 +116,9 @@ interface VincereState {
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
 
   setOportunidad: (proyectoId: string, oportunidad: VincereOportunidad | null) => void;
+
+  addPitch: (proyectoId: string, pitch: VincerePitch) => void;
+  deletePitch: (proyectoId: string, pitchId: string) => void;
 
   addCandidato: (proyectoId: string, candidato: Omit<VincereCandidato, "id" | "creadoEn">) => void;
   updateCandidato: (proyectoId: string, candidatoId: string, patch: Partial<VincereCandidato>) => void;
@@ -429,6 +433,23 @@ export const useVincereStore = create<VincereState>()(
       setOportunidad: (proyectoId, oportunidad) =>
         set((s) => ({
           proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, oportunidad })),
+        })),
+
+      // Los pitches se acumulan: uno para el DSP y otro para el sello son
+      // documentos distintos que conviven, no versiones del mismo.
+      addPitch: (proyectoId, pitch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            pitches: [pitch, ...(p.pitches ?? [])],
+          })),
+        })),
+      deletePitch: (proyectoId, pitchId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            pitches: (p.pitches ?? []).filter((x) => x.id !== pitchId),
+          })),
         })),
 
       addCandidato: (proyectoId, candidato) =>
