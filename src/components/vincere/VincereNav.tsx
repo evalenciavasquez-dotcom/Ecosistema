@@ -17,6 +17,7 @@ const CORE_SECTIONS: VincereSeccion[] = [
   "management",
   "kpis",
   "oportunidad",
+  "pitch",
   "triage",
   "stress",
 ];

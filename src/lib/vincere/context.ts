@@ -177,6 +177,83 @@ function showsConConversion(p: VincereProyecto) {
   }));
 }
 
+// Contactos propios que pueden servir de puente hacia un sello o una marca.
+//
+// Vienen del C.C.O., no de VINCERE: es el primer punto donde los dos sistemas
+// se hablan. Se manda solo lo mínimo para reconocer un puente —nombre, empresa,
+// rol, cómo está la relación e influencia— y se dejan fuera los campos
+// sensibles de esa ficha (pagos, riesgos, conversaciones pendientes), que no
+// aportan nada a escribir un pitch.
+export interface ContactoPuente {
+  nombre: string;
+  empresa: string;
+  rol: string;
+  relacion: string;
+  influencia: string;
+  ultimoContacto: string;
+}
+
+// Contexto del Pitch. Lo arma el cliente porque necesita cruzar el proyecto de
+// VINCERE con los contactos del C.C.O., que viven en otro store.
+export function buildPitchContext(p: VincereProyecto, contactos: ContactoPuente[]): unknown {
+  return {
+    artista: p.nombre,
+    genero: p.genero,
+    fase: p.fase,
+    momentum: {
+      streamsMes: p.resumen.streamsMes,
+      streamsMesLegible: formatStreams(p.resumen.streamsMes),
+      streamsCambioPct: p.resumen.streamsCambioPct,
+      seguidores: p.resumen.seguidores,
+      seguidoresLegible: formatFollowers(p.resumen.seguidores),
+      seguidoresCambioPct: p.resumen.seguidoresCambioPct,
+      momentumIndex: p.resumen.momentumIndex,
+    },
+    diagnostico: p.diagnostico,
+    marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca",
+    catalogo: p.canciones.length
+      ? p.canciones.map((c) => ({
+          nombre: c.nombre,
+          streams: c.streams,
+          retencionPct: c.retencionPct,
+          skipPct: c.skipPct,
+          playlistAdds: c.playlistAdds,
+          ...(c.audio ? { audio: resumenAudio(c.audio) } : {}),
+          ...(c.analisis
+            ? { tema: c.analisis.tema, gancho: c.analisis.gancho, potencial: c.analisis.clasificacionPotencial }
+            : {}),
+        }))
+      : "sin catálogo cargado",
+    audiencia: p.audiencia,
+    zonasCalor: p.zonasCalor.length ? p.zonasCalor : "sin zonas cargadas",
+    // La taquilla real es el dato más convincente que existe frente a un
+    // tercero: demuestra que la audiencia paga, no solo que escucha.
+    shows: showsConConversion(p) ?? "sin shows registrados",
+    // Si ya se analizó el negocio, el pitch no lo reinventa: lo usa.
+    ...(p.oportunidad
+      ? {
+          analisisDeOportunidad: {
+            puntaje: p.oportunidad.puntaje,
+            viaRecomendada: p.oportunidad.viaRecomendada,
+            loQueLoBaja: p.oportunidad.loQueLoBaja,
+            vias: p.oportunidad.vias.map((v) => ({
+              modalidad: v.modalidad,
+              participacion: v.participacion,
+              queAportamos: v.queAportamos,
+            })),
+          },
+        }
+      : {}),
+    contactosPropios: contactos.length
+      ? {
+          nota: "Contactos reales de la agenda de Eduardo. Úsalos solo para señalar puentes que existan de verdad; nunca inventes personas ni relaciones.",
+          lista: contactos,
+        }
+      : "no hay contactos cargados en la agenda: no propongas puentes personales",
+    ...(investigacionExterna(p, "general", 3) ? { investigacionExterna: investigacionExterna(p, "general", 3) } : {}),
+  };
+}
+
 // Contexto de Oportunidad. Es el motor que decide si entrar, así que recibe
 // todo lo que el sistema sabe del artista — incluidas las lecturas que otros
 // motores ya emitieron. Un análisis de negocio que ignora que Marca detectó una

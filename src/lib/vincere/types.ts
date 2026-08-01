@@ -20,6 +20,7 @@ export type VincereSeccion =
   | "ar"
   | "touring"
   | "oportunidad"
+  | "pitch"
   | "audiencia"
   | "calor"
   | "management"
@@ -39,6 +40,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   ar: "A&R y Colaboraciones",
   touring: "Shows y Touring",
   oportunidad: "Oportunidad de Negocio",
+  pitch: "Pitch y Presentación",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
   management: "Management / Decisiones",
@@ -364,6 +366,76 @@ export interface VincereMarcaDiagnostico {
   riesgos: string[];
   movimientos: string[]; // Qué hacer, concreto.
   veredicto: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
+// --- Pitch y Presentación ---
+// Tres destinos, tres documentos distintos. Un editor de DSP lee cientos de
+// pitches por semana y descarta el que se extiende; una disquera necesita una
+// tesis de negocio; una marca no compra al artista, compra su audiencia.
+// Escribir uno solo y cambiarle el título es la forma más común de que ninguno
+// funcione.
+//
+// La decisión de diseño que lo distingue: el pitch declara su propio riesgo y
+// el nivel de evidencia de cada dato. Todos llegan a esa sala con números
+// buenos; el que nombra su punto débil antes de que lo encuentren es el único
+// al que le creen el resto. Eso no vende al artista — posiciona a quien
+// presenta.
+
+export type VincerePitchDestino = "dsp" | "disquera" | "marca";
+
+export const VINCERE_PITCH_DESTINO_LABEL: Record<VincerePitchDestino, string> = {
+  dsp: "DSP / Editorial",
+  disquera: "Disquera / Sello",
+  marca: "Marca / Sponsor",
+};
+
+export const VINCERE_PITCH_DESTINO_DESC: Record<VincerePitchDestino, string> = {
+  dsp: "Para pitchear un tema a los editores de Spotify, Apple o Deezer. Corto y concreto: leen cientos por semana.",
+  disquera: "Propuesta de negocio a un sello. Abre con una tesis de mercado, no con la biografía.",
+  marca: "Para un sponsor o una marca. No se vende al artista: se vende la audiencia y el encaje.",
+};
+
+export interface VincerePitchBloque {
+  titulo: string;
+  contenido: string;
+}
+
+// Cada dato del pitch va con su origen y su nivel. Es lo que permite decir en
+// la sala "esto es nivel 2, no apuesten la casa" — y que eso sume en vez de
+// restar.
+export interface VincereEvidenciaPitch {
+  dato: string;
+  deDondeSale: string;
+  nivel: VincereNivel;
+}
+
+export interface VincerePitch {
+  id: string;
+  destino: VincerePitchDestino;
+  objetivo: string; // Lo que se pide, escrito por Eduardo antes de generar.
+  titular: string; // La primera frase. Lo único que se garantiza que van a leer.
+  apertura: string; // Tesis de mercado (disquera/marca) o el porqué de ahora (DSP).
+  bloques: VincerePitchBloque[];
+  evidencia: VincereEvidenciaPitch[];
+  // El diferencial.
+  riesgoQueNombramos: string;
+  porQueIgualFunciona: string;
+  elPedido: string; // Qué se pide exactamente. Un pitch sin pedido es una charla.
+  queDamosACambio: string;
+  // Qué callar en ESTA sala. Distinto del riesgo: no es ocultar, es no
+  // debilitarse con información que no aporta a esta conversación.
+  queNoDecir: string[];
+  // Solo DSP: el campo literal que se pega en Spotify for Artists.
+  pitchCorto: string | null;
+  etiquetas: string[];
+  // Solo disquera/marca: a quién y por qué.
+  destinatarioSugerido: string | null;
+  porQueEseDestinatario: string | null;
+  // Contactos propios que aparecieron como puente hacia ese destinatario.
+  contactosRelevantes: string[];
+  siguientePaso: string;
   nivelGlobal: VincereNivel;
   generadoEn: string;
 }
@@ -748,6 +820,7 @@ export interface VincereProyecto {
   candidatos?: VincereCandidato[];
   arDiagnostico?: VincereARDiagnostico | null;
   oportunidad?: VincereOportunidad | null;
+  pitches?: VincerePitch[];
   decisiones: VincereDecision[];
   kpis: VincereKpi[];
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;

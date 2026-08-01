@@ -14,6 +14,8 @@ import {
   VincereModalidad,
   VincereNivel,
   VincereOportunidad,
+  VincerePitch,
+  VincerePitchDestino,
   VincerePotencialCancion,
   VincerePrioridadPaso,
   VincereSeccion,
@@ -279,6 +281,60 @@ const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
 const IMPACTOS = ["alto", "medio", "bajo"] as const;
 
 // Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchPitch(input: {
+  artista: unknown;
+  destino: VincerePitchDestino;
+  objetivo?: string;
+}): Promise<Omit<VincerePitch, "id">> {
+  const res = await fetch("/api/vincere/pitch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  // El campo de Spotify tiene tope duro de 500 caracteres: se recorta acá para
+  // que lo que se muestra sea siempre pegable tal cual.
+  const corto = typeof r.pitchCorto === "string" && r.pitchCorto.trim() ? r.pitchCorto.trim() : null;
+
+  return {
+    destino: input.destino,
+    objetivo: input.objetivo?.trim() ?? "",
+    titular: r.titular ?? "",
+    apertura: r.apertura ?? "",
+    bloques: (Array.isArray(r.bloques) ? r.bloques : []).map((b: { titulo?: string; contenido?: string }) => ({
+      titulo: b.titulo ?? "",
+      contenido: b.contenido ?? "",
+    })),
+    evidencia: (Array.isArray(r.evidencia) ? r.evidencia : []).map(
+      (e: { dato?: string; deDondeSale?: string; nivel?: number }) => ({
+        dato: e.dato ?? "",
+        deDondeSale: e.deDondeSale ?? "",
+        nivel: clampNivel(e.nivel),
+      })
+    ),
+    riesgoQueNombramos: r.riesgoQueNombramos ?? "",
+    porQueIgualFunciona: r.porQueIgualFunciona ?? "",
+    elPedido: r.elPedido ?? "",
+    queDamosACambio: r.queDamosACambio ?? "",
+    queNoDecir: textos(r.queNoDecir),
+    pitchCorto: input.destino === "dsp" && corto ? corto.slice(0, 500) : null,
+    etiquetas: input.destino === "dsp" ? textos(r.etiquetas) : [],
+    destinatarioSugerido: input.destino === "dsp" ? null : (r.destinatarioSugerido ?? null),
+    porQueEseDestinatario: input.destino === "dsp" ? null : (r.porQueEseDestinatario ?? null),
+    contactosRelevantes: textos(r.contactosRelevantes),
+    siguientePaso: r.siguientePaso ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
 export async function fetchOportunidad(input: {
   artista: unknown;
   nota?: string;
