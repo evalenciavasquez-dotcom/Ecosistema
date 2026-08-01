@@ -16,6 +16,7 @@ const CORE_SECTIONS: VincereSeccion[] = [
   "touring",
   "management",
   "kpis",
+  "monetizacion",
   "oportunidad",
   "pitch",
   "triage",
@@ -25,7 +26,6 @@ const CORE_SECTIONS: VincereSeccion[] = [
 // Secciones P1 del PRD — se activan una a una en fases posteriores.
 const PROXIMAMENTE = [
   "Finanzas y Presupuesto",
-  "Monetización",
   "Valoración de Carrera",
   "Legal y Derechos",
   "Relaciones de Industria",

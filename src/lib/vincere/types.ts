@@ -21,6 +21,7 @@ export type VincereSeccion =
   | "touring"
   | "oportunidad"
   | "pitch"
+  | "monetizacion"
   | "audiencia"
   | "calor"
   | "management"
@@ -41,6 +42,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   touring: "Shows y Touring",
   oportunidad: "Oportunidad de Negocio",
   pitch: "Pitch y Presentación",
+  monetizacion: "Monetización",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
   management: "Management / Decisiones",
@@ -436,6 +438,77 @@ export interface VincerePitch {
   // Contactos propios que aparecieron como puente hacia ese destinatario.
   contactosRelevantes: string[];
   siguientePaso: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
+// --- Monetización ---
+// Tres preguntas distintas metidas en una palabra: de dónde viene el dinero,
+// cuánto queda de nuestro lado, y por dónde más podría entrar. Las tres viven
+// acá porque comparten la misma base, pero se leen por separado.
+//
+// El desajuste que este motor existe para mostrar: la atención se va a donde
+// se ven los números —el streaming— y el dinero suele entrar por otro lado.
+// El sistema ya tiene los dos datos y nadie los había puesto juntos.
+
+export type VincereFuenteTipo =
+  | "streaming"
+  | "shows"
+  | "merch"
+  | "sync"
+  | "publishing"
+  | "marca"
+  | "otro";
+
+export const VINCERE_FUENTE_LABEL: Record<VincereFuenteTipo, string> = {
+  streaming: "Streaming",
+  shows: "Shows",
+  merch: "Merch",
+  sync: "Sync / Licencias",
+  publishing: "Publishing / Regalías",
+  marca: "Marcas / Sponsors",
+  otro: "Otro",
+};
+
+export const VINCERE_FUENTE_COLOR: Record<VincereFuenteTipo, string> = {
+  streaming: "#2dd4bf",
+  shows: "#5cc98e",
+  merch: "#e0a83a",
+  sync: "#a78bfa",
+  publishing: "#60a5fa",
+  marca: "#f472b6",
+  otro: "#a39c92",
+};
+
+export interface VincereIngreso {
+  id: string;
+  tipo: VincereFuenteTipo;
+  monto: number;
+  moneda: string;
+  periodo: string; // YYYY-MM
+  nota: string;
+}
+
+export interface VincereViaSinExplotar {
+  via: string;
+  porQueEncaja: string; // Contra la data de ESTE artista, no en general.
+  queHaceFalta: string;
+  esfuerzo: "bajo" | "medio" | "alto";
+  nivel: VincereNivel;
+}
+
+export interface VincereMonetizacionDiagnostico {
+  lecturaGeneral: string;
+  // El corazón del motor: dónde se pone el esfuerzo contra dónde entra el dinero.
+  brechaAtencionIngreso: string;
+  riesgoDeConcentracion: string;
+  loQueYaFunciona: string[];
+  viasSinExplotar: VincereViaSinExplotar[];
+  queMoverAhora: string[];
+  // Lectura del lado propio: qué significa este negocio para quien lo dirige.
+  lecturaDeLoMio: string;
+  queFaltaSaber: string[];
+  veredicto: string;
   nivelGlobal: VincereNivel;
   generadoEn: string;
 }
@@ -885,6 +958,8 @@ export interface VincereProyecto {
   candidatos?: VincereCandidato[];
   arDiagnostico?: VincereARDiagnostico | null;
   vinculo?: VincereVinculo | null;
+  ingresos?: VincereIngreso[];
+  monetizacionDiagnostico?: VincereMonetizacionDiagnostico | null;
   oportunidad?: VincereOportunidad | null;
   pitches?: VincerePitch[];
   decisiones: VincereDecision[];

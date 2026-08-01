@@ -627,6 +627,52 @@ export const pitchResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Qué tan respaldado va este pitch. Con poca data del artista no puede ser alto"),
 });
 
+export const monetizacionResponseSchema = z.object({
+  lecturaGeneral: z
+    .string()
+    .describe("De qué vive realmente este artista hoy, en dos o tres frases. Concreto y con las cifras del contexto, no una descripción general"),
+  brechaAtencionIngreso: z
+    .string()
+    .describe("El corazón del análisis: dónde se pone el esfuerzo contra dónde entra el dinero. Los números del contexto vienen calculados — úsalos. Si un catálogo de millones de reproducciones deja menos que dos noches tocando, dilo con las dos cifras al lado. Es la lectura que nadie hace porque los dos datos suelen vivir en pantallas distintas. 3-5 frases"),
+  riesgoDeConcentracion: z
+    .string()
+    .describe("Qué tan frágil es este ingreso. Por encima del 70% en una sola fuente el negocio depende de una pata, y hay que decir qué pasa si esa pata falla. Si está repartido, dilo también — es una fortaleza que rara vez se nombra"),
+  loQueYaFunciona: z
+    .array(z.string())
+    .max(4)
+    .describe("Las fuentes que están rindiendo y por qué, con su cifra. Sirve para no romper lo que funciona por perseguir lo nuevo"),
+  viasSinExplotar: z
+    .array(
+      z.object({
+        via: z.string().describe("La vía concreta de monetización"),
+        porQueEncaja: z
+          .string()
+          .describe("Por qué encaja con ESTE artista, citando su data: su audiencia, sus plazas, su marca declarada, su catálogo. Un catálogo genérico de vías que le sirve a cualquiera no vale nada — si no puedes justificarla con la data de este artista, no la propongas"),
+        queHaceFalta: z.string().describe("Qué se necesita concretamente para activarla"),
+        esfuerzo: z.enum(["bajo", "medio", "alto"]).describe("Cuánto trabajo exige montarla"),
+        nivel: nivelSchema,
+      })
+    )
+    .max(5)
+    .describe("Vías que este artista no está aprovechando, ordenadas por relación entre lo que rendiría y lo que cuesta montar"),
+  queMoverAhora: z
+    .array(z.string())
+    .max(5)
+    .describe("Acciones concretas y ejecutables este mes, no aspiraciones. 'Subir precio de merch de 250 a 350 en el próximo show' vale; 'diversificar ingresos' no"),
+  lecturaDeLoMio: z
+    .string()
+    .describe("Qué significa este negocio para quien dirige, según el vínculo del contexto. Si es participación, cuánto deja hoy y qué tendría que pasar para que valga las horas comprometidas. Si es una tarifa de cliente, si el trabajo que exige la justifica. Si el vínculo está sin confirmar, trátalo como hipótesis y dilo. Si no hay vínculo, di que no aplica"),
+  queFaltaSaber: z
+    .array(z.string())
+    .max(5)
+    .describe("Qué falta para que esta lectura sea sólida: períodos sin cargar, fuentes que probablemente existan y no estén, costos que no se ven"),
+  veredicto: z
+    .string()
+    .describe("La postura: de qué debería vivir este artista en los próximos seis meses y qué hay que cambiar para llegar ahí. Clara, nunca un 'depende'"),
+  nivelGlobal: nivelSchema.describe("Con pocos períodos cargados esto no puede ser alto: un mes suelto no es una tendencia"),
+});
+
+export type MonetizacionResponse = z.infer<typeof monetizacionResponseSchema>;
 export type PitchResponse = z.infer<typeof pitchResponseSchema>;
 export type OportunidadResponse = z.infer<typeof oportunidadResponseSchema>;
 export type ARResponse = z.infer<typeof arResponseSchema>;

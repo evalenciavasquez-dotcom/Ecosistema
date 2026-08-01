@@ -6,6 +6,7 @@ import {
   VINCERE_SECCION_LABEL,
 } from "./types";
 import { describirTextura } from "./audio";
+import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
@@ -250,6 +251,96 @@ export function buildPitchContext(p: VincereProyecto, contactos: ContactoPuente[
           lista: contactos,
         }
       : "no hay contactos cargados en la agenda: no propongas puentes personales",
+    ...(investigacionExterna(p, "general", 3) ? { investigacionExterna: investigacionExterna(p, "general", 3) } : {}),
+  };
+}
+
+// Contexto de Monetización. Las cifras llegan resueltas desde dinero.ts: la IA
+// interpreta, no calcula.
+export function buildMonetizacionContext(
+  p: VincereProyecto,
+  r: ResumenDinero,
+  loMio: LoMio,
+  cargaSemanalTotal?: number
+): unknown {
+  return {
+    artista: p.nombre,
+    genero: p.genero,
+    fase: p.fase,
+    // El lado de la atención: lo que se mide todos los días.
+    alcance: {
+      streamsMes: p.resumen.streamsMes,
+      streamsMesLegible: formatStreams(p.resumen.streamsMes),
+      streamsCambioPct: p.resumen.streamsCambioPct,
+      seguidores: p.resumen.seguidores,
+      seguidoresLegible: formatFollowers(p.resumen.seguidores),
+    },
+    dinero: r.ingresos.length
+      ? {
+          ...(r.variasMonedas
+            ? {
+                avisoDeMonedas: `Hay ingresos en varias monedas (${r.monedas.map((m) => m.moneda).join(", ")}) y NO se convirtieron. Todo el análisis de abajo es solo sobre ${r.monedaPrincipal}. No sumes monedas distintas ni inventes un tipo de cambio.`,
+              }
+            : {}),
+          moneda: r.monedaPrincipal,
+          totalCargado: r.totalPrincipal,
+          mesesConDatos: r.meses,
+          promedioMensual: r.promedioMensual,
+          repartoPorFuente: r.porFuente.map((f) => ({
+            fuente: f.tipo,
+            total: f.total,
+            porcentaje: f.pct,
+          })),
+          concentracionPct: r.concentracionPct,
+          fuenteDominante: r.fuenteDominante,
+          // Los dos números que ponen el alcance en su lugar.
+          ingresoPorMilStreams_soloStreaming:
+            r.porMilStreams != null
+              ? Number(r.porMilStreams.toFixed(2))
+              : "no calculable: falta ingreso de streaming o cifra de streams",
+          ingresoPorMilStreams_todasLasFuentes:
+            r.porMilStreamsTotal != null ? Number(r.porMilStreamsTotal.toFixed(2)) : "no calculable",
+          notaSobreEsosDos:
+            "El primero es lo que paga el streaming; el segundo, lo que vale esa misma audiencia contando todo lo que entra. La distancia entre ambos ES la lectura: si el segundo es varias veces el primero, el streaming está siendo el foco equivocado.",
+          detalle: r.ingresos.map((i) => ({
+            fuente: i.tipo,
+            monto: i.monto,
+            moneda: i.moneda,
+            periodo: i.periodo,
+            ...(i.nota ? { nota: i.nota } : {}),
+          })),
+        }
+      : "no hay ingresos cargados: no se puede leer de qué vive este artista. Dilo, y trabaja solo sobre las vías que su data sugiere",
+    // Evidencia de que la audiencia paga, no solo escucha.
+    shows: showsConConversion(p) ?? "sin shows registrados",
+    audiencia: p.audiencia,
+    zonasCalor: p.zonasCalor.length ? p.zonasCalor : "sin zonas cargadas",
+    marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca",
+    catalogo: p.canciones.length
+      ? p.canciones.map((c) => ({
+          nombre: c.nombre,
+          streams: c.streams,
+          retencionPct: c.retencionPct,
+          skipPct: c.skipPct,
+        }))
+      : "sin catálogo cargado",
+    loQueNosQueda: loMio.aplica
+      ? {
+          via: loMio.via,
+          mensualEstimado: loMio.mensual,
+          moneda: loMio.moneda,
+          estado: loMio.hipotetico
+            ? "HIPOTÉTICO — el vínculo no está confirmado, trátalo como escenario y no como ingreso"
+            : "acordado",
+          explicacion: loMio.explicacion,
+          ...(cargaSemanalTotal != null
+            ? {
+                horasSemanalesComprometidasEnTodo: cargaSemanalTotal,
+                nota: "Úsalo para decir si lo que deja este proyecto justifica el tiempo que ocupa.",
+              }
+            : {}),
+        }
+      : loMio.explicacion || "no aplica: no hay vínculo de negocio con este proyecto",
     ...(investigacionExterna(p, "general", 3) ? { investigacionExterna: investigacionExterna(p, "general", 3) } : {}),
   };
 }
