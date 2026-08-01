@@ -1,4 +1,22 @@
-import { VincereInforme, VincereProyecto } from "./types";
+import {
+  VincereEstadoPrediccion,
+  VincereInforme,
+  VincereProyecto,
+  VINCERE_ESTADO_PREDICCION_LABEL,
+  calcularMarcador,
+} from "./types";
+
+// Casilla marcada solo cuando acertó: en Markdown plano es lo que se lee de un
+// vistazo, y hace visible el error sin tener que buscarlo.
+const ESTADO_MARCA: Record<VincereEstadoPrediccion, string> = {
+  abierta: " ",
+  acertada: "x",
+  fallada: " ",
+  parcial: "~",
+  "no-verificable": "?",
+};
+
+const ESTADO_TEXTO: Record<VincereEstadoPrediccion, string> = VINCERE_ESTADO_PREDICCION_LABEL;
 
 // Exporta el informe a Markdown — formato universal: se abre en cualquier
 // editor, se pega en Notion o en Word sin perder la estructura.
@@ -58,6 +76,48 @@ export function informeToMarkdown(informe: VincereInforme, proyecto: VincereProy
       lines.push(`- [${p.hecho ? "x" : " "}] **${p.accion}** — ${p.responsable} · ${p.plazo} · Prioridad ${p.prioridad}`);
     });
     lines.push("");
+  }
+
+  // El informe se lleva su propio marcador. Es lo que lo vuelve auditable por
+  // quien lo recibe: puede ver qué se dijo antes y cuánto de eso se cumplió,
+  // sin depender de que se lo contemos nosotros.
+  const preds = proyecto.predicciones ?? [];
+  if (preds.length) {
+    const m = calcularMarcador(preds);
+    const abiertas = preds.filter((p) => p.estado === "abierta");
+    const cerradas = preds.filter((p) => p.estado !== "abierta");
+
+    lines.push("## Predicciones", "");
+    lines.push(
+      m.pctAcierto == null
+        ? `Marcador: ${m.cerradas} cerradas · aún no hay suficientes para un porcentaje de acierto.`
+        : `Marcador: ${m.acertadas} acertadas de ${m.acertadas + m.falladas} verificables (${m.pctAcierto}%) · ${m.abiertas} abiertas${m.vencidas ? ` · ${m.vencidas} vencidas sin cerrar` : ""}.`
+    );
+    if (m.nivelesSirven === false) {
+      lines.push("");
+      lines.push(
+        "> Advertencia del propio sistema: hasta hoy las lecturas de nivel alto NO están acertando más que las de nivel bajo. La escala de evidencia de este informe todavía no está probada."
+      );
+    }
+    lines.push("");
+
+    if (abiertas.length) {
+      lines.push("### Abiertas", "");
+      abiertas.forEach((p) => {
+        lines.push(`- **${p.afirmacion}** ${nivel(p.nivelAlEmitir)} · vence ${p.venceEn}`);
+        lines.push(`  Se verifica así: ${p.comoSeVerifica}`);
+      });
+      lines.push("");
+    }
+
+    if (cerradas.length) {
+      lines.push("### Cerradas", "");
+      cerradas.forEach((p) => {
+        lines.push(`- [${ESTADO_MARCA[p.estado]}] **${p.afirmacion}** ${nivel(p.nivelAlEmitir)} — ${ESTADO_TEXTO[p.estado]}`);
+        if (p.queOcurrio) lines.push(`  Qué ocurrió: ${p.queOcurrio}`);
+      });
+      lines.push("");
+    }
   }
 
   lines.push("---", "");

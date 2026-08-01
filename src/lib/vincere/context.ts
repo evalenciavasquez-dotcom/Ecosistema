@@ -1,4 +1,5 @@
 import {
+  calcularMarcador,
   VincereAudioAnalisis,
   VincereLetraMetrica,
   VincereProyecto,
@@ -750,6 +751,31 @@ export function buildInformeContext(p: VincereProyecto): unknown {
     investigacionExterna:
       investigacionExterna(p, "todo", 4) ??
       "no se ha investigado nada afuera para este proyecto: el informe se sostiene solo en data propia",
+    // El marcador de predicciones es lo único del sistema que no es opinión:
+    // dice si sus lecturas anteriores acertaron. Un informe que lo ignora
+    // repite el mismo tono seguro aunque el histórico diga que se equivocó.
+    marcadorDePredicciones: (() => {
+      const preds = p.predicciones ?? [];
+      if (!preds.length) return "no hay predicciones registradas: este sistema todavía no tiene historial de aciertos";
+      const m = calcularMarcador(preds);
+      return {
+        acertadas: m.acertadas,
+        falladas: m.falladas,
+        parciales: m.parciales,
+        abiertas: m.abiertas,
+        vencidasSinCerrar: m.vencidas,
+        pctAcierto: m.pctAcierto,
+        losNivelesDeEvidenciaSirven:
+          m.nivelesSirven === null
+            ? "todavía no hay datos suficientes para saberlo"
+            : m.nivelesSirven
+              ? "sí: las lecturas de nivel alto aciertan más que las de nivel bajo"
+              : "NO: las lecturas de nivel alto no aciertan más que las de nivel bajo. Sé más prudente al asignar niveles altos en este informe",
+        falladasConcretas: preds
+          .filter((x) => x.estado === "fallada")
+          .map((x) => ({ afirmacion: x.afirmacion, queOcurrio: x.queOcurrio })),
+      };
+    })(),
     informeAnterior: (p.informesArchivados ?? [])[0]
       ? {
           fecha: (p.informesArchivados ?? [])[0].generadoEn.slice(0, 10),

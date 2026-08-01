@@ -285,6 +285,11 @@ function InformeDocumento({
 
   const pasosHechos = informe.proximosPasos.filter((p) => p.hecho).length;
 
+  // Índice del paso que se está convirtiendo en predicción, si hay alguno.
+  const [predDe, setPredDe] = useState<number | null>(null);
+  const yaEsPrediccion = (accion: string) =>
+    (proyecto.predicciones ?? []).some((p) => p.afirmacion.trim() === accion.trim());
+
   return (
     <article className="vin-print-area vin-card p-6 md:p-10">
       <header className="mb-8 border-b pb-6" style={{ borderColor: "var(--vin-border)" }}>
@@ -565,7 +570,7 @@ function InformeDocumento({
                 />
               </label>
 
-              <span className="vin-muted flex flex-wrap items-center gap-2 text-xs">
+              <div className="vin-muted flex flex-wrap items-center gap-2 text-xs">
                 {editando ? (
                   <>
                     <Editable
@@ -619,12 +624,37 @@ function InformeDocumento({
                     >
                       {p.prioridad}
                     </span>
+                    {yaEsPrediccion(p.accion) ? (
+                      <span className="vin-faint vin-no-print text-[10.5px]">· ya es predicción</span>
+                    ) : (
+                      <button
+                        onClick={() => setPredDe(predDe === i ? null : i)}
+                        className="vin-faint vin-no-print text-[10.5px] hover:underline"
+                      >
+                        · {predDe === i ? "cancelar" : "→ predicción"}
+                      </button>
+                    )}
                   </>
                 )}
-              </span>
+              </div>
+
+              {predDe === i && !editando && (
+                <PrediccionDesdePaso
+                  proyectoId={proyecto.id}
+                  paso={p}
+                  onListo={() => setPredDe(null)}
+                />
+              )}
             </li>
           ))}
         </ul>
+
+        {!editando && informe.proximosPasos.length > 0 && (
+          <p className="vin-faint vin-no-print mt-3 text-[11px] leading-relaxed">
+            Un paso dice qué vas a hacer. Una predicción dice qué esperas que pase — con fecha y con una forma de
+            saber que falló. Sin eso, el informe nunca se puede evaluar.
+          </p>
+        )}
 
         {editando && (
           <BotonAnadir
@@ -645,5 +675,117 @@ function InformeDocumento({
         evidencia sólida · 2 evidencia parcial · 1 especulativo).
       </footer>
     </article>
+  );
+}
+
+// --- Del paso a la predicción -----------------------------------------------
+
+function hoyMas(dias: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+// El plazo del informe es texto libre: "30 días", "6 semanas", "2026-03-15".
+// Se intenta leer; si no se entiende, quedan 30 días y Eduardo lo corrige.
+function fechaDesdePlazo(plazo: string): string {
+  const iso = plazo.match(/\d{4}-\d{2}-\d{2}/);
+  if (iso) return iso[0];
+  const rel = plazo.match(/(\d+)\s*(d[ií]as?|semanas?|meses?)/i);
+  if (rel) {
+    const n = Number(rel[1]);
+    const unidad = rel[2].toLowerCase();
+    if (unidad.startsWith("d")) return hoyMas(n);
+    if (unidad.startsWith("s")) return hoyMas(n * 7);
+    return hoyMas(n * 30);
+  }
+  return hoyMas(30);
+}
+
+function PrediccionDesdePaso({
+  proyectoId,
+  paso,
+  onListo,
+}: {
+  proyectoId: string;
+  paso: VincereInformePaso;
+  onListo: () => void;
+}) {
+  const addPrediccion = useVincereStore((s) => s.addPrediccion);
+  const showToast = useVincereStore((s) => s.showToast);
+
+  const [afirmacion, setAfirmacion] = useState(paso.accion);
+  const [comoSeVerifica, setComoSeVerifica] = useState("");
+  const [venceEn, setVenceEn] = useState(() => fechaDesdePlazo(paso.plazo));
+  const [nivel, setNivel] = useState<VincereNivel>(2);
+
+  const listo = afirmacion.trim().length > 0 && comoSeVerifica.trim().length > 0 && venceEn.length === 10;
+
+  function crear() {
+    if (!listo) return;
+    addPrediccion(proyectoId, {
+      motor: "informe",
+      afirmacion: afirmacion.trim(),
+      comoSeVerifica: comoSeVerifica.trim(),
+      venceEn,
+      nivelAlEmitir: nivel,
+    });
+    showToast("Predicción abierta. Vive en Predicciones hasta que se cierre.");
+    onListo();
+  }
+
+  return (
+    <div
+      className="vin-no-print mt-3 w-full rounded-sm p-3.5"
+      style={{ background: "var(--vin-surface)", border: "1px solid var(--vin-border)" }}
+    >
+      <p className="vin-faint mb-2.5 text-[10.5px] uppercase tracking-[0.08em]">Convertir en predicción</p>
+
+      <div className="grid gap-2.5">
+        <textarea
+          value={afirmacion}
+          onChange={(e) => setAfirmacion(e.target.value)}
+          rows={2}
+          className="vin-input resize-none !text-[13px]"
+          placeholder="Qué esperas que pase"
+        />
+        <textarea
+          value={comoSeVerifica}
+          onChange={(e) => setComoSeVerifica(e.target.value)}
+          rows={2}
+          className="vin-input resize-none !text-[13px]"
+          placeholder="Cómo se verifica: qué habría que ver para decir que falló"
+        />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <input
+            type="date"
+            value={venceEn}
+            onChange={(e) => setVenceEn(e.target.value)}
+            className="vin-input !w-auto !py-1.5 !text-xs"
+            aria-label="Vence en"
+          />
+          <select
+            className="vin-select !py-1.5 !text-xs"
+            value={nivel}
+            onChange={(e) => setNivel(Number(e.target.value) as VincereNivel)}
+            aria-label="Nivel al emitir"
+          >
+            {NIVELES.map((n) => (
+              <option key={n} value={n}>
+                Nivel {n}
+              </option>
+            ))}
+          </select>
+          <button onClick={crear} disabled={!listo} className="vin-btn-primary !px-3.5 !py-1.5 !text-xs">
+            Abrir predicción
+          </button>
+        </div>
+        {!comoSeVerifica.trim() && (
+          <p className="vin-faint text-[11px] leading-relaxed">
+            Sin &ldquo;cómo se verifica&rdquo; no es una predicción, es una opinión con fecha.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

@@ -18,14 +18,17 @@ import {
   VincereInsight,
   VincereInvestigacion,
   VincereARDiagnostico,
+  VincereCantidadData,
   VincereCandidato,
   VincereKpi,
   VincereMarca,
   VincereMarcaDiagnostico,
   VincereIngreso,
   VincereMonetizacionDiagnostico,
+  VincereEstadoPrediccion,
   VincereOportunidad,
   VincerePitch,
+  VincerePrediccion,
   VincereVinculo,
   VincereVinculoTipo,
   vinculoVacio,
@@ -122,6 +125,19 @@ interface VincereState {
 
   updateVinculo: (proyectoId: string, patch: Partial<VincereVinculo>) => void;
 
+  addPrediccion: (
+    proyectoId: string,
+    p: Omit<VincerePrediccion, "id" | "creadoEn" | "estado" | "queOcurrio" | "verificadoEn">
+  ) => void;
+  verificarPrediccion: (
+    proyectoId: string,
+    prediccionId: string,
+    estado: Exclude<VincereEstadoPrediccion, "abierta">,
+    queOcurrio: string
+  ) => void;
+  reabrirPrediccion: (proyectoId: string, prediccionId: string) => void;
+  deletePrediccion: (proyectoId: string, prediccionId: string) => void;
+
   addIngreso: (proyectoId: string, ingreso: Omit<VincereIngreso, "id">) => void;
   updateIngreso: (proyectoId: string, ingresoId: string, patch: Partial<VincereIngreso>) => void;
   deleteIngreso: (proyectoId: string, ingresoId: string) => void;
@@ -175,7 +191,7 @@ interface VincereState {
   setComparacionInsights: (idA: string, idB: string, insights: VincereInsight[]) => void;
   addComparacionQA: (idA: string, idB: string, entry: VincereQAEntry) => void;
 
-  addTriageCaso: (input: { nombre: string; genero: string; fase: string; descripcion: string }) => string;
+  addTriageCaso: (input: { nombre: string; genero: string; fase: string; descripcion: string; dataDisponible: VincereCantidadData }) => string;
   updateTriageCasoVeredicto: (
     id: string,
     veredicto: {
@@ -467,6 +483,56 @@ export const useVincereStore = create<VincereState>()(
             }
             return { ...p, vinculo: { ...base, actualizadoEn: new Date().toISOString() } };
           }),
+        })),
+
+      // Ordenadas por vencimiento: lo que hay que cerrar primero va arriba.
+      addPrediccion: (proyectoId, p) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (pr) => ({
+            ...pr,
+            predicciones: [
+              {
+                ...p,
+                id: genId("pred"),
+                estado: "abierta" as const,
+                queOcurrio: null,
+                verificadoEn: null,
+                creadoEn: new Date().toISOString().slice(0, 10),
+              },
+              ...(pr.predicciones ?? []),
+            ].sort((a, b) => a.venceEn.localeCompare(b.venceEn)),
+          })),
+        })),
+      verificarPrediccion: (proyectoId, prediccionId, estado, queOcurrio) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (pr) => ({
+            ...pr,
+            predicciones: (pr.predicciones ?? []).map((x) =>
+              x.id === prediccionId
+                ? { ...x, estado, queOcurrio, verificadoEn: new Date().toISOString().slice(0, 10) }
+                : x
+            ),
+          })),
+        })),
+      // Se puede reabrir, pero se borra el veredicto anterior: dejar el texto
+      // de una verificación que ya no aplica confundiría el marcador.
+      reabrirPrediccion: (proyectoId, prediccionId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (pr) => ({
+            ...pr,
+            predicciones: (pr.predicciones ?? []).map((x) =>
+              x.id === prediccionId
+                ? { ...x, estado: "abierta" as const, queOcurrio: null, verificadoEn: null }
+                : x
+            ),
+          })),
+        })),
+      deletePrediccion: (proyectoId, prediccionId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (pr) => ({
+            ...pr,
+            predicciones: (pr.predicciones ?? []).filter((x) => x.id !== prediccionId),
+          })),
         })),
 
       // Del período más reciente al más antiguo: lo de este mes importa más
@@ -895,6 +961,7 @@ export const useVincereStore = create<VincereState>()(
           prioridad: null,
           motorRecomendado: null,
           nivel: null,
+          dataDisponible: input.dataDisponible,
           vinculoSugerido: null,
           comoCobrarlo: null,
           horasSemanalesEstimadas: null,

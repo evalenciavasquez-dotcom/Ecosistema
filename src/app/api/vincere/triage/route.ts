@@ -3,6 +3,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { triageResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_TRIAGE_SYSTEM_PROMPT, buildTriageUserPrompt } from "@/lib/vincere/prompt";
+import { VincereCantidadData } from "@/lib/vincere/types";
+
+// Si el cliente no la declara, se asume la peor: es la que menos deja afirmar.
+const CANTIDADES: VincereCantidadData[] = ["baja", "media", "alta"];
 
 export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -31,6 +35,7 @@ export async function POST(request: Request) {
             genero: body.genero ?? "",
             fase: body.fase ?? "",
             descripcion: body.descripcion,
+            dataDisponible: CANTIDADES.includes(body.dataDisponible) ? body.dataDisponible : "baja",
           }),
         },
       ],

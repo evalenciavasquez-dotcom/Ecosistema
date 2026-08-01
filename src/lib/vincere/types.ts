@@ -22,6 +22,7 @@ export type VincereSeccion =
   | "oportunidad"
   | "pitch"
   | "monetizacion"
+  | "predicciones"
   | "audiencia"
   | "calor"
   | "management"
@@ -43,6 +44,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   oportunidad: "Oportunidad de Negocio",
   pitch: "Pitch y Presentación",
   monetizacion: "Monetización",
+  predicciones: "Predicciones",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
   management: "Management / Decisiones",
@@ -478,6 +480,129 @@ export interface VincerePitch {
   siguientePaso: string;
   nivelGlobal: VincereNivel;
   generadoEn: string;
+}
+
+// --- Predicciones ---
+// La debilidad de fondo de todo el sistema: las lecturas son juicios en prosa,
+// y si una recomendación falla siempre se puede decir que la ejecución estuvo
+// mal. Sin marcador, nada es falsable y todo suena convincente.
+//
+// Esto lo cierra. Se registra qué se espera que pase y para cuándo, y después
+// se contrasta contra lo que ocurrió.
+//
+// Hay un segundo uso, menos obvio y más valioso: los niveles de evidencia los
+// asigna el mismo modelo que hace la afirmación — un examen autocorregido.
+// Guardando el nivel que tenía cada predicción al emitirse se puede comprobar
+// si el nivel 4 acierta más que el 2. Si no, esos niveles son decoración, y
+// conviene saberlo con números en vez de suponerlo.
+
+export type VincereEstadoPrediccion = "abierta" | "acertada" | "fallada" | "parcial" | "no-verificable";
+
+export const VINCERE_ESTADO_PREDICCION_LABEL: Record<VincereEstadoPrediccion, string> = {
+  abierta: "Abierta",
+  acertada: "Acertada",
+  fallada: "Fallada",
+  parcial: "Parcial",
+  "no-verificable": "No verificable",
+};
+
+export const VINCERE_ESTADO_PREDICCION_COLOR: Record<VincereEstadoPrediccion, string> = {
+  abierta: "#a39c92",
+  acertada: "#5cc98e",
+  fallada: "#e0483a",
+  parcial: "#e0a83a",
+  "no-verificable": "#6b645c",
+};
+
+export interface VincerePrediccion {
+  id: string;
+  motor: VincereSeccion | null; // De qué lectura salió, si salió de una.
+  afirmacion: string;
+  // Sin esto no es una predicción, es una opinión con fecha. Se exige al
+  // crearla: qué habría que observar para decir que falló.
+  comoSeVerifica: string;
+  venceEn: string; // YYYY-MM-DD
+  // El nivel que el sistema se auto-asignó al emitirla. Es lo que permite
+  // auditar después si esos niveles significan algo.
+  nivelAlEmitir: VincereNivel;
+  estado: VincereEstadoPrediccion;
+  queOcurrio: string | null;
+  verificadoEn: string | null;
+  creadoEn: string;
+}
+
+export interface CalibracionNivel {
+  nivel: VincereNivel;
+  cerradas: number;
+  acertadas: number;
+  pct: number | null;
+}
+
+export interface MarcadorPredicciones {
+  abiertas: number;
+  vencidas: number; // Abiertas cuyo plazo ya pasó: son las que hay que cerrar.
+  cerradas: number;
+  acertadas: number;
+  falladas: number;
+  parciales: number;
+  noVerificables: number;
+  // Solo cuenta acertadas y falladas: las parciales y las no verificables
+  // ensuciarían el número, y un marcador que se infla a sí mismo no sirve.
+  pctAcierto: number | null;
+  calibracion: CalibracionNivel[];
+  // ¿Los niveles altos aciertan más que los bajos? Es la pregunta que audita
+  // el diferencial del sistema. null mientras no haya datos suficientes.
+  nivelesSirven: boolean | null;
+}
+
+const HOY = () => new Date().toISOString().slice(0, 10);
+
+export function calcularMarcador(preds: VincerePrediccion[]): MarcadorPredicciones {
+  const hoy = HOY();
+  const abiertas = preds.filter((p) => p.estado === "abierta");
+  const cerradas = preds.filter((p) => p.estado !== "abierta");
+  const acertadas = cerradas.filter((p) => p.estado === "acertada").length;
+  const falladas = cerradas.filter((p) => p.estado === "fallada").length;
+  const decisivas = acertadas + falladas;
+
+  const calibracion: CalibracionNivel[] = ([1, 2, 3, 4] as VincereNivel[]).map((nivel) => {
+    const delNivel = cerradas.filter(
+      (p) => p.nivelAlEmitir === nivel && (p.estado === "acertada" || p.estado === "fallada")
+    );
+    const ok = delNivel.filter((p) => p.estado === "acertada").length;
+    return {
+      nivel,
+      cerradas: delNivel.length,
+      acertadas: ok,
+      pct: delNivel.length > 0 ? Math.round((ok / delNivel.length) * 100) : null,
+    };
+  });
+
+  // Se compara el bloque alto (3-4) contra el bajo (1-2). Hace falta un mínimo
+  // de casos en ambos: con dos predicciones no se concluye nada.
+  const alto = calibracion.filter((c) => c.nivel >= 3).reduce(
+    (a, c) => ({ n: a.n + c.cerradas, ok: a.ok + c.acertadas }),
+    { n: 0, ok: 0 }
+  );
+  const bajo = calibracion.filter((c) => c.nivel <= 2).reduce(
+    (a, c) => ({ n: a.n + c.cerradas, ok: a.ok + c.acertadas }),
+    { n: 0, ok: 0 }
+  );
+  const nivelesSirven =
+    alto.n >= 3 && bajo.n >= 3 ? alto.ok / alto.n > bajo.ok / bajo.n : null;
+
+  return {
+    abiertas: abiertas.length,
+    vencidas: abiertas.filter((p) => p.venceEn <= hoy).length,
+    cerradas: cerradas.length,
+    acertadas,
+    falladas,
+    parciales: cerradas.filter((p) => p.estado === "parcial").length,
+    noVerificables: cerradas.filter((p) => p.estado === "no-verificable").length,
+    pctAcierto: decisivas > 0 ? Math.round((acertadas / decisivas) * 100) : null,
+    calibracion,
+    nivelesSirven,
+  };
 }
 
 // --- Monetización ---
@@ -1002,6 +1127,7 @@ export interface VincereProyecto {
   candidatos?: VincereCandidato[];
   arDiagnostico?: VincereARDiagnostico | null;
   vinculo?: VincereVinculo | null;
+  predicciones?: VincerePrediccion[];
   ingresos?: VincereIngreso[];
   monetizacionDiagnostico?: VincereMonetizacionDiagnostico | null;
   oportunidad?: VincereOportunidad | null;
@@ -1021,6 +1147,31 @@ export interface VincereProyecto {
   creadoEn: string;
 }
 
+export type VincereCantidadData = "baja" | "media" | "alta";
+
+export const VINCERE_CANTIDAD_DATA_LABEL: Record<VincereCantidadData, string> = {
+  baja: "Baja",
+  media: "Media",
+  alta: "Alta",
+};
+
+export const VINCERE_CANTIDAD_DATA_DESC: Record<VincereCantidadData, string> = {
+  baja: "Menos de 3 meses de historial, o solo cifras sueltas. El veredicto no puede pasar de nivel 2.",
+  media: "3 a 6 meses de historial con métricas por canción y algo de audiencia. Permite leer tendencia, no ciclo.",
+  alta: "6 meses o más, con catálogo, audiencia por país, plazas y algún show o liquidación. Aquí sí se puede afirmar.",
+};
+
+// Qué data mueve realmente la aguja, en orden de impacto. Se muestra en el
+// Triage porque es el momento en que se decide qué pedir — después es tarde.
+export const VINCERE_DATA_QUE_SIRVE: string[] = [
+  "Streams y oyentes mensuales de los últimos 6 meses, no solo el número de hoy: una foto no muestra tendencia.",
+  "Métricas por canción: retención, skip rate y playlist adds. Es lo que distingue un catálogo que funciona de uno que solo acumula.",
+  "Audiencia por país y ciudad, para saber dónde hay algo que reforzar.",
+  "Shows anteriores con aforo y, si se sabe, cuánta gente entró. Es la única prueba de que la audiencia paga.",
+  "Liquidaciones de la distribuidora, aunque sean de un trimestre: sin ellas no se puede decir de qué vive.",
+  "La letra de las canciones que importan, para leerlas como obra y no como fila de números.",
+];
+
 export interface VincereTriageCaso {
   id: string;
   nombre: string;
@@ -1031,6 +1182,10 @@ export interface VincereTriageCaso {
   prioridad: "Alta" | "Media" | "Baja" | null;
   motorRecomendado: string | null;
   nivel: VincereNivel | null;
+  // Cuánta data hay realmente sobre este caso. Lo declara Eduardo, y limita
+  // cuánto puede concluir el análisis: con data baja, un veredicto de alta
+  // evidencia sería falso por construcción.
+  dataDisponible: VincereCantidadData | null;
   // Propuesta de encuadre comercial desde el primer contacto. Es una sugerencia
   // para confirmar, no un acuerdo: por eso vive en el caso de triage y no en un
   // vínculo, que solo existe cuando el proyecto entra al sistema.

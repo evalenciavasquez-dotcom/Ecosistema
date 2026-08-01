@@ -37,7 +37,9 @@ export const triageResponseSchema = z.object({
     .min(0)
     .max(60)
     .describe("Horas por semana que este caso probablemente consuma, aproximado. Es la variable que decide si entra o no aunque el caso sea bueno: sé realista, no optimista"),
-  nivel: nivelSchema,
+  nivel: nivelSchema.describe(
+    "Confianza del veredicto. Está ACOTADO por la cantidad de data declarada: con data 'baja' no puede pasar de 2, con 'media' no puede pasar de 3. Un veredicto de alta evidencia sobre un caso del que casi no se sabe nada es falso por construcción"
+  ),
 });
 
 export const songAnalysisResponseSchema = z.object({
