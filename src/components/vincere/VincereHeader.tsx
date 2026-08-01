@@ -113,7 +113,7 @@ export default function VincereHeader() {
           {registering ? "Registrando…" : "Registrar en Notion"}
         </button>
 
-        <Link href="/" className="vin-faint px-2 text-xs hover:underline" title="Volver a C.C.O. E.V.">
+        <Link href="/inicio" className="vin-faint px-2 text-xs hover:underline" title="Volver a C.C.O. E.V.">
           ← C.C.O.
         </Link>
       </div>

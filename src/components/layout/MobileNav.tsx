@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnalysisPanelBody } from "./AIPanel";
 
 const TABS = [
-  { code: "IN", label: "Inicio", href: "/" },
+  { code: "IN", label: "Inicio", href: "/inicio" },
   { code: "BA", label: "Bandeja", href: "/bandeja" },
   { code: "PR", label: "Proyectos", href: "/proyectos" },
   { code: "DE", label: "Decisiones", href: "/decisiones" },
@@ -35,7 +35,7 @@ export default function MobileNav() {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {TABS.map((tab) => {
-          const active = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
+          const active = pathname.startsWith(tab.href);
           return (
             <Link
               key={tab.href}
