@@ -10,6 +10,7 @@ import {
   evidencias,
   goals,
   historial,
+  interrogatorios,
   metasFinancieras,
   movimientos,
   personas,
@@ -63,14 +64,15 @@ export async function GET() {
       db.select().from(strategicCases).orderBy(desc(strategicCases.creadoEn)),
     ]);
 
-    // Las tablas de tiempo, metas financieras, cierres mensuales y goals
-    // llegaron después del esquema inicial: si aún no existen en esta base,
-    // no deben tumbar todo el estado.
-    const [tiempoRows, metasFinancierasRows, cierresMensualesRows, goalsRows] = await Promise.all([
+    // Las tablas de tiempo, metas financieras, cierres mensuales, goals e
+    // interrogatorios llegaron después del esquema inicial: si aún no existen
+    // en esta base, no deben tumbar todo el estado.
+    const [tiempoRows, metasFinancierasRows, cierresMensualesRows, goalsRows, interrogatoriosRows] = await Promise.all([
       db.select().from(tiempo).orderBy(desc(tiempo.fecha)).catch(() => []),
       db.select().from(metasFinancieras).orderBy(desc(metasFinancieras.creadoEn)).catch(() => []),
       db.select().from(cierresMensuales).orderBy(desc(cierresMensuales.creadoEn)).catch(() => []),
       db.select().from(goals).orderBy(desc(goals.creadoEn)).catch(() => []),
+      db.select().from(interrogatorios).orderBy(desc(interrogatorios.creadoEn)).catch(() => []),
     ]);
 
     return NextResponse.json({
@@ -89,6 +91,7 @@ export async function GET() {
       metasFinancieras: metasFinancierasRows,
       cierresMensuales: cierresMensualesRows,
       goals: goalsRows,
+      interrogatorios: interrogatoriosRows,
     });
   } catch (err) {
     console.error("Error leyendo estado desde la base de datos", err);

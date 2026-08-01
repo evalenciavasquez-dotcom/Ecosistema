@@ -10,11 +10,15 @@ import {
   ESCENARIO_DESCRIPCION,
   ESCENARIO_LABEL,
   EscenarioTipo,
+  Interrogatorio,
   NivelRiesgo,
   StrategicCase,
+  TipoPreguntaInterrogatorio,
+  TurnoInterrogatorio,
 } from "@/lib/types";
 import { buildAnalysisContext, proyectoNombre } from "@/lib/selectors";
 import { useOpenParam } from "@/lib/useOpenParam";
+import { genId } from "@/lib/id";
 
 const ESCENARIO_ORDEN: EscenarioTipo[] = [
   "avanzar",
@@ -120,9 +124,11 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
   const resolverDecision = useAppStore((s) => s.resolverDecision);
   const updateDecision = useAppStore((s) => s.updateDecision);
   const updateStrategicCase = useAppStore((s) => s.updateStrategicCase);
+  const interrogatorios = useAppStore((s) => s.interrogatorios).filter((i) => i.decisionId === decision.id);
   const [respuesta, setRespuesta] = useState(decision.decisionFinal);
   const [analizando, setAnalizando] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState("");
+  const [cuestionando, setCuestionando] = useState(false);
 
   const strategicCase = strategicCases.find((c) => c.decisionId === decision.id) ?? null;
 
@@ -204,6 +210,34 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
         </button>
       </div>
       {errorAnalisis && <p className="text-xs text-accent-red">{errorAnalisis}</p>}
+
+      <div className="rounded-xl border border-border-subtle bg-surface p-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium">Cuestionar esta decisión</div>
+          <div className="text-xs text-muted mt-0.5">
+            Preguntas directas — contraste, confrontación, consistencia con tu historial — hasta que algo quede
+            genuinamente claro. Máximo 5.
+          </div>
+        </div>
+        <button
+          onClick={() => setCuestionando(true)}
+          className="rounded-full border border-accent-blue text-accent-blue text-sm font-medium px-4 py-2 shrink-0"
+        >
+          Cuestionar
+        </button>
+      </div>
+
+      {interrogatorios.length > 0 && <InterrogatoriosAnteriores interrogatorios={interrogatorios} />}
+
+      {cuestionando && (
+        <InterrogatorioModal
+          decision={decision}
+          proyectoNombre={proyectoNombre(proyectos, decision.proyectoId)}
+          historial={historial}
+          otrasDecisiones={decisiones.filter((d) => d.id !== decision.id && d.proyectoId === decision.proyectoId)}
+          onClose={() => setCuestionando(false)}
+        />
+      )}
 
       {strategicCase ? (
         <StrategicCaseView strategicCase={strategicCase} decision={decision} />
@@ -349,6 +383,230 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const TIPO_LABEL: Record<TipoPreguntaInterrogatorio, string> = {
+  contraste: "Contraste",
+  confrontativa: "Confrontación",
+  consistencia: "Consistencia",
+  psicologica: "Psicológica",
+  aceptacion: "Aceptación",
+  cierre: "Cierre",
+};
+
+const TIPO_TONE: Record<TipoPreguntaInterrogatorio, "red" | "amber" | "blue" | "purple" | "green" | "teal"> = {
+  contraste: "blue",
+  confrontativa: "red",
+  consistencia: "amber",
+  psicologica: "purple",
+  aceptacion: "green",
+  cierre: "teal",
+};
+
+function InterrogatoriosAnteriores({ interrogatorios }: { interrogatorios: Interrogatorio[] }) {
+  const [abiertoId, setAbiertoId] = useState<string | null>(null);
+  return (
+    <div className="rounded-xl border border-border-subtle bg-surface p-4 space-y-2">
+      <div className="text-[11px] uppercase tracking-wide text-muted">Cuestionamientos anteriores</div>
+      {interrogatorios.map((i) => {
+        const primeraPregunta = i.turnos.find((t) => t.rol === "sistema");
+        const abierto = abiertoId === i.id;
+        return (
+          <div key={i.id} className="rounded-lg bg-surface-2 p-3">
+            <button onClick={() => setAbiertoId(abierto ? null : i.id)} className="w-full text-left">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted">
+                  {new Date(i.creadoEn).toLocaleDateString("es-ES")} · {i.estado === "cerrado" ? "Cerrado" : "En curso"}
+                </span>
+                <span className="text-xs text-accent-blue">{abierto ? "Ocultar" : "Ver"}</span>
+              </div>
+              {!abierto && primeraPregunta && <p className="text-sm mt-1 truncate">{primeraPregunta.texto}</p>}
+            </button>
+            {abierto && (
+              <div className="space-y-2 mt-2">
+                {i.turnos.map((t, idx) => (
+                  <div key={idx} className={t.rol === "sistema" ? "" : "pl-4"}>
+                    {t.rol === "sistema" && t.tipo && (
+                      <Pill tone={TIPO_TONE[t.tipo]}>{TIPO_LABEL[t.tipo]}</Pill>
+                    )}
+                    <p className={`text-sm mt-1 ${t.rol === "usuario" ? "text-muted" : ""}`}>{t.texto}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function InterrogatorioModal({
+  decision,
+  proyectoNombre,
+  historial,
+  otrasDecisiones,
+  onClose,
+}: {
+  decision: Decision;
+  proyectoNombre: string;
+  historial: { entidadId: string; cambio: string }[];
+  otrasDecisiones: Decision[];
+  onClose: () => void;
+}) {
+  const guardarInterrogatorio = useAppStore((s) => s.guardarInterrogatorio);
+  const [sessionId] = useState(() => genId("interr"));
+  const [turnos, setTurnos] = useState<TurnoInterrogatorio[]>([]);
+  const [respuesta, setRespuesta] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+  const [cerrado, setCerrado] = useState(false);
+  const preguntasHechas = turnos.filter((t) => t.rol === "sistema").length;
+
+  const ctx = {
+    decision: {
+      pregunta: decision.pregunta,
+      contexto: decision.contexto,
+      nivelRiesgo: decision.nivelRiesgo,
+      fechaLimite: decision.fechaLimite,
+      opciones: decision.opciones,
+      decisionFinal: decision.decisionFinal,
+      condiciones: decision.condiciones,
+      resultadoPosterior: decision.resultadoPosterior,
+    },
+    proyectoNombre: proyectoNombre || null,
+    historialRelacionado: historial
+      .filter((h) => h.entidadId === decision.proyectoId || h.entidadId === decision.id)
+      .slice(0, 10)
+      .map((h) => h.cambio),
+    otrasDecisiones: otrasDecisiones.map((d) => ({
+      pregunta: d.pregunta,
+      estado: d.estado,
+      resultadoPosterior: d.resultadoPosterior,
+    })),
+  };
+
+  async function pedirSiguienteTurno(turnosActuales: TurnoInterrogatorio[]) {
+    setCargando(true);
+    setError("");
+    try {
+      const res = await fetch("/api/cuestionar-decision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ctx, turnos: turnosActuales }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error ?? "No se pudo generar la siguiente pregunta");
+        return;
+      }
+      const nuevoTurno: TurnoInterrogatorio = { rol: "sistema", texto: body.turno.texto, tipo: body.turno.tipo };
+      const actualizados = [...turnosActuales, nuevoTurno];
+      setTurnos(actualizados);
+      const estaCerrado = body.turno.cerrar === true;
+      setCerrado(estaCerrado);
+      guardarInterrogatorio(sessionId, decision.id, actualizados, estaCerrado ? "cerrado" : "en_curso");
+    } catch {
+      setError("Error de conexión al generar la pregunta");
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  useEffect(() => {
+    const t = setTimeout(() => pedirSiguienteTurno([]), 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleResponder(e: React.FormEvent) {
+    e.preventDefault();
+    if (!respuesta.trim() || cargando || cerrado) return;
+    const actualizados: TurnoInterrogatorio[] = [...turnos, { rol: "usuario", texto: respuesta.trim() }];
+    setTurnos(actualizados);
+    guardarInterrogatorio(sessionId, decision.id, actualizados, "en_curso");
+    setRespuesta("");
+    pedirSiguienteTurno(actualizados);
+  }
+
+  function handleTerminarAqui() {
+    guardarInterrogatorio(sessionId, decision.id, turnos, "cerrado");
+    setCerrado(true);
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
+      <div className="w-full max-w-lg rounded-2xl border border-border-subtle bg-surface-2 flex flex-col max-h-[85vh]">
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-border-subtle">
+          <div>
+            <h3 className="font-semibold text-sm">Cuestionar esta decisión</h3>
+            <p className="text-[11px] text-muted mt-0.5">
+              Pregunta {Math.min(preguntasHechas + (cerrado ? 0 : 1), 5)} de máximo 5
+            </p>
+          </div>
+          <button onClick={onClose} className="text-muted text-sm" aria-label="Cerrar">
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {turnos.map((t, idx) => (
+            <div key={idx} className={t.rol === "usuario" ? "flex justify-end" : ""}>
+              <div
+                className={`max-w-[85%] rounded-xl p-3 ${
+                  t.rol === "usuario" ? "bg-accent-blue text-white" : "bg-surface"
+                }`}
+              >
+                {t.rol === "sistema" && t.tipo && (
+                  <div className="mb-1.5">
+                    <Pill tone={TIPO_TONE[t.tipo]}>{TIPO_LABEL[t.tipo]}</Pill>
+                  </div>
+                )}
+                <p className="text-sm leading-relaxed">{t.texto}</p>
+              </div>
+            </div>
+          ))}
+          {cargando && <p className="text-xs text-muted">Pensando…</p>}
+          {error && <p className="text-xs text-accent-red">{error}</p>}
+          {cerrado && !cargando && (
+            <p className="text-xs text-accent-green text-center pt-1">Sesión cerrada.</p>
+          )}
+        </div>
+
+        {!cerrado && (
+          <form onSubmit={handleResponder} className="flex items-center gap-2 p-4 border-t border-border-subtle">
+            <input
+              autoFocus
+              value={respuesta}
+              onChange={(e) => setRespuesta(e.target.value)}
+              disabled={cargando}
+              placeholder="Escribí tu respuesta…"
+              className="flex-1 rounded-lg bg-surface border border-border-subtle px-3 py-2 text-sm outline-none focus:border-accent-blue disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={cargando || !respuesta.trim()}
+              className="rounded-full bg-accent-blue text-white text-sm font-medium px-4 py-2 disabled:opacity-50 shrink-0"
+            >
+              Enviar
+            </button>
+          </form>
+        )}
+
+        <div className="flex justify-end p-3 pt-0">
+          {!cerrado ? (
+            <button onClick={handleTerminarAqui} className="text-xs text-muted hover:text-foreground">
+              Terminar aquí
+            </button>
+          ) : (
+            <button onClick={onClose} className="text-xs text-accent-blue">
+              Cerrar
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

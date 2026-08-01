@@ -184,6 +184,13 @@ const STATEMENTS = [
     completado_en text,
     criterio_auto jsonb
   )`,
+  `CREATE TABLE IF NOT EXISTS interrogatorios (
+    id text PRIMARY KEY,
+    decision_id text NOT NULL,
+    turnos jsonb NOT NULL,
+    estado text NOT NULL,
+    creado_en text NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS strategic_cases (
     id text PRIMARY KEY,
     decision_id text NOT NULL,

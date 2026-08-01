@@ -33,6 +33,7 @@ export interface ServerState {
   metasFinancieras?: unknown[];
   cierresMensuales?: unknown[];
   goals?: unknown[];
+  interrogatorios?: unknown[];
 }
 
 export interface MigrationResult {

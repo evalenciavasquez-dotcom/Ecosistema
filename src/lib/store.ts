@@ -35,12 +35,14 @@ import {
   Evidencia,
   Goal,
   HistorialEntry,
+  Interrogatorio,
   MetaFinanciera,
   MovimientoEconomico,
   Persona,
   Proyecto,
   RegistroTiempo,
   StrategicCase,
+  TurnoInterrogatorio,
 } from "./types";
 import { classifyText } from "./classifier";
 import { genId, pickKeys } from "./id";
@@ -78,6 +80,14 @@ interface AppState {
   deleteGoal: (id: string) => void;
   buscandoRetos: boolean;
   buscarMasRetos: () => Promise<{ ok: boolean; error?: string }>;
+
+  interrogatorios: Interrogatorio[];
+  guardarInterrogatorio: (
+    id: string,
+    decisionId: string,
+    turnos: TurnoInterrogatorio[],
+    estado: "en_curso" | "cerrado"
+  ) => void;
 
   // Cronómetro de trabajo: uno activo a la vez, local a este dispositivo.
   timerActivo: { proyectoId: string; inicio: string } | null;
@@ -171,6 +181,7 @@ function seedState() {
     generandoCierreMensual: false,
     goals: [] as Goal[],
     buscandoRetos: false,
+    interrogatorios: [] as Interrogatorio[],
     timerActivo: null as { proyectoId: string; inicio: string } | null,
   };
 }
@@ -294,6 +305,20 @@ export const useAppStore = create<AppState>()(
           return { ok: false, error: "No se pudo conectar con el servidor" };
         } finally {
           set({ buscandoRetos: false });
+        }
+      },
+
+      guardarInterrogatorio: (id, decisionId, turnos, estado) => {
+        const existente = get().interrogatorios.find((i) => i.id === id);
+        if (existente) {
+          set((state) => ({
+            interrogatorios: state.interrogatorios.map((i) => (i.id === id ? { ...i, turnos, estado } : i)),
+          }));
+          dbMutate("interrogatorios", "update", id, { turnos, estado });
+        } else {
+          const nuevo: Interrogatorio = { id, decisionId, turnos, estado, creadoEn: new Date().toISOString() };
+          set((state) => ({ interrogatorios: [nuevo, ...state.interrogatorios] }));
+          dbMutate("interrogatorios", "insert", undefined, nuevo);
         }
       },
 
@@ -910,6 +935,7 @@ export const useAppStore = create<AppState>()(
           metasFinancieras: [],
           cierresMensuales: [],
           goals: [],
+          interrogatorios: [],
           timerActivo: null,
         }),
 
@@ -958,6 +984,7 @@ export const useAppStore = create<AppState>()(
           metasFinancieras: (server.metasFinancieras ?? []) as MetaFinanciera[],
           cierresMensuales: (server.cierresMensuales ?? []) as CierreMensual[],
           goals: (server.goals ?? []) as Goal[],
+          interrogatorios: (server.interrogatorios ?? []) as Interrogatorio[],
         });
       },
 

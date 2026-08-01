@@ -165,6 +165,32 @@ export interface Decision {
   fechaDecision?: string | null;
 }
 
+// --- Interrogatorio socrático en decisiones ---
+// Chat corto con la IA que presiona con preguntas de 6 tipos distintos hasta
+// que hay algo genuinamente claro — nunca preguntas por preguntar.
+
+export type TipoPreguntaInterrogatorio =
+  | "contraste"
+  | "confrontativa"
+  | "consistencia"
+  | "psicologica"
+  | "aceptacion"
+  | "cierre";
+
+export interface TurnoInterrogatorio {
+  rol: "sistema" | "usuario";
+  texto: string;
+  tipo?: TipoPreguntaInterrogatorio; // solo en turnos del sistema
+}
+
+export interface Interrogatorio {
+  id: string;
+  decisionId: string;
+  turnos: TurnoInterrogatorio[];
+  estado: "en_curso" | "cerrado";
+  creadoEn: string;
+}
+
 export type MovimientoTipo = "ingreso" | "gasto";
 export type MovimientoEstado = "confirmado" | "esperado" | "sin_conciliar";
 
