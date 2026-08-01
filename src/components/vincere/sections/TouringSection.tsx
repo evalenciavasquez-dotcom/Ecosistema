@@ -11,6 +11,7 @@ import {
 import { useVincereStore } from "@/lib/vincere/store";
 import { fetchTouring } from "@/lib/vincere/ai-client";
 import { buildTouringContext } from "@/lib/vincere/context";
+import { monedaDe } from "@/lib/vincere/dinero";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
@@ -85,7 +86,14 @@ export default function TouringSection({ proyecto }: { proyecto: VincereProyecto
           para verte; una sala agotada sí.
         </p>
 
-        {agregando && <FormularioShow proyectoId={proyecto.id} onAdd={addShow} onListo={() => setAgregando(false)} />}
+        {agregando && (
+          <FormularioShow
+            proyectoId={proyecto.id}
+            monedaProyecto={monedaDe(proyecto)}
+            onAdd={addShow}
+            onListo={() => setAgregando(false)}
+          />
+        )}
 
         {shows.length === 0 && !agregando && (
           <Panel>
@@ -139,10 +147,12 @@ export default function TouringSection({ proyecto }: { proyecto: VincereProyecto
 
 function FormularioShow({
   proyectoId,
+  monedaProyecto,
   onAdd,
   onListo,
 }: {
   proyectoId: string;
+  monedaProyecto: string;
   onAdd: (id: string, show: Omit<VincereShow, "id">) => void;
   onListo: () => void;
 }) {
@@ -153,7 +163,7 @@ function FormularioShow({
     aforo: "",
     asistencia: "",
     ingresoNeto: "",
-    moneda: "MXN",
+    moneda: monedaProyecto,
     nota: "",
   });
 
@@ -168,7 +178,7 @@ function FormularioShow({
       aforo: Number(f.aforo) || 0,
       asistencia: Number(f.asistencia) || 0,
       ingresoNeto: f.ingresoNeto ? Number(f.ingresoNeto) : null,
-      moneda: f.moneda.trim() || "MXN",
+      moneda: f.moneda.trim() || monedaProyecto,
       nota: f.nota.trim(),
     });
     onListo();

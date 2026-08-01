@@ -55,6 +55,13 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   manual: "Documentación",
 };
 
+// Moneda base del proyecto. Cada artista puede operar en la suya: un colombiano
+// cobra shows en COP y liquidaciones en USD, y forzar una sola moneda a todo el
+// sistema obliga a convertir de cabeza o a cargar cifras que no significan nada.
+export const VINCERE_MONEDA_POR_DEFECTO = "COP";
+
+export const VINCERE_MONEDAS_SUGERIDAS = ["COP", "USD", "MXN", "EUR", "ARS", "CLP", "PEN"] as const;
+
 export type VincereProyectoTipo = "propio" | "competencia";
 export type VincereFase = "Emergente" | "Emergente → Consolidación" | "Consolidación" | "Establecido";
 
@@ -565,7 +572,7 @@ export function vinculoVacio(): VincereVinculo {
     confirmado: false,
     participacionPct: null,
     tarifa: null,
-    moneda: "MXN",
+    moneda: VINCERE_MONEDA_POR_DEFECTO,
     periodicidad: "mensual",
     horasSemanales: null,
     notas: "",
@@ -946,6 +953,9 @@ export interface VincereProyecto {
   genero: string;
   fase: VincereFase;
   tipo: VincereProyectoTipo;
+  // Opcional por compatibilidad: los proyectos guardados antes de que esto
+  // existiera caen a VINCERE_MONEDA_POR_DEFECTO en vez de romperse.
+  moneda?: string;
   resumen: VincereResumen;
   diagnostico: VincereDiagnostico;
   marca?: VincereMarca | null;

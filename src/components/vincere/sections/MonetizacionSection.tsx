@@ -11,7 +11,8 @@ import {
 import { useVincereStore } from "@/lib/vincere/store";
 import { fetchMonetizacion } from "@/lib/vincere/ai-client";
 import { buildMonetizacionContext } from "@/lib/vincere/context";
-import { calcularLoMio, resumirDinero } from "@/lib/vincere/dinero";
+import { calcularLoMio, monedaDe, resumirDinero } from "@/lib/vincere/dinero";
+import MonedaSelector from "../MonedaSelector";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
@@ -65,7 +66,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
     }
   }
 
-  const moneda = resumen.monedaPrincipal ?? "MXN";
+  const moneda = resumen.monedaPrincipal ?? monedaDe(proyecto);
 
   return (
     <SectionShell
@@ -76,6 +77,8 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
       subtitle="La atención se va a donde se ven los números. El dinero suele entrar por otro lado. Aquí están los dos juntos por primera vez."
       aiTitle="Lectura VINCERE — Monetización"
     >
+      <MonedaSelector proyecto={proyecto} />
+
       {/* VISTA 1 — lo que entra */}
       {resumen.ingresos.length > 0 && (
         <section>
@@ -341,7 +344,7 @@ function FormularioIngreso({
             onAdd({
               tipo: f.tipo,
               monto: Number(f.monto),
-              moneda: f.moneda.trim() || "MXN",
+              moneda: f.moneda.trim() || monedaSugerida,
               periodo: f.periodo,
               nota: f.nota.trim(),
             })
