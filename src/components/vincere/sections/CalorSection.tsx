@@ -37,7 +37,7 @@ export default function CalorSection({ proyecto }: { proyecto: VincereProyecto }
       seccion="calor"
       eyebrow="Zonas de Calor"
       title="Dónde hay demanda"
-      subtitle="El calor mide escucha activa, no entradas vendidas. Sirve para dos cosas: saber dónde reforzar, y tener con qué convencer a un empresario de la plaza de que ahí hay público esperando."
+      subtitle="Las ciudades salen de Spotify for Artists o Chartmetric; la lectura es nuestra. El calor mide escucha activa, no entradas vendidas, y sirve para dos cosas: saber dónde reforzar, y tener con qué convencer a un empresario de la plaza de que ahí hay público esperando."
       aiTitle="Lectura VINCERE — Zonas de Calor"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -102,8 +102,11 @@ export default function CalorSection({ proyecto }: { proyecto: VincereProyecto }
                       </button>
                     </>
                   ) : (
-                    <span className="vin-serif text-lg tabular-nums" style={{ color }}>
-                      {z.calor}%
+                    <span className="tabular-nums">
+                      <span className="vin-serif text-lg" style={{ color }}>
+                        {z.calor}
+                      </span>
+                      <span className="vin-faint text-[11px]"> / 100</span>
                     </span>
                   )}
                 </div>
@@ -152,6 +155,13 @@ export default function CalorSection({ proyecto }: { proyecto: VincereProyecto }
 
       <Panel>
         <PanelLabel>Cómo leer la escala</PanelLabel>
+        {/* No es un porcentaje de oyentes: es intensidad relativa a la propia
+            ciudad más fuerte. Decirlo evita que el número se lea como algo que
+            no es, sobre todo si la pantalla se le muestra a un tercero. */}
+        <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          No es un porcentaje de tus oyentes. Es intensidad de 0 a 100 relativa a tu ciudad más fuerte, que vale 100.
+          Cuando la data entra desde un archivo, el sistema normaliza así lo que reporten Spotify o Chartmetric.
+        </p>
         <div className="space-y-2">
           {TEMPERATURAS.map((t) => (
             <div key={t} className="flex gap-2.5">
@@ -162,7 +172,7 @@ export default function CalorSection({ proyecto }: { proyecto: VincereProyecto }
               <p className="text-[13px] leading-relaxed">
                 <span style={{ color: VINCERE_TEMPERATURA_COLOR[t] }}>
                   {VINCERE_TEMPERATURA_LABEL[t]}
-                  {t === "caliente" ? " (70-100%)" : t === "medio" ? " (40-69%)" : " (0-39%)"}
+                  {t === "caliente" ? " (70-100)" : t === "medio" ? " (40-69)" : " (0-39)"}
                 </span>
                 {" — "}
                 <span className="vin-muted">{VINCERE_TEMPERATURA_LECTURA[t]}</span>
