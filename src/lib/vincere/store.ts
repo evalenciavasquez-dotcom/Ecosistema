@@ -89,7 +89,7 @@ interface VincereState {
   addProyecto: (input: { nombre: string; genero: string; fase: VincereFase; tipo: VincereProyectoTipo }) => string;
   updateProyectoMeta: (
     id: string,
-    patch: Partial<Pick<VincereProyecto, "nombre" | "genero" | "fase" | "tipo">>
+    patch: Partial<Pick<VincereProyecto, "nombre" | "genero" | "fase" | "tipo" | "moneda">>
   ) => void;
   deleteProyecto: (id: string) => void;
 

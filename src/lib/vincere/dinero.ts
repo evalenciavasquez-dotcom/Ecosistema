@@ -3,7 +3,14 @@ import {
   VincereIngreso,
   VincereProyecto,
   VincereVinculo,
+  VINCERE_MONEDA_POR_DEFECTO,
 } from "./types";
+
+// Moneda base del proyecto, con respaldo para los guardados antes de que el
+// campo existiera.
+export function monedaDe(p: VincereProyecto): string {
+  return p.moneda?.trim() || VINCERE_MONEDA_POR_DEFECTO;
+}
 
 // Cálculos de dinero. Viven acá y no en el prompt a propósito: sumar, dividir y
 // sacar porcentajes son operaciones exactas, y un modelo de lenguaje las falla
@@ -59,7 +66,7 @@ export function ingresosDeShows(p: VincereProyecto): VincereIngreso[] {
       id: `show-${s.id}`,
       tipo: "shows" as const,
       monto: s.ingresoNeto as number,
-      moneda: s.moneda || "MXN",
+      moneda: s.moneda || monedaDe(p),
       periodo: s.fecha.slice(0, 7),
       nota: `${s.sala || "Show"} en ${s.ciudad}`,
     }));
@@ -69,9 +76,10 @@ export function resumirDinero(p: VincereProyecto): ResumenDinero {
   const manuales = (p.ingresos ?? []).filter((i) => i.monto > 0);
   const ingresos = [...manuales, ...ingresosDeShows(p)];
 
+  const base = monedaDe(p);
   const porMoneda = new Map<string, number>();
   for (const i of ingresos) {
-    const m = i.moneda || "MXN";
+    const m = i.moneda || base;
     porMoneda.set(m, (porMoneda.get(m) ?? 0) + i.monto);
   }
   const monedas: TotalPorMoneda[] = [...porMoneda.entries()]
@@ -82,7 +90,7 @@ export function resumirDinero(p: VincereProyecto): ResumenDinero {
   const totalPrincipal = monedas[0]?.total ?? 0;
   // Todo lo que sigue se calcula SOLO sobre la moneda principal. Mezclar
   // monedas en un porcentaje da un reparto falso.
-  const deLaPrincipal = ingresos.filter((i) => (i.moneda || "MXN") === monedaPrincipal);
+  const deLaPrincipal = ingresos.filter((i) => (i.moneda || base) === monedaPrincipal);
 
   const acumFuente = new Map<VincereFuenteTipo, number>();
   for (const i of deLaPrincipal) {
