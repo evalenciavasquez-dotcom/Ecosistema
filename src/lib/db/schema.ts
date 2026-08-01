@@ -12,6 +12,7 @@ import type {
   EscenarioProfundo,
   GananciaPerdida,
   GoalCriterioAuto,
+  TurnoInterrogatorio,
   HechoOHipotesis,
   MetricaFinanciera,
   RecomendacionEjecutiva,
@@ -252,6 +253,17 @@ export const goals = pgTable("goals", {
   criterioAuto: jsonb("criterio_auto").$type<GoalCriterioAuto | null>(),
 });
 
+// Interrogatorio socrático: una sesión de cuestionamiento por decisión (puede
+// haber varias en el tiempo). Los turnos completos van en un solo jsonb —
+// es un chat corto (tope de 5 preguntas), no necesita su propia tabla de turnos.
+export const interrogatorios = pgTable("interrogatorios", {
+  id: text("id").primaryKey(),
+  decisionId: text("decision_id").notNull(),
+  turnos: jsonb("turnos").$type<TurnoInterrogatorio[]>().notNull(),
+  estado: text("estado").notNull(),
+  creadoEn: text("creado_en").notNull(),
+});
+
 // Conexión OAuth con Google — una sola fila (id fijo "default"), no es
 // parte del modelo de dominio sincronizado con el cliente vía TABLES/mutate.
 // Se maneja directamente desde src/lib/google.ts.
@@ -302,6 +314,7 @@ export const TABLES = {
   metasFinancieras,
   cierresMensuales,
   goals,
+  interrogatorios,
   proyectos,
   personas,
   acciones,

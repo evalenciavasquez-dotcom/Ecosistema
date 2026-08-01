@@ -8,6 +8,7 @@ import {
   ensureGoalColumns,
   ensureGoalsTable,
   ensureGoogleSchema,
+  ensureInterrogatoriosTable,
   ensureMetasFinancierasTable,
   ensureProyectoColumns,
   ensureStrategicCaseColumns,
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       await ensureGoalsTable();
       await ensureGoalColumns();
     }
+    if (table === "interrogatorios") await ensureInterrogatoriosTable();
     switch (op) {
       case "insert": {
         if (!values) return NextResponse.json({ error: "Faltan 'values'" }, { status: 400 });

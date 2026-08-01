@@ -168,6 +168,21 @@ export async function ensureGoalColumns() {
   goalColumnsEnsured = true;
 }
 
+let interrogatoriosEnsured = false;
+export async function ensureInterrogatoriosTable() {
+  if (interrogatoriosEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS interrogatorios (
+      id text PRIMARY KEY,
+      decision_id text NOT NULL,
+      turnos jsonb NOT NULL,
+      estado text NOT NULL,
+      creado_en text NOT NULL
+    )`)
+  );
+  interrogatoriosEnsured = true;
+}
+
 let googleSchemaEnsured = false;
 export async function ensureGoogleSchema() {
   if (googleSchemaEnsured) return;
