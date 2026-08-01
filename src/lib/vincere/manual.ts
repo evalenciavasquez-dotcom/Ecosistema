@@ -207,6 +207,16 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Entender de qué vive el artista y qué te queda a ti",
+    pasos: [
+      "Monetización → «+ Registrar ingreso» por cada fuente y período. Los shows ya están: entran solos desde Touring.",
+      "Mira primero las dos cifras por mil streams. La primera es lo que paga el streaming; la segunda, lo que vale esa misma audiencia contando todo. La distancia entre ambas es la lectura completa.",
+      "Revisa el reparto por fuente. Si una sola pasa del 70%, el sistema lo avisa: el negocio depende de una pata.",
+      "«Lo tuyo» sale del vínculo que definiste en Oportunidad. Si el vínculo está sin confirmar aparece en ámbar, porque es un escenario y no un ingreso.",
+      "«Analizar monetización» devuelve por dónde más podría entrar — solo vías justificadas con la data de ESTE artista, no un catálogo genérico.",
+    ],
+  },
+  {
     tarea: "Definir qué eres en un proyecto y cuánto tiempo te cuesta",
     pasos: [
       "Oportunidad de Negocio → panel «Tu vínculo con este proyecto».",
@@ -515,6 +525,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Ejecución / KPIs",
     cuandoUsarlo: "Para ver si el trimestre va a cerrar en meta y si el gasto va al ritmo correcto.",
     queCargar: "Métrica, valor actual, meta y una nota de contexto.",
+  },
+  {
+    motor: "Monetización",
+    cuandoUsarlo: "Cuando llega la liquidación, al cerrar el mes, y cada vez que el streaming parezca la prioridad obvia.",
+    queCargar: "Los ingresos por fuente y período: streaming, merch, sync, publishing, marcas. Los shows entran solos desde Touring con su ingreso neto — no los cargues dos veces.",
   },
   {
     motor: "Pitch y Presentación",

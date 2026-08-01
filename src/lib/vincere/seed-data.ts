@@ -101,6 +101,17 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
       { id: "city-6", ciudad: "Buenos Aires", calor: 44 },
       { id: "city-7", ciudad: "Miami", calor: 39 },
     ],
+    // Ingresos con la brecha montada a propósito: 2,43M de streams al mes
+    // dejan unos 19.000 al mes, mientras UNA noche agotada de 350 personas
+    // dejó 41.000. Los shows entran solos desde Touring, así que acá van solo
+    // las fuentes que no vive ya el sistema.
+    ingresos: [
+      { id: "ing-1", tipo: "streaming", monto: 19400, moneda: "MXN", periodo: "2026-05", nota: "Liquidación distribuidora" },
+      { id: "ing-2", tipo: "streaming", monto: 17800, moneda: "MXN", periodo: "2026-04", nota: "Liquidación distribuidora" },
+      { id: "ing-3", tipo: "streaming", monto: 16200, moneda: "MXN", periodo: "2026-03", nota: "Liquidación distribuidora" },
+      { id: "ing-4", tipo: "merch", monto: 8900, moneda: "MXN", periodo: "2026-05", nota: "Vendido en el show de Guadalajara" },
+      { id: "ing-5", tipo: "sync", monto: 35000, moneda: "MXN", periodo: "2026-03", nota: "Bajo Cero en una serie local — pago único" },
+    ],
     // Vínculo de ejemplo: sociedad ya acordada, con horas comprometidas. Es lo
     // que permite que el panel de capacidad muestre algo desde la primera
     // corrida en vez de un cero.

@@ -12,6 +12,7 @@ import {
   VincereInvestigacionTipo,
   VincereMarcaDiagnostico,
   VincereModalidad,
+  VincereMonetizacionDiagnostico,
   VincereNivel,
   VincereOportunidad,
   VincerePitch,
@@ -298,6 +299,50 @@ const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
 const IMPACTOS = ["alto", "medio", "bajo"] as const;
 
 // Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchMonetizacion(input: {
+  artista: unknown;
+  nota?: string;
+}): Promise<VincereMonetizacionDiagnostico> {
+  const res = await fetch("/api/vincere/monetizacion", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  const ESFUERZOS = ["bajo", "medio", "alto"] as const;
+
+  return {
+    lecturaGeneral: r.lecturaGeneral ?? "",
+    brechaAtencionIngreso: r.brechaAtencionIngreso ?? "",
+    riesgoDeConcentracion: r.riesgoDeConcentracion ?? "",
+    loQueYaFunciona: textos(r.loQueYaFunciona),
+    viasSinExplotar: (Array.isArray(r.viasSinExplotar) ? r.viasSinExplotar : []).map(
+      (v: { via?: string; porQueEncaja?: string; queHaceFalta?: string; esfuerzo?: string; nivel?: number }) => ({
+        via: v.via ?? "",
+        porQueEncaja: v.porQueEncaja ?? "",
+        queHaceFalta: v.queHaceFalta ?? "",
+        esfuerzo: (ESFUERZOS as readonly string[]).includes(v.esfuerzo ?? "")
+          ? (v.esfuerzo as "bajo" | "medio" | "alto")
+          : "medio",
+        nivel: clampNivel(v.nivel),
+      })
+    ),
+    queMoverAhora: textos(r.queMoverAhora),
+    lecturaDeLoMio: r.lecturaDeLoMio ?? "",
+    queFaltaSaber: textos(r.queFaltaSaber),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
 export async function fetchPitch(input: {
   artista: unknown;
   destino: VincerePitchDestino;

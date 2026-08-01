@@ -22,6 +22,8 @@ import {
   VincereKpi,
   VincereMarca,
   VincereMarcaDiagnostico,
+  VincereIngreso,
+  VincereMonetizacionDiagnostico,
   VincereOportunidad,
   VincerePitch,
   VincereVinculo,
@@ -119,6 +121,11 @@ interface VincereState {
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
 
   updateVinculo: (proyectoId: string, patch: Partial<VincereVinculo>) => void;
+
+  addIngreso: (proyectoId: string, ingreso: Omit<VincereIngreso, "id">) => void;
+  updateIngreso: (proyectoId: string, ingresoId: string, patch: Partial<VincereIngreso>) => void;
+  deleteIngreso: (proyectoId: string, ingresoId: string) => void;
+  setMonetizacionDiagnostico: (proyectoId: string, d: VincereMonetizacionDiagnostico | null) => void;
 
   setOportunidad: (proyectoId: string, oportunidad: VincereOportunidad | null) => void;
 
@@ -460,6 +467,38 @@ export const useVincereStore = create<VincereState>()(
             }
             return { ...p, vinculo: { ...base, actualizadoEn: new Date().toISOString() } };
           }),
+        })),
+
+      // Del período más reciente al más antiguo: lo de este mes importa más
+      // que lo del año pasado.
+      addIngreso: (proyectoId, ingreso) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            ingresos: [{ ...ingreso, id: genId("ing") }, ...(p.ingresos ?? [])].sort((a, b) =>
+              b.periodo.localeCompare(a.periodo)
+            ),
+          })),
+        })),
+      updateIngreso: (proyectoId, ingresoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            ingresos: (p.ingresos ?? [])
+              .map((i) => (i.id === ingresoId ? { ...i, ...patch } : i))
+              .sort((a, b) => b.periodo.localeCompare(a.periodo)),
+          })),
+        })),
+      deleteIngreso: (proyectoId, ingresoId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            ingresos: (p.ingresos ?? []).filter((i) => i.id !== ingresoId),
+          })),
+        })),
+      setMonetizacionDiagnostico: (proyectoId, d) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, monetizacionDiagnostico: d })),
         })),
 
       setOportunidad: (proyectoId, oportunidad) =>
