@@ -7,46 +7,6 @@ export const metadata: Metadata = {
   description: "Puerta de entrada privada a C.C.O. E.V. y VINCERE.",
 };
 
-// Recreación en SVG del logo real de VINCERE (Eduardo lo pasó como imagen,
-// pero no llegó como archivo utilizable) — la V con la muesca bordó y el
-// wordmark, sobre el mismo verde oliva oscuro de la marca original.
-function VincereLogo() {
-  return (
-    <svg viewBox="0 0 340 210" className="w-full h-auto rounded-xl" role="img" aria-label="VINCERE Music">
-      <rect width="340" height="210" rx="14" fill="#2b2f28" />
-      <polygon points="138,44 168,44 170,112" fill="#f2ede1" />
-      <polygon points="202,44 172,44 170,112" fill="#f2ede1" />
-      <polygon points="167,44 173,44 170,60" fill="#7c2430" />
-      <text
-        x="170"
-        y="146"
-        textAnchor="middle"
-        fontFamily="var(--font-sans), Arial, sans-serif"
-        fontSize="26"
-        fontWeight="500"
-        letterSpacing="6"
-        fill="#f2ede1"
-      >
-        VINCERE
-      </text>
-      <line x1="132" y1="171" x2="150" y2="171" stroke="#f2ede1" strokeWidth="1" opacity="0.7" />
-      <text
-        x="170"
-        y="175"
-        textAnchor="middle"
-        fontFamily="var(--font-sans), Arial, sans-serif"
-        fontSize="10"
-        letterSpacing="3"
-        fill="#f2ede1"
-        opacity="0.85"
-      >
-        MUSIC
-      </text>
-      <line x1="190" y1="171" x2="208" y2="171" stroke="#f2ede1" strokeWidth="1" opacity="0.7" />
-    </svg>
-  );
-}
-
 const SISTEMAS: {
   href: string;
   nombre: string;
@@ -71,7 +31,15 @@ const SISTEMAS: {
     href: "/vincere",
     nombre: "VINCERE",
     icono: null,
-    logo: <VincereLogo />,
+    logo: (
+      <Image
+        src="/icons/vincere-logo.png"
+        alt="VINCERE Music"
+        width={1600}
+        height={1000}
+        className="w-full h-auto rounded-xl"
+      />
+    ),
     tagline: null,
     detalle: "Dirección estratégica musical — A&R, touring, marca y oportunidad.",
     accent: "#a13a44",
