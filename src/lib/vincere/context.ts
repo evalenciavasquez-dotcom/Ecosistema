@@ -172,7 +172,13 @@ function showsConConversion(p: VincereProyecto) {
     sala: s.sala,
     aforo: s.aforo,
     asistencia: s.asistencia,
-    conversionPct: s.aforo > 0 ? Math.round((s.asistencia / s.aforo) * 100) : null,
+    // Sin taquilla reportada no hay conversión que calcular. Se dice en vez de
+    // mandar un cero, que la IA leería como "no fue nadie".
+    conversionPct:
+      s.asistencia != null && s.aforo > 0 ? Math.round((s.asistencia / s.aforo) * 100) : null,
+    ...(s.asistencia == null
+      ? { avisoDeTaquilla: "el empresario no reportó cuánta gente entró: no hay conversión medible en este show" }
+      : {}),
     ...(s.ingresoNeto != null ? { ingresoNeto: s.ingresoNeto, moneda: s.moneda } : {}),
     ...(s.nota.trim() ? { nota: s.nota.trim() } : {}),
   }));

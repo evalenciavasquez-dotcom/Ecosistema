@@ -210,6 +210,37 @@ export interface VincereZonaCalor {
   calor: number; // 0-100
 }
 
+// Temperatura de una plaza. El calor no es una decisión de dónde tocar: es
+// dónde hay demanda que se puede reforzar, y el argumento con el que se le
+// vende un show a un empresario.
+export type VincereTemperatura = "frio" | "medio" | "caliente";
+
+export const VINCERE_TEMPERATURA_LABEL: Record<VincereTemperatura, string> = {
+  frio: "Frío",
+  medio: "Medio",
+  caliente: "Caliente",
+};
+
+export const VINCERE_TEMPERATURA_COLOR: Record<VincereTemperatura, string> = {
+  frio: "#4a9eff",
+  medio: "#f59e42",
+  caliente: "#e0483a",
+};
+
+export const VINCERE_TEMPERATURA_LECTURA: Record<VincereTemperatura, string> = {
+  frio: "Poca escucha. Entrar aquí es abrir mercado, no cosechar.",
+  medio: "Hay base. Sirve para reforzar, todavía no para apostar fuerte.",
+  caliente: "Demanda real. Es el argumento más fuerte para venderle un show a un empresario de la plaza.",
+};
+
+// Mismos cortes que el semáforo de Oportunidad, a propósito: dos escalas con
+// umbrales distintos en el mismo sistema obligan a recordar cuál es cuál.
+export function temperaturaDe(calor: number): VincereTemperatura {
+  if (calor >= 70) return "caliente";
+  if (calor >= 40) return "medio";
+  return "frio";
+}
+
 export type VincereDecisionEstado = "Pendiente" | "Tomada";
 
 export interface VincereDecision {
@@ -783,7 +814,10 @@ export interface VincereShow {
   fecha: string; // YYYY-MM-DD
   sala: string;
   aforo: number; // Capacidad de la sala.
-  asistencia: number; // Cuántos fueron de verdad.
+  // Cuántos fueron de verdad. Puede no saberse: muchos empresarios no comparten
+  // la taquilla, y exigir el dato impediría registrar el show. Sin él se pierde
+  // la conversión, no el resto.
+  asistencia: number | null;
   ingresoNeto: number | null; // Lo que quedó, si se sabe. null = no registrado.
   moneda: string;
   nota: string;
