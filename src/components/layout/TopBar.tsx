@@ -6,7 +6,7 @@ import { useAppStore } from "@/lib/store";
 import TimerChip from "@/components/TimerChip";
 
 const TITLES: Record<string, string> = {
-  "/": "Inicio",
+  "/inicio": "Inicio",
   "/actividad": "Actividad",
   "/bandeja": "Bandeja de entrada",
   "/proyectos": "Proyectos",

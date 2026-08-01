@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 
 const NAV_ITEMS = [
-  { code: "IN", label: "Inicio", href: "/" },
+  { code: "IN", label: "Inicio", href: "/inicio" },
   { code: "BA", label: "Bandeja", href: "/bandeja" },
   { code: "PR", label: "Proyectos", href: "/proyectos" },
   { code: "AC", label: "Acciones", href: "/acciones" },
@@ -31,16 +31,16 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-border-subtle bg-surface px-4 py-5">
-      <div className="mb-8 px-2">
+      <Link href="/" className="mb-8 px-2 block">
         <div className="text-base font-bold tracking-tight">C.C.O. E.V.</div>
         <div className="text-xs text-muted mt-1 leading-snug">
           Tu realidad analizada. Tus decisiones con dirección.
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 space-y-1">
         {NAV_ITEMS.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const active = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
