@@ -101,6 +101,20 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
       { id: "city-6", ciudad: "Buenos Aires", calor: 44 },
       { id: "city-7", ciudad: "Miami", calor: 39 },
     ],
+    // Vínculo de ejemplo: sociedad ya acordada, con horas comprometidas. Es lo
+    // que permite que el panel de capacidad muestre algo desde la primera
+    // corrida en vez de un cero.
+    vinculo: {
+      tipo: "socio",
+      confirmado: true,
+      participacionPct: 18,
+      tarifa: null,
+      moneda: "MXN",
+      periodicidad: "mensual",
+      horasSemanales: 12,
+      notas: "18% sobre ingresos netos, revisable a los 12 meses.",
+      actualizadoEn: "2026-02-01T00:00:00.000Z",
+    },
     // Candidatos con las dos trampas del motor montadas: uno grande que viola
     // el antipatrón declarado en Marca (no es artista de perreo), y uno que
     // suena ideal pero comparte exactamente la misma audiencia — colaborar con

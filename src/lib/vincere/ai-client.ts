@@ -22,6 +22,7 @@ import {
   VincereStressTest,
   VincereTouringDiagnostico,
   VincereVeredictoPlaza,
+  VincereVinculoTipo,
   VINCERE_ESCENARIOS_PLAN,
 } from "./types";
 
@@ -77,7 +78,15 @@ export async function fetchTriage(input: {
   genero: string;
   fase: string;
   descripcion: string;
-}): Promise<{ veredicto: string; prioridad: "Alta" | "Media" | "Baja"; motorRecomendado: string; nivel: VincereNivel }> {
+}): Promise<{
+  veredicto: string;
+  prioridad: "Alta" | "Media" | "Baja";
+  motorRecomendado: string;
+  vinculoSugerido: VincereVinculoTipo;
+  comoCobrarlo: string;
+  horasSemanalesEstimadas: number | null;
+  nivel: VincereNivel;
+}> {
   const res = await fetch("/api/vincere/triage", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -89,10 +98,18 @@ export async function fetchTriage(input: {
   }
   const body = await res.json();
   const r = body?.result ?? {};
+  const VINCULOS: VincereVinculoTipo[] = ["propio", "socio", "cliente", "evaluando", "ninguno"];
+  const horas = typeof r.horasSemanalesEstimadas === "number" ? Math.round(r.horasSemanalesEstimadas) : null;
+
   return {
     veredicto: r.veredicto ?? "",
     prioridad: r.prioridad ?? "Media",
     motorRecomendado: r.motorRecomendado ?? "",
+    vinculoSugerido: VINCULOS.includes(r.vinculoSugerido as VincereVinculoTipo)
+      ? (r.vinculoSugerido as VincereVinculoTipo)
+      : "evaluando",
+    comoCobrarlo: r.comoCobrarlo ?? "",
+    horasSemanalesEstimadas: horas != null ? Math.min(60, Math.max(0, horas)) : null,
     nivel: clampNivel(r.nivel),
   };
 }

@@ -25,6 +25,18 @@ export const triageResponseSchema = z.object({
   veredicto: z.string().describe("Veredicto de una a dos frases con la razón concreta"),
   prioridad: z.enum(["Alta", "Media", "Baja"]).describe("Prioridad de atención del caso"),
   motorRecomendado: z.string().describe("Sección de VINCERE por la que debería empezar el análisis de este caso"),
+  vinculoSugerido: z
+    .enum(["propio", "socio", "cliente", "evaluando", "ninguno"])
+    .describe("Cómo conviene encuadrar comercialmente este caso. 'cliente' si lo que pide son servicios puntuales y no hay razón para participar de sus ingresos; 'socio' si hay recorrido largo y conviene alinear incentivos; 'evaluando' si la descripción no alcanza para decidir — que suele ser lo honesto en un caso nuevo"),
+  comoCobrarlo: z
+    .string()
+    .describe("Cómo cobrarlo, con su razón. Si es cliente, en qué rango de tarifa y por qué alcance; si es sociedad, qué porcentaje tendría sentido. Habla en rangos y nombra de qué depende: nunca des una cifra de mercado como hecho verificado. 1-2 frases"),
+  horasSemanalesEstimadas: z
+    .number()
+    .int()
+    .min(0)
+    .max(60)
+    .describe("Horas por semana que este caso probablemente consuma, aproximado. Es la variable que decide si entra o no aunque el caso sea bueno: sé realista, no optimista"),
   nivel: nivelSchema,
 });
 

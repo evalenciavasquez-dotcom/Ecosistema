@@ -14,12 +14,20 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { fetchOportunidad } from "@/lib/vincere/ai-client";
 import { buildOportunidadContext } from "@/lib/vincere/context";
 import SectionShell from "../SectionShell";
+import VinculoPanel from "../VinculoPanel";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
 export default function OportunidadSection({ proyecto }: { proyecto: VincereProyecto }) {
   const setOportunidad = useVincereStore((s) => s.setOportunidad);
   const showToast = useVincereStore((s) => s.showToast);
+  const proyectos = useVincereStore((s) => s.proyectos);
+
+  // Solo cuenta lo acordado: sumar lo que todavía se está pensando inflaría la
+  // carga y haría rechazar casos que sí entran.
+  const cargaSemanalTotal = proyectos
+    .filter((x) => x.vinculo?.confirmado && x.vinculo.horasSemanales)
+    .reduce((t, x) => t + (x.vinculo?.horasSemanales ?? 0), 0);
 
   const [nota, setNota] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -32,7 +40,10 @@ export default function OportunidadSection({ proyecto }: { proyecto: VincereProy
     setCargando(true);
     setError(null);
     try {
-      const r = await fetchOportunidad({ artista: buildOportunidadContext(proyecto), nota });
+      const r = await fetchOportunidad({
+        artista: buildOportunidadContext(proyecto, cargaSemanalTotal),
+        nota,
+      });
       setOportunidad(proyecto.id, r);
       setNota("");
       showToast(`Oportunidad evaluada: ${r.puntaje}/100`);
@@ -52,6 +63,8 @@ export default function OportunidadSection({ proyecto }: { proyecto: VincereProy
       subtitle="La pregunta anterior a todas las demás. Los otros motores dirigen a alguien que ya está adentro; este decide si entra, con qué estructura y a cambio de qué."
       aiTitle="Lectura VINCERE — Oportunidad"
     >
+      <VinculoPanel proyecto={proyecto} />
+
       <Panel>
         <PanelLabel>Evaluar la oportunidad</PanelLabel>
         <p className="vin-faint mb-3 text-xs leading-relaxed">

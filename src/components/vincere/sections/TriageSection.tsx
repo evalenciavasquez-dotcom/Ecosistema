@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
-import { VincereQAEntry } from "@/lib/vincere/types";
+import { VincereQAEntry, VINCERE_VINCULO_LABEL } from "@/lib/vincere/types";
 import { fetchAsk, fetchTriage } from "@/lib/vincere/ai-client";
 import { genId } from "@/lib/id";
 import { SectionHeader, Panel } from "../primitives";
@@ -152,6 +152,37 @@ export default function TriageSection() {
                       {c.nivel && <EvidenceTag nivel={c.nivel} />}
                     </div>
                     <p className="text-sm leading-relaxed">{c.veredicto}</p>
+
+                    {/* El encuadre comercial: cómo entrar y qué cuesta en
+                        tiempo. Es una propuesta para confirmar, no un acuerdo. */}
+                    {(c.vinculoSugerido || c.comoCobrarlo || c.horasSemanalesEstimadas != null) && (
+                      <div
+                        className="mt-3 rounded-sm p-3"
+                        style={{ background: "var(--vin-surface)", border: "1px solid var(--vin-border)" }}
+                      >
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="vin-faint text-[10.5px] uppercase tracking-[0.08em]">Encuadre sugerido</span>
+                          {c.vinculoSugerido && (
+                            <span
+                              className="rounded-full border px-2 py-0.5 text-[11px]"
+                              style={{ color: "var(--vin-muted)", borderColor: "var(--vin-border-strong)" }}
+                            >
+                              {VINCERE_VINCULO_LABEL[c.vinculoSugerido]}
+                            </span>
+                          )}
+                          {c.horasSemanalesEstimadas != null && (
+                            <span className="vin-faint text-[11.5px] tabular-nums">
+                              ~{c.horasSemanalesEstimadas}h/semana
+                            </span>
+                          )}
+                        </div>
+                        {c.comoCobrarlo && <p className="vin-muted text-[13px] leading-relaxed">{c.comoCobrarlo}</p>}
+                        <p className="vin-faint mt-2 text-[11px] leading-relaxed">
+                          Es una propuesta para que la confirmes, no un acuerdo. Al crear el proyecto, defínela en
+                          Oportunidad → Tu vínculo.
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <p className="vin-muted text-sm">Analizando…</p>
