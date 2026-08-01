@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 
 const newsreader = Newsreader({
@@ -17,6 +18,7 @@ const SISTEMAS = [
   {
     href: "/inicio",
     nombre: "C.C.O. E.V.",
+    icono: "/icons/icon-192.png",
     tagline: "Centro de Control Operativo y Estratégico",
     detalle: "Proyectos, decisiones, economía y goals — tu realidad analizada.",
     accent: "#5b8dee",
@@ -26,6 +28,7 @@ const SISTEMAS = [
   {
     href: "/vincere",
     nombre: "VINCERE",
+    icono: null as string | null,
     tagline: "Intelligence Platform",
     detalle: "Dirección estratégica musical — A&R, touring, marca y oportunidad.",
     accent: "#e0483a",
@@ -57,8 +60,19 @@ export default function HubPage() {
                   aria-hidden
                 />
                 <div className="relative">
-                  <div className={`text-[26px] leading-none ${s.wordmarkClass}`} style={{ color: s.accent }}>
-                    {s.nombre}
+                  <div className="flex items-center gap-3">
+                    {s.icono && (
+                      <Image
+                        src={s.icono}
+                        alt=""
+                        width={36}
+                        height={36}
+                        className="rounded-[9px] shrink-0"
+                      />
+                    )}
+                    <div className={`text-[26px] leading-none ${s.wordmarkClass}`} style={{ color: s.accent }}>
+                      {s.nombre}
+                    </div>
                   </div>
                   <div className="mt-2 text-[11px] uppercase tracking-[0.12em] text-[#8a8d94]">{s.tagline}</div>
                   <p className="mt-4 text-sm leading-relaxed text-[#b4b6bc]">{s.detalle}</p>
