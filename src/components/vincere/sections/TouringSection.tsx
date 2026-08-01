@@ -167,7 +167,9 @@ function FormularioShow({
     nota: "",
   });
 
-  const valido = f.ciudad.trim() && f.aforo && f.asistencia;
+  // Solo la ciudad es obligatoria: si el empresario no comparte la
+  // taquilla, el show igual se registra y se pierde solo la conversión.
+  const valido = Boolean(f.ciudad.trim());
 
   function guardar() {
     if (!valido) return;
@@ -176,7 +178,7 @@ function FormularioShow({
       fecha: f.fecha,
       sala: f.sala.trim(),
       aforo: Number(f.aforo) || 0,
-      asistencia: Number(f.asistencia) || 0,
+      asistencia: f.asistencia ? Number(f.asistencia) : null,
       ingresoNeto: f.ingresoNeto ? Number(f.ingresoNeto) : null,
       moneda: f.moneda.trim() || monedaProyecto,
       nota: f.nota.trim(),
@@ -191,7 +193,12 @@ function FormularioShow({
         <Campo label="Fecha" valor={f.fecha} onChange={(v) => setF({ ...f, fecha: v })} tipo="date" />
         <Campo label="Sala" valor={f.sala} onChange={(v) => setF({ ...f, sala: v })} />
         <Campo label="Aforo" valor={f.aforo} onChange={(v) => setF({ ...f, aforo: v })} tipo="number" />
-        <Campo label="Asistencia" valor={f.asistencia} onChange={(v) => setF({ ...f, asistencia: v })} tipo="number" />
+        <Campo
+          label="Asistencia (si la sabes)"
+          valor={f.asistencia}
+          onChange={(v) => setF({ ...f, asistencia: v })}
+          tipo="number"
+        />
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <Campo
             label="Ingreso neto"
@@ -260,8 +267,9 @@ function FilaShow({
   onUpdate: (patch: Partial<VincereShow>) => void;
   onDelete: () => void;
 }) {
-  const pct = show.aforo > 0 ? Math.round((show.asistencia / show.aforo) * 100) : 0;
-  const color = conversionColor(pct);
+  const hayConversion = show.asistencia != null && show.aforo > 0;
+  const pct = hayConversion ? Math.round(((show.asistencia as number) / show.aforo) * 100) : 0;
+  const color = hayConversion ? conversionColor(pct) : "var(--vin-border-strong)";
 
   return (
     <div className="vin-card border-l-2 p-4" style={{ borderLeftColor: color }}>
@@ -272,22 +280,30 @@ function FilaShow({
           <span className="vin-faint text-[11.5px] tabular-nums">{show.fecha}</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="tabular-nums text-[13px]">
-            <span style={{ color }}>{show.asistencia}</span>
-            <span className="vin-faint"> / {show.aforo}</span>
-          </span>
-          <span className="vin-serif text-lg tabular-nums" style={{ color }}>
-            {pct}%
-          </span>
+          {hayConversion ? (
+            <>
+              <span className="tabular-nums text-[13px]">
+                <span style={{ color }}>{show.asistencia}</span>
+                <span className="vin-faint"> / {show.aforo}</span>
+              </span>
+              <span className="vin-serif text-lg tabular-nums" style={{ color }}>
+                {pct}%
+              </span>
+            </>
+          ) : (
+            <span className="vin-faint text-[11.5px]">sin taquilla reportada</span>
+          )}
           <button onClick={onDelete} className="vin-faint px-1 text-xs hover:underline" title="Eliminar">
             ✕
           </button>
         </div>
       </div>
 
-      <div className="vin-bar-track mb-2.5 h-1.5">
-        <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: color }} />
-      </div>
+      {hayConversion && (
+        <div className="vin-bar-track mb-2.5 h-1.5">
+          <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: color }} />
+        </div>
+      )}
 
       {show.ingresoNeto != null && (
         <div className="vin-faint mb-2 text-[11.5px] tabular-nums">
