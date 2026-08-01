@@ -24,6 +24,9 @@ import {
   VincereMarcaDiagnostico,
   VincereOportunidad,
   VincerePitch,
+  VincereVinculo,
+  VincereVinculoTipo,
+  vinculoVacio,
   VincerePuntoContacto,
   VincereSenalPlaza,
   VincereShow,
@@ -115,6 +118,8 @@ interface VincereState {
   updateZonaCalor: (proyectoId: string, zonaId: string, patch: Partial<VincereZonaCalor>) => void;
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
 
+  updateVinculo: (proyectoId: string, patch: Partial<VincereVinculo>) => void;
+
   setOportunidad: (proyectoId: string, oportunidad: VincereOportunidad | null) => void;
 
   addPitch: (proyectoId: string, pitch: VincerePitch) => void;
@@ -166,7 +171,15 @@ interface VincereState {
   addTriageCaso: (input: { nombre: string; genero: string; fase: string; descripcion: string }) => string;
   updateTriageCasoVeredicto: (
     id: string,
-    veredicto: { veredicto: string; prioridad: "Alta" | "Media" | "Baja"; motorRecomendado: string; nivel: 1 | 2 | 3 | 4 }
+    veredicto: {
+      veredicto: string;
+      prioridad: "Alta" | "Media" | "Baja";
+      motorRecomendado: string;
+      vinculoSugerido: VincereVinculoTipo;
+      comoCobrarlo: string;
+      horasSemanalesEstimadas: number | null;
+      nivel: 1 | 2 | 3 | 4;
+    }
   ) => void;
   deleteTriageCaso: (id: string) => void;
 
@@ -428,6 +441,25 @@ export const useVincereStore = create<VincereState>()(
             ...p,
             zonasCalor: p.zonasCalor.filter((z) => z.id !== zonaId),
           })),
+        })),
+
+      // Al cambiar de tipo se limpia el campo que deja de aplicar: un cliente
+      // con un porcentaje colgando haría que las proyecciones cuenten dinero
+      // que no existe.
+      updateVinculo: (proyectoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
+            const base = { ...vinculoVacio(), ...(p.vinculo ?? {}), ...patch };
+            if (patch.tipo === "cliente") base.participacionPct = null;
+            if (patch.tipo === "propio" || patch.tipo === "socio") base.tarifa = null;
+            if (patch.tipo === "ninguno") {
+              base.participacionPct = null;
+              base.tarifa = null;
+              base.horasSemanales = null;
+              base.confirmado = false;
+            }
+            return { ...p, vinculo: { ...base, actualizadoEn: new Date().toISOString() } };
+          }),
         })),
 
       setOportunidad: (proyectoId, oportunidad) =>
@@ -824,6 +856,9 @@ export const useVincereStore = create<VincereState>()(
           prioridad: null,
           motorRecomendado: null,
           nivel: null,
+          vinculoSugerido: null,
+          comoCobrarlo: null,
+          horasSemanalesEstimadas: null,
           creadoEn: new Date().toISOString().slice(0, 10),
         };
         set((s) => ({ triageCasos: [nuevo, ...s.triageCasos] }));

@@ -207,6 +207,17 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Definir qué eres en un proyecto y cuánto tiempo te cuesta",
+    pasos: [
+      "Oportunidad de Negocio → panel «Tu vínculo con este proyecto».",
+      "Elige qué eres: proyecto propio, sociedad, cliente, evaluando o sin vínculo. Un cliente al que le cobras y un proyecto donde participas son negocios distintos, y el análisis cambia según cuál sea.",
+      "Si es sociedad o propio, pon el porcentaje. Si es cliente, la tarifa y su periodicidad — al cambiar de tipo, el campo que deja de aplicar se limpia solo para que ninguna proyección cuente dinero inexistente.",
+      "Carga las horas por semana. Es la variable que decide si puedes tomar un caso más, aunque el caso sea bueno.",
+      "Deja sin marcar «Acordado y en marcha» mientras solo lo estés pensando: así los análisis lo tratan como hipótesis y no como ingreso.",
+      "Abajo del panel está tu carga semanal sumando TODOS los proyectos. Ahí se ve si queda espacio o si tomar algo nuevo significa soltar otra cosa.",
+    ],
+  },
+  {
     tarea: "Decidir si sumarte a un artista",
     pasos: [
       "Carga lo que tengas del artista en los motores que apliquen. El puntaje se sostiene en data: con un proyecto vacío, el motor lo dice y no infla la confianza.",

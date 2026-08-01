@@ -440,6 +440,71 @@ export interface VincerePitch {
   generadoEn: string;
 }
 
+// --- Vínculo ---
+// Hasta acá el sistema trataba todos los proyectos igual. Pero un CLIENTE al
+// que se le cobra una tarifa y un proyecto PROPIO donde se tiene un porcentaje
+// son dos negocios distintos, y esa diferencia cambia todo lo que el sistema
+// debería decir: a un cliente no se le calcula participación, y a un socio no
+// se le cotiza una tarifa.
+//
+// Se separa lo confirmado de lo que se está pensando. No es lo mismo el
+// porcentaje que se tiene que el que se querría tener, y mezclarlos hace que
+// las proyecciones mientan.
+
+export type VincereVinculoTipo = "propio" | "socio" | "cliente" | "evaluando" | "ninguno";
+
+export const VINCERE_VINCULO_LABEL: Record<VincereVinculoTipo, string> = {
+  propio: "Proyecto propio",
+  socio: "Sociedad",
+  cliente: "Cliente",
+  evaluando: "Evaluando",
+  ninguno: "Sin vínculo",
+};
+
+export const VINCERE_VINCULO_DESC: Record<VincereVinculoTipo, string> = {
+  propio: "Lo diriges y participas de sus ingresos.",
+  socio: "Sociedad con el artista o con un tercero, con participación acordada.",
+  cliente: "Te contrata por servicios y cobras una tarifa. No participas de sus ingresos.",
+  evaluando: "Todavía no hay acuerdo. Lo que cargues aquí es la hipótesis, no un hecho.",
+  ninguno: "Referencia de mercado o competencia. No hay negocio.",
+};
+
+// Un vínculo de cliente se mide en tarifa; uno de sociedad, en porcentaje.
+// Guardar ambos y usar solo el que corresponde evita el error de proyectar
+// ingresos por participación sobre un cliente que solo paga una factura.
+export interface VincereVinculo {
+  tipo: VincereVinculoTipo;
+  // false = es lo que se está pensando pedir, no lo que está acordado.
+  confirmado: boolean;
+  participacionPct: number | null; // Solo para propio/socio.
+  tarifa: number | null; // Solo para cliente.
+  moneda: string;
+  periodicidad: string; // "mensual", "por proyecto", "por show"…
+  // La pieza que vuelve el costo de oportunidad un número en vez de un párrafo.
+  horasSemanales: number | null;
+  notas: string;
+  actualizadoEn: string;
+}
+
+export function vinculoVacio(): VincereVinculo {
+  return {
+    tipo: "evaluando",
+    confirmado: false,
+    participacionPct: null,
+    tarifa: null,
+    moneda: "MXN",
+    periodicidad: "mensual",
+    horasSemanales: null,
+    notas: "",
+    actualizadoEn: new Date().toISOString(),
+  };
+}
+
+// Si de este proyecto entra dinero propio, y por qué vía.
+export function participaDelNegocio(v: VincereVinculo | null | undefined): boolean {
+  return !!v && (v.tipo === "propio" || v.tipo === "socio" || v.tipo === "cliente");
+}
+
 // --- Oportunidad de Negocio ---
 // Todos los demás motores dirigen un artista que ya está adentro. Este decide
 // lo anterior a todo: si conviene entrar. Triage da la primera lectura de un
@@ -819,6 +884,7 @@ export interface VincereProyecto {
   touringDiagnostico?: VincereTouringDiagnostico | null;
   candidatos?: VincereCandidato[];
   arDiagnostico?: VincereARDiagnostico | null;
+  vinculo?: VincereVinculo | null;
   oportunidad?: VincereOportunidad | null;
   pitches?: VincerePitch[];
   decisiones: VincereDecision[];
@@ -846,6 +912,12 @@ export interface VincereTriageCaso {
   prioridad: "Alta" | "Media" | "Baja" | null;
   motorRecomendado: string | null;
   nivel: VincereNivel | null;
+  // Propuesta de encuadre comercial desde el primer contacto. Es una sugerencia
+  // para confirmar, no un acuerdo: por eso vive en el caso de triage y no en un
+  // vínculo, que solo existe cuando el proyecto entra al sistema.
+  vinculoSugerido: VincereVinculoTipo | null;
+  comoCobrarlo: string | null; // Tarifa si es cliente, % si es sociedad, con su razón.
+  horasSemanalesEstimadas: number | null;
   creadoEn: string;
 }
 

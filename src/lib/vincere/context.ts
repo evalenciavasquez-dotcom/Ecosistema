@@ -258,12 +258,39 @@ export function buildPitchContext(p: VincereProyecto, contactos: ContactoPuente[
 // todo lo que el sistema sabe del artista — incluidas las lecturas que otros
 // motores ya emitieron. Un análisis de negocio que ignora que Marca detectó una
 // brecha grave, o que Touring dijo que no está para salir, decide a ciegas.
-export function buildOportunidadContext(p: VincereProyecto): unknown {
+// Cómo se relaciona hoy Eduardo con este proyecto. Cambia la pregunta que hay
+// que responder: a un cliente se le cotiza, a un socio se le calcula
+// participación, y lo no confirmado es hipótesis y no ingreso.
+function vinculoActual(p: VincereProyecto, cargaSemanalTotal?: number): unknown {
+  const v = p.vinculo;
+  if (!v || v.tipo === "ninguno") {
+    return "no hay vínculo de negocio con este proyecto: es referencia de mercado. No propongas participación ni tarifa";
+  }
+  return {
+    tipo: v.tipo,
+    estado: v.confirmado
+      ? "ACORDADO — esto ya está en marcha"
+      : "SIN CONFIRMAR — es lo que se está pensando pedir, trátalo como hipótesis y nunca como ingreso existente",
+    ...(v.participacionPct != null ? { participacionPct: v.participacionPct } : {}),
+    ...(v.tarifa != null ? { tarifa: v.tarifa, moneda: v.moneda, periodicidad: v.periodicidad } : {}),
+    ...(v.horasSemanales != null ? { horasSemanalesEnEsteProyecto: v.horasSemanales } : {}),
+    ...(v.notas.trim() ? { notas: v.notas.trim() } : {}),
+    ...(cargaSemanalTotal != null
+      ? {
+          cargaSemanalTotalComprometida: cargaSemanalTotal,
+          nota: "Horas ya comprometidas en TODOS los proyectos, sobre una semana de referencia de 40h. Úsalo para el costo de oportunidad: si queda poco margen, dilo con el número en la mano en vez de hablar de tiempo en abstracto.",
+        }
+      : {}),
+  };
+}
+
+export function buildOportunidadContext(p: VincereProyecto, cargaSemanalTotal?: number): unknown {
   return {
     artista: p.nombre,
     genero: p.genero,
     fase: p.fase,
     tipo: p.tipo,
+    vinculoActual: vinculoActual(p, cargaSemanalTotal),
     momentum: {
       streamsMes: p.resumen.streamsMes,
       streamsMesLegible: formatStreams(p.resumen.streamsMes),
