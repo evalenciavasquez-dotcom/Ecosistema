@@ -46,8 +46,18 @@ export default function ConfiguracionPage() {
   const resetToSeed = useAppStore((s) => s.resetToSeed);
   const resetToEmpty = useAppStore((s) => s.resetToEmpty);
   const historial = useAppStore((s) => s.historial);
+  const proyectos = useAppStore((s) => s.proyectos);
+  const movimientos = useAppStore((s) => s.movimientos);
   const [wiping, setWiping] = useState(false);
   const [wipeMsg, setWipeMsg] = useState<string | null>(null);
+
+  const [pwaInstalada] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true
+    );
+  });
 
   const [dbStatus, setDbStatus] = useState<DbStatus>("checking");
   const [migrating, setMigrating] = useState(false);
@@ -378,8 +388,49 @@ export default function ConfiguracionPage() {
     }
   }
 
+  const pasos = [
+    { hecho: dbStatus === "activa", label: "Base de datos conectada y con datos", href: null },
+    { hecho: proyectos.length > 0 || movimientos.length > 0, label: "Ya cargaste datos reales (proyectos o economía)", href: null },
+    { hecho: pushStatus === "activas", label: "Notificaciones activadas", href: "#notificaciones" },
+    { hecho: pwaInstalada, label: "App instalada en el celular (no solo en el navegador)", href: null },
+    { hecho: googleStatus?.connected ?? false, label: "Google conectado (opcional — Gmail y Calendar)", href: "#google" },
+  ];
+  const pendientes = pasos.filter((p) => !p.hecho);
+
   return (
     <div className="max-w-2xl space-y-6">
+      {pendientes.length > 0 && (
+        <div className="rounded-2xl border border-accent-blue/30 bg-accent-blue/5 p-5 space-y-3">
+          <div className="text-[11px] uppercase tracking-wide text-accent-blue font-semibold">Primeros pasos</div>
+          <div className="space-y-2">
+            {pasos.map((p) => (
+              <div key={p.label} className="flex items-center gap-2.5 text-sm">
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                    p.hecho ? "bg-accent-green/20 text-accent-green" : "bg-overlay/10 text-muted"
+                  }`}
+                >
+                  {p.hecho ? "✓" : ""}
+                </span>
+                {p.href ? (
+                  <a href={p.href} className={p.hecho ? "text-muted line-through" : "text-accent-blue hover:underline"}>
+                    {p.label}
+                  </a>
+                ) : (
+                  <span className={p.hecho ? "text-muted line-through" : ""}>{p.label}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          {!pwaInstalada && (
+            <p className="text-xs text-muted pt-1">
+              Para instalar la app: abrí este sitio en el navegador del celular y elegí &ldquo;Agregar a pantalla de
+              inicio&rdquo; (Android: menú ⋮ → Instalar app · iPhone: compartir → Agregar a inicio).
+            </p>
+          )}
+        </div>
+      )}
+
       <Section title="Cuenta">
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 flex items-center justify-between">
           <div>
@@ -592,7 +643,7 @@ export default function ConfiguracionPage() {
         </div>
       </Section>
 
-      <Section title="Google">
+      <Section title="Google" id="google">
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
           {googleFeedback && (
             <div
@@ -689,7 +740,7 @@ export default function ConfiguracionPage() {
         </div>
       </Section>
 
-      <Section title="Notificaciones">
+      <Section title="Notificaciones" id="notificaciones">
         <div className="rounded-2xl border border-border-subtle bg-surface p-5 space-y-3">
           {pushStatus === "checking" && <p className="text-sm text-muted">Verificando…</p>}
 
@@ -779,9 +830,9 @@ export default function ConfiguracionPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <div>
+    <div id={id}>
       <h3 className="text-xs uppercase tracking-wide text-muted mb-2">{title}</h3>
       {children}
     </div>
