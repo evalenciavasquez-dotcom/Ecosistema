@@ -22,6 +22,7 @@ import {
   VincereKpi,
   VincereMarca,
   VincereMarcaDiagnostico,
+  VincereOportunidad,
   VincerePuntoContacto,
   VincereSenalPlaza,
   VincereShow,
@@ -112,6 +113,8 @@ interface VincereState {
   addZonaCalor: (proyectoId: string, zona: Omit<VincereZonaCalor, "id">) => void;
   updateZonaCalor: (proyectoId: string, zonaId: string, patch: Partial<VincereZonaCalor>) => void;
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
+
+  setOportunidad: (proyectoId: string, oportunidad: VincereOportunidad | null) => void;
 
   addCandidato: (proyectoId: string, candidato: Omit<VincereCandidato, "id" | "creadoEn">) => void;
   updateCandidato: (proyectoId: string, candidatoId: string, patch: Partial<VincereCandidato>) => void;
@@ -421,6 +424,11 @@ export const useVincereStore = create<VincereState>()(
             ...p,
             zonasCalor: p.zonasCalor.filter((z) => z.id !== zonaId),
           })),
+        })),
+
+      setOportunidad: (proyectoId, oportunidad) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({ ...p, oportunidad })),
         })),
 
       addCandidato: (proyectoId, candidato) =>

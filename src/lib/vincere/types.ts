@@ -19,6 +19,7 @@ export type VincereSeccion =
   | "song"
   | "ar"
   | "touring"
+  | "oportunidad"
   | "audiencia"
   | "calor"
   | "management"
@@ -37,6 +38,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   song: "Song Intelligence",
   ar: "A&R y Colaboraciones",
   touring: "Shows y Touring",
+  oportunidad: "Oportunidad de Negocio",
   audiencia: "Audiencia y Segmentos",
   calor: "Zonas de Calor",
   management: "Management / Decisiones",
@@ -366,6 +368,103 @@ export interface VincereMarcaDiagnostico {
   generadoEn: string;
 }
 
+// --- Oportunidad de Negocio ---
+// Todos los demás motores dirigen un artista que ya está adentro. Este decide
+// lo anterior a todo: si conviene entrar. Triage da la primera lectura de un
+// caso nuevo en cuatro campos; este es la versión que se firma.
+//
+// El puntaje va de 0 a 100 en pasos de diez a propósito. Un número redondo se
+// discute ("¿por qué 60 y no 70?"); un 63 finge una precisión que no existe
+// cuando media evaluación es criterio.
+
+export type VincereSemaforo = "rojo" | "amarillo" | "verde";
+
+export const VINCERE_SEMAFORO_LABEL: Record<VincereSemaforo, string> = {
+  rojo: "No conviene",
+  amarillo: "Posible con condiciones",
+  verde: "Conviene entrar",
+};
+
+export const VINCERE_SEMAFORO_COLOR: Record<VincereSemaforo, string> = {
+  rojo: "#e0483a",
+  amarillo: "#e0a83a",
+  verde: "#5cc98e",
+};
+
+// Umbrales fijos y no interpretados por la IA: el mismo puntaje tiene que dar
+// siempre el mismo color, o el semáforo deja de significar algo.
+export function semaforoDe(puntaje: number): VincereSemaforo {
+  if (puntaje >= 70) return "verde";
+  if (puntaje >= 40) return "amarillo";
+  return "rojo";
+}
+
+export type VincereModalidad =
+  | "management"
+  | "management-360"
+  | "por-proyecto"
+  | "servicios"
+  | "sociedad"
+  | "distribucion"
+  | "solo-asesoria";
+
+export const VINCERE_MODALIDAD_LABEL: Record<VincereModalidad, string> = {
+  management: "Management",
+  "management-360": "Management 360",
+  "por-proyecto": "Por proyecto",
+  servicios: "Servicios sueltos",
+  sociedad: "Sociedad / JV",
+  distribucion: "Distribución",
+  "solo-asesoria": "Solo asesoría",
+};
+
+// Una forma concreta de entrar, con su economía. No es una idea suelta: trae
+// qué se pide, qué se da, qué se espera recuperar y cómo se sale.
+export interface VincereViaDeEntrada {
+  modalidad: VincereModalidad;
+  comoFunciona: string;
+  participacion: string; // El % o la estructura, con su razón. Rango, no cifra inventada.
+  queAportamos: string;
+  queEsperamosRecuperar: string; // ROI en términos concretos y su plazo.
+  compromisosNuestros: string[];
+  compromisosDelArtista: string[];
+  // Sin esto se termina atado a un artista que dejó de moverse. Todo trato
+  // propuesto trae su puerta de salida.
+  clausulaDeRevision: string;
+  riesgo: string;
+  nivel: VincereNivel;
+}
+
+export interface VincereEscenarioNegocio {
+  nombre: string;
+  queOcurre: string;
+  queSignificaParaNosotros: string;
+  probabilidad: string;
+  nivel: VincereNivel;
+}
+
+export interface VincereOportunidad {
+  puntaje: number; // 0-100, múltiplo de 10.
+  porQueEsePuntaje: string; // Qué lo sube y qué lo baja, explícito.
+  loQueLoSube: string[];
+  loQueLoBaja: string[];
+  vias: VincereViaDeEntrada[];
+  viaRecomendada: string; // Una sola. Elegir es el trabajo.
+  escenarios: VincereEscenarioNegocio[];
+  serviciosQueOfrecemos: string[];
+  // El artista también nos elige a nosotros. Sin esto el análisis es una sola
+  // cara de la mesa.
+  porQueNosotros: string;
+  // Decir que sí acá es decir que no a otra cosa: para un equipo chico el
+  // cuello de botella es el tiempo, no las ganas.
+  costoDeOportunidad: string;
+  senalesDeAlerta: string[];
+  queFaltaSaber: string[];
+  veredicto: string;
+  nivelGlobal: VincereNivel;
+  generadoEn: string;
+}
+
 // --- A&R y Colaboraciones ---
 // La app ya registraba una decisión tomada — "rechazar feature con artista de
 // bajo fit de marca" — sin ningún motor que la tomara. Y el motor de
@@ -648,6 +747,7 @@ export interface VincereProyecto {
   touringDiagnostico?: VincereTouringDiagnostico | null;
   candidatos?: VincereCandidato[];
   arDiagnostico?: VincereARDiagnostico | null;
+  oportunidad?: VincereOportunidad | null;
   decisiones: VincereDecision[];
   kpis: VincereKpi[];
   insights: Partial<Record<VincereSeccion, VincereInsight[]>>;

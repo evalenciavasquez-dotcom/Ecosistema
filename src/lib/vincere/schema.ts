@@ -471,6 +471,89 @@ export const arResponseSchema = z.object({
   nivelGlobal: nivelSchema.describe("Sin marca declarada o sin investigación de los candidatos esto no puede ser alto: el solapamiento de audiencia sería suposición"),
 });
 
+export const oportunidadResponseSchema = z.object({
+  puntaje: z
+    .number()
+    .int()
+    .min(0)
+    .max(100)
+    .describe("Múltiplo de 10 entre 0 y 100. 0 = no tiene sentido entrar. 50 = probable, la decisión está pareja. 100 = habría que estar adentro ya. Solo múltiplos de 10: un 63 finge una precisión que no existe cuando media evaluación es criterio, y un número redondo se puede discutir"),
+  porQueEsePuntaje: z
+    .string()
+    .describe("Qué sostiene ese número exactamente. Tiene que quedar claro qué tendría que cambiar para que suba o baje diez puntos. 2-4 frases"),
+  loQueLoSube: z.array(z.string()).max(5).describe("Lo concreto que juega a favor de entrar, con el dato que lo respalda"),
+  loQueLoBaja: z
+    .array(z.string())
+    .max(5)
+    .describe("Lo concreto que juega en contra. Nunca dejes esta lista vacía: si no encuentras nada en contra, no miraste lo suficiente"),
+  vias: z
+    .array(
+      z.object({
+        modalidad: z.enum([
+          "management",
+          "management-360",
+          "por-proyecto",
+          "servicios",
+          "sociedad",
+          "distribucion",
+          "solo-asesoria",
+        ]),
+        comoFunciona: z.string().describe("Cómo se articula esta vía en la práctica para ESTE caso"),
+        participacion: z
+          .string()
+          .describe("La participación o estructura económica, en RANGO y con su razón ('15-20% de ingresos netos por management, en el rango bajo porque el catálogo todavía no genera'). Nunca inventes una cifra de mercado como si fuera un hecho verificado: si no la sabes, describe la lógica y manda el número a queFaltaSaber"),
+        queAportamos: z.string().describe("Qué pone nuestro lado concretamente: trabajo, red, capital, estructura"),
+        queEsperamosRecuperar: z
+          .string()
+          .describe("El retorno esperado en términos concretos y con plazo: de dónde saldría, en cuánto tiempo, y qué tendría que pasar para que se dé"),
+        compromisosNuestros: z.array(z.string()).max(4).describe("A qué nos obligamos, medible"),
+        compromisosDelArtista: z.array(z.string()).max(4).describe("A qué se obliga el artista, medible. Un trato donde solo una parte se compromete no es un trato"),
+        clausulaDeRevision: z
+          .string()
+          .describe("Cuándo y contra qué se revisa o se sale. Obligatorio: los acuerdos sin puerta de salida son cómo se termina atado años a un proyecto que dejó de moverse"),
+        riesgo: z.string().describe("El riesgo principal de ESTA vía en particular"),
+        nivel: nivelSchema,
+      })
+    )
+    .min(2)
+    .max(4)
+    .describe("Formas concretas de entrar, de la más recomendable a la menos. Al menos dos, para que haya algo que comparar"),
+  viaRecomendada: z
+    .string()
+    .describe("Cuál de las vías y por qué. Una sola — elegir es el trabajo. Si el veredicto es no entrar, dilo aquí también"),
+  escenarios: z
+    .array(
+      z.object({
+        nombre: z.string().describe("Nombre corto del escenario"),
+        queOcurre: z.string(),
+        queSignificaParaNosotros: z.string().describe("Qué pasa de nuestro lado si esto se da: económicamente y en tiempo"),
+        probabilidad: z.string().describe("Qué tan plausible y por qué, según la data — no un porcentaje inventado"),
+        nivel: nivelSchema,
+      })
+    )
+    .min(3)
+    .max(5)
+    .describe("Escenarios estratégicos, incluyendo siempre al menos uno donde esto sale mal"),
+  serviciosQueOfrecemos: z
+    .array(z.string())
+    .max(6)
+    .describe("Qué se le puede ofrecer a ESTE artista según lo que su data muestra que necesita — no un catálogo genérico de servicios"),
+  porQueNosotros: z
+    .string()
+    .describe("Qué nos hace los indicados para este artista en particular. El artista también nos elige: sin esto el análisis mira una sola cara de la mesa"),
+  costoDeOportunidad: z
+    .string()
+    .describe("Qué dejamos de hacer si tomamos esto. Para un equipo chico el cuello de botella es el tiempo, no las ganas: un caso de 70 que consume seis meses puede ser peor que dos de 50 que no"),
+  senalesDeAlerta: z.array(z.string()).max(4).describe("Lo que haría replantear todo: banderas rojas del artista, de su entorno o del trato"),
+  queFaltaSaber: z
+    .array(z.string())
+    .max(6)
+    .describe("Qué averiguar antes de comprometerse, incluidas las cifras de mercado que no se pudieron afirmar con certeza"),
+  veredicto: z.string().describe("La postura: entrar, entrar condicionado, esperar o pasar — y por qué. Clara, nunca un 'depende'"),
+  nivelGlobal: nivelSchema.describe("Con poca data del artista esto no puede ser alto, por convincente que suene la lectura"),
+});
+
+export type OportunidadResponse = z.infer<typeof oportunidadResponseSchema>;
 export type ARResponse = z.infer<typeof arResponseSchema>;
 export type TouringResponse = z.infer<typeof touringResponseSchema>;
 export type MarcaResponse = z.infer<typeof marcaResponseSchema>;

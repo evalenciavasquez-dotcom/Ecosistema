@@ -196,6 +196,17 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Decidir si sumarte a un artista",
+    pasos: [
+      "Carga lo que tengas del artista en los motores que apliquen. El puntaje se sostiene en data: con un proyecto vacío, el motor lo dice y no infla la confianza.",
+      "Oportunidad de Negocio → «Evaluar oportunidad». Si tienes contexto que el sistema no sabe («me lo presentó su manager», «este trimestre estoy corto de tiempo»), escríbelo en la nota.",
+      "Lee el puntaje con su escala: bajo 40 es rojo, de 40 a 69 amarillo, de 70 arriba verde. El número va de diez en diez a propósito — un 63 fingiría una precisión que no existe.",
+      "Lo importante no es el número sino «lo que lo baja». Si esa lista viene corta, desconfía: todo caso tiene contras.",
+      "Compara las vías de entrada. Cada una trae qué se pide, qué se da, qué se espera recuperar y —obligatorio— cómo se revisa o se sale.",
+      "Antes de decidir, lee «Costo de oportunidad». Un caso de 70 que te consume seis meses puede ser peor que dos de 50 que no.",
+    ],
+  },
+  {
     tarea: "Decidir si un feature conviene",
     pasos: [
       "Declara la marca primero, con su antipatrón. Sin eso el motor no puede señalar el nombre grande que rompe la identidad, que es justo para lo que sirve.",
@@ -482,6 +493,11 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     motor: "Ejecución / KPIs",
     cuandoUsarlo: "Para ver si el trimestre va a cerrar en meta y si el gasto va al ritmo correcto.",
     queCargar: "Métrica, valor actual, meta y una nota de contexto.",
+  },
+  {
+    motor: "Oportunidad de Negocio",
+    cuandoUsarlo: "Antes de comprometerte con un artista nuevo. Y cuando la ilusión por un caso empiece a pesar más que los números.",
+    queCargar: "Nada extra: usa todo lo que ya cargaste. Cuanta más data tenga el proyecto, más sostenido es el puntaje — con poco, el motor lo dice y baja el nivel de evidencia.",
   },
   {
     motor: "Triage",
