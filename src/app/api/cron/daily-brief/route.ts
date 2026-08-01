@@ -10,6 +10,13 @@ import { getConnection, isGoogleConfigured } from "@/lib/google";
 import { runGoogleSync } from "@/lib/googleSync";
 import type { MovimientoEconomico } from "@/lib/types";
 
+// El plan de Vercel de este proyecto permite un solo cron job (ver
+// vercel.json) — por eso esta ruta hace de anfitrión de todo lo que necesita
+// correr diario o mensual: el resumen diario, los retos de la IA (todos los
+// días) y el cierre económico mensual (día 1). Cualquier tarea programada
+// nueva debe colgarse de aquí en vez de agregar otra entrada a "crons" en
+// vercel.json, o el deploy puede fallar por exceder el límite del plan.
+
 function hoyISO(): string {
   // Fecha "hoy" en hora de Colombia (UTC-5), independiente del reloj del servidor.
   const now = new Date(Date.now() - 5 * 60 * 60 * 1000);
