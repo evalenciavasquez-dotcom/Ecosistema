@@ -177,6 +177,67 @@ function showsConConversion(p: VincereProyecto) {
   }));
 }
 
+// Contexto de Oportunidad. Es el motor que decide si entrar, así que recibe
+// todo lo que el sistema sabe del artista — incluidas las lecturas que otros
+// motores ya emitieron. Un análisis de negocio que ignora que Marca detectó una
+// brecha grave, o que Touring dijo que no está para salir, decide a ciegas.
+export function buildOportunidadContext(p: VincereProyecto): unknown {
+  return {
+    artista: p.nombre,
+    genero: p.genero,
+    fase: p.fase,
+    tipo: p.tipo,
+    momentum: {
+      streamsMes: p.resumen.streamsMes,
+      streamsMesLegible: formatStreams(p.resumen.streamsMes),
+      streamsCambioPct: p.resumen.streamsCambioPct,
+      seguidores: p.resumen.seguidores,
+      seguidoresLegible: formatFollowers(p.resumen.seguidores),
+      seguidoresCambioPct: p.resumen.seguidoresCambioPct,
+      momentumIndex: p.resumen.momentumIndex,
+      serieStreamsMiles: p.resumen.serie,
+    },
+    diagnostico: p.diagnostico,
+    marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca",
+    ...(p.marcaDiagnostico
+      ? {
+          brechaDeMarca: {
+            puntuacion: p.marcaDiagnostico.puntuacionCoherencia,
+            coherencia: p.marcaDiagnostico.coherencia,
+            veredicto: p.marcaDiagnostico.veredicto,
+          },
+        }
+      : {}),
+    catalogo: p.canciones.length
+      ? p.canciones.map((c) => ({
+          nombre: c.nombre,
+          streams: c.streams,
+          retencionPct: c.retencionPct,
+          skipPct: c.skipPct,
+          playlistAdds: c.playlistAdds,
+        }))
+      : "sin catálogo cargado",
+    audiencia: p.audiencia,
+    zonasCalor: p.zonasCalor.length ? p.zonasCalor : "sin zonas cargadas",
+    // La convocatoria real y el dinero que dejó cada fecha: la señal más
+    // cercana a "esto genera ingresos" que tiene el sistema.
+    shows: showsConConversion(p) ?? "sin shows registrados",
+    ...(p.touringDiagnostico
+      ? {
+          lecturaDeTouring: {
+            listoParaGira: p.touringDiagnostico.listoParaGira,
+            veredicto: p.touringDiagnostico.veredicto,
+          },
+        }
+      : {}),
+    kpis: p.kpis.length ? p.kpis : "sin KPIs cargados",
+    decisionesAbiertas: p.decisiones.filter((d) => d.estado === "Pendiente").map((d) => d.texto),
+    historialDeCargas:
+      historialReciente(p, 10) ?? "solo hay una foto de indicadores: no se puede leer trayectoria todavía",
+    ...(investigacionExterna(p, "todo", 4) ? { investigacionExterna: investigacionExterna(p, "todo", 4) } : {}),
+  };
+}
+
 // Contexto de A&R. La pregunta central —¿esta colaboración trae gente nueva?—
 // solo se puede responder sabiendo quién escucha hoy y qué dice el artista ser,
 // así que van audiencia, zonas y marca junto a los candidatos.

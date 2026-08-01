@@ -11,7 +11,9 @@ import {
   VincereInvestigacion,
   VincereInvestigacionTipo,
   VincereMarcaDiagnostico,
+  VincereModalidad,
   VincereNivel,
+  VincereOportunidad,
   VincerePotencialCancion,
   VincerePrioridadPaso,
   VincereSeccion,
@@ -277,6 +279,97 @@ const TIPOS_VARIABLE = ["ganadora", "perdedora", "incierta"] as const;
 const IMPACTOS = ["alto", "medio", "bajo"] as const;
 
 // Somete un plan de un tercero a prueba contra la realidad del artista.
+export async function fetchOportunidad(input: {
+  artista: unknown;
+  nota?: string;
+}): Promise<VincereOportunidad> {
+  const res = await fetch("/api/vincere/oportunidad", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Error ${res.status}`);
+  }
+  const r = (await res.json())?.result ?? {};
+  const textos = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+
+  const MODALIDADES: VincereModalidad[] = [
+    "management",
+    "management-360",
+    "por-proyecto",
+    "servicios",
+    "sociedad",
+    "distribucion",
+    "solo-asesoria",
+  ];
+
+  // Se fuerza el múltiplo de diez acá y no solo en el prompt: el semáforo se
+  // deriva del puntaje, y un 63 colado rompería la promesa de la escala.
+  const bruto = typeof r.puntaje === "number" ? r.puntaje : 0;
+  const puntaje = Math.min(100, Math.max(0, Math.round(bruto / 10) * 10));
+
+  return {
+    puntaje,
+    porQueEsePuntaje: r.porQueEsePuntaje ?? "",
+    loQueLoSube: textos(r.loQueLoSube),
+    loQueLoBaja: textos(r.loQueLoBaja),
+    vias: (Array.isArray(r.vias) ? r.vias : []).map(
+      (v: {
+        modalidad?: string;
+        comoFunciona?: string;
+        participacion?: string;
+        queAportamos?: string;
+        queEsperamosRecuperar?: string;
+        compromisosNuestros?: unknown;
+        compromisosDelArtista?: unknown;
+        clausulaDeRevision?: string;
+        riesgo?: string;
+        nivel?: number;
+      }) => ({
+        modalidad: MODALIDADES.includes(v.modalidad as VincereModalidad)
+          ? (v.modalidad as VincereModalidad)
+          : "servicios",
+        comoFunciona: v.comoFunciona ?? "",
+        participacion: v.participacion ?? "",
+        queAportamos: v.queAportamos ?? "",
+        queEsperamosRecuperar: v.queEsperamosRecuperar ?? "",
+        compromisosNuestros: textos(v.compromisosNuestros),
+        compromisosDelArtista: textos(v.compromisosDelArtista),
+        clausulaDeRevision: v.clausulaDeRevision ?? "",
+        riesgo: v.riesgo ?? "",
+        nivel: clampNivel(v.nivel),
+      })
+    ),
+    viaRecomendada: r.viaRecomendada ?? "",
+    escenarios: (Array.isArray(r.escenarios) ? r.escenarios : []).map(
+      (e: {
+        nombre?: string;
+        queOcurre?: string;
+        queSignificaParaNosotros?: string;
+        probabilidad?: string;
+        nivel?: number;
+      }) => ({
+        nombre: e.nombre ?? "",
+        queOcurre: e.queOcurre ?? "",
+        queSignificaParaNosotros: e.queSignificaParaNosotros ?? "",
+        probabilidad: e.probabilidad ?? "",
+        nivel: clampNivel(e.nivel),
+      })
+    ),
+    serviciosQueOfrecemos: textos(r.serviciosQueOfrecemos),
+    porQueNosotros: r.porQueNosotros ?? "",
+    costoDeOportunidad: r.costoDeOportunidad ?? "",
+    senalesDeAlerta: textos(r.senalesDeAlerta),
+    queFaltaSaber: textos(r.queFaltaSaber),
+    veredicto: r.veredicto ?? "",
+    nivelGlobal: clampNivel(r.nivelGlobal),
+    generadoEn: new Date().toISOString(),
+  };
+}
+
 export async function fetchAR(input: { artista: unknown; nota?: string }): Promise<VincereARDiagnostico> {
   const res = await fetch("/api/vincere/ar", {
     method: "POST",
