@@ -24,7 +24,7 @@ export default function ManagementSection({ proyecto }: { proyecto: VincereProye
       aiTitle="Lectura VINCERE — Prioridad de decisión"
     >
       <Panel>
-        {decisiones.length === 0 && <p className="vin-muted text-sm">Sin decisiones registradas.</p>}
+        {decisiones.length === 0 && <p className="vin-muted vin-t-sm">Sin decisiones registradas.</p>}
         {decisiones.map((d, i) => {
           const pendiente = d.estado === "Pendiente";
           const color = pendiente ? "var(--vin-accent)" : "var(--vin-faint)";
@@ -34,17 +34,17 @@ export default function ManagementSection({ proyecto }: { proyecto: VincereProye
               className="flex items-center justify-between gap-3 py-3"
               style={{ borderTop: i === 0 ? "none" : "1px solid var(--vin-border)" }}
             >
-              <span className="text-[15px]">{d.texto}</span>
+              <span className="vin-t-base">{d.texto}</span>
               <div className="flex shrink-0 items-center gap-2">
                 <button
                   onClick={() => setEstado(proyecto.id, d.id, pendiente ? "Tomada" : "Pendiente")}
-                  className="rounded-sm border px-2.5 py-1 text-[11px] uppercase tracking-[0.06em]"
+                  className="rounded-xl border px-2.5 py-1 vin-t-xs uppercase tracking-[0.06em]"
                   style={{ color, borderColor: color }}
                   title="Cambiar estado"
                 >
                   {d.estado}
                 </button>
-                <button onClick={() => deleteDecision(proyecto.id, d.id)} className="vin-faint px-1 text-xs hover:underline">
+                <button onClick={() => deleteDecision(proyecto.id, d.id)} className="vin-faint px-1 vin-t-xs hover:underline">
                   ✕
                 </button>
               </div>

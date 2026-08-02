@@ -37,7 +37,7 @@ export default function KpisSection({ proyecto }: { proyecto: VincereProyecto })
       aiTitle="Lectura VINCERE — Ejecución"
     >
       <div className="flex justify-end">
-        <button className="vin-faint text-xs hover:underline" onClick={() => setAdding((v) => !v)}>
+        <button className="vin-faint vin-t-xs hover:underline" onClick={() => setAdding((v) => !v)}>
           {adding ? "Cancelar" : "+ Agregar KPI"}
         </button>
       </div>
@@ -57,7 +57,7 @@ export default function KpisSection({ proyecto }: { proyecto: VincereProyecto })
 
       {kpis.length === 0 ? (
         <Panel>
-          <p className="vin-muted text-sm">Sin KPIs cargados.</p>
+          <p className="vin-muted vin-t-sm">Sin KPIs cargados.</p>
         </Panel>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -66,15 +66,15 @@ export default function KpisSection({ proyecto }: { proyecto: VincereProyecto })
             return (
               <Panel key={k.id}>
                 <div className="mb-2.5 flex items-start justify-between gap-2">
-                  <div className="vin-muted text-[13px]">{k.label}</div>
-                  <button onClick={() => deleteKpi(proyecto.id, k.id)} className="vin-faint text-xs hover:underline">✕</button>
+                  <div className="vin-muted vin-t-sm">{k.label}</div>
+                  <button onClick={() => deleteKpi(proyecto.id, k.id)} className="vin-faint vin-t-xs hover:underline">✕</button>
                 </div>
                 <div className="mb-2 flex items-baseline justify-between">
-                  <span className="vin-serif text-[22px]">
+                  <span className="vin-serif vin-t-xl">
                     {k.actual}
                     {k.unidad}
                   </span>
-                  <span className="vin-faint text-xs">
+                  <span className="vin-faint vin-t-xs">
                     meta {k.meta}
                     {k.unidad}
                   </span>
@@ -82,7 +82,7 @@ export default function KpisSection({ proyecto }: { proyecto: VincereProyecto })
                 <div className="vin-bar-track mb-2.5 h-2">
                   <div className="vin-bar-fill h-full" style={{ width: `${pct}%` }} />
                 </div>
-                <div className="vin-faint text-[12.5px] leading-relaxed">{k.nota}</div>
+                <div className="vin-faint vin-t-sm leading-relaxed">{k.nota}</div>
               </Panel>
             );
           })}

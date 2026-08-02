@@ -4,7 +4,7 @@ import { VincereStreamMes } from "@/lib/vincere/types";
 
 export default function StreamsChart({ serie }: { serie: VincereStreamMes[] }) {
   if (serie.length < 2) {
-    return <p className="vin-faint text-sm">Carga al menos dos meses de streams para ver la curva.</p>;
+    return <p className="vin-faint vin-t-sm">Carga al menos dos meses de streams para ver la curva.</p>;
   }
 
   const values = serie.map((s) => s.valor);
@@ -44,7 +44,7 @@ export default function StreamsChart({ serie }: { serie: VincereStreamMes[] }) {
       </div>
       <div className="mt-2 flex justify-between">
         {serie.map((s) => (
-          <span key={s.mes} className="vin-faint text-[11px]">
+          <span key={s.mes} className="vin-faint vin-t-xs">
             {s.mes}
           </span>
         ))}

@@ -77,11 +77,11 @@ export default function TouringSection({ proyecto }: { proyecto: VincereProyecto
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <PanelLabel>Shows realizados</PanelLabel>
-          <button onClick={() => setAgregando((v) => !v)} className="vin-faint text-xs hover:underline">
+          <button onClick={() => setAgregando((v) => !v)} className="vin-faint vin-t-xs hover:underline">
             {agregando ? "Cancelar" : "+ Registrar show"}
           </button>
         </div>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           La única evidencia dura de convocatoria. Un millón de reproducciones no dice cuánta gente cruza la ciudad
           para verte; una sala agotada sí.
         </p>
@@ -97,7 +97,7 @@ export default function TouringSection({ proyecto }: { proyecto: VincereProyecto
 
         {shows.length === 0 && !agregando && (
           <Panel>
-            <p className="vin-muted text-sm">
+            <p className="vin-muted vin-t-sm">
               Sin shows registrados. El motor funciona igual, pero sin conversión medida todo lo que diga sobre
               convocatoria es estimación desde streaming — y lo va a decir con nivel de evidencia bajo.
             </p>
@@ -118,7 +118,7 @@ export default function TouringSection({ proyecto }: { proyecto: VincereProyecto
 
       <Panel>
         <PanelLabel>Evaluar las plazas</PanelLabel>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           Cruza el mapa de calor, la conversión real de los shows y lo que se haya investigado de cada plaza.
         </p>
         <input
@@ -131,10 +131,10 @@ export default function TouringSection({ proyecto }: { proyecto: VincereProyecto
           <button onClick={analizar} disabled={cargando} className="vin-btn-primary">
             {cargando ? "Cruzando calor y convocatoria…" : diag ? "Volver a evaluar" : "Evaluar plazas"}
           </button>
-          {cargando && <span className="vin-faint text-xs">Ordenando ruta y buscando plazas trampa.</span>}
+          {cargando && <span className="vin-faint vin-t-xs">Ordenando ruta y buscando plazas trampa.</span>}
         </div>
         {error && (
-          <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
@@ -246,7 +246,7 @@ function Campo({
 }) {
   return (
     <div className={ancho}>
-      <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">{label}</div>
+      <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">{label}</div>
       <input
         type={tipo}
         value={valor}
@@ -275,25 +275,25 @@ function FilaShow({
     <div className="vin-card border-l-2 p-4" style={{ borderLeftColor: color }}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2.5">
-          <span className="text-[15px] font-medium">{show.ciudad}</span>
-          {show.sala && <span className="vin-muted text-[13px]">{show.sala}</span>}
-          <span className="vin-faint text-[11.5px] tabular-nums">{show.fecha}</span>
+          <span className="vin-t-base font-medium">{show.ciudad}</span>
+          {show.sala && <span className="vin-muted vin-t-sm">{show.sala}</span>}
+          <span className="vin-faint vin-t-sm tabular-nums">{show.fecha}</span>
         </div>
         <div className="flex items-center gap-3">
           {hayConversion ? (
             <>
-              <span className="tabular-nums text-[13px]">
+              <span className="tabular-nums vin-t-sm">
                 <span style={{ color }}>{show.asistencia}</span>
                 <span className="vin-faint"> / {show.aforo}</span>
               </span>
-              <span className="vin-serif text-lg tabular-nums" style={{ color }}>
+              <span className="vin-serif vin-t-lg tabular-nums" style={{ color }}>
                 {pct}%
               </span>
             </>
           ) : (
-            <span className="vin-faint text-[11.5px]">sin taquilla reportada</span>
+            <span className="vin-faint vin-t-sm">sin taquilla reportada</span>
           )}
-          <button onClick={onDelete} className="vin-faint px-1 text-xs hover:underline" title="Eliminar">
+          <button onClick={onDelete} className="vin-faint px-1 vin-t-xs hover:underline" title="Eliminar">
             ✕
           </button>
         </div>
@@ -306,7 +306,7 @@ function FilaShow({
       )}
 
       {show.ingresoNeto != null && (
-        <div className="vin-faint mb-2 text-[11.5px] tabular-nums">
+        <div className="vin-faint mb-2 vin-t-sm tabular-nums">
           Neto: {show.ingresoNeto.toLocaleString("es")} {show.moneda}
         </div>
       )}
@@ -316,7 +316,7 @@ function FilaShow({
         onChange={(e) => onUpdate({ nota: e.target.value })}
         rows={1}
         placeholder="Cómo estuvo la noche — la IA lo lee para entender por qué convirtió o no"
-        className="vin-input resize-none text-[13px]"
+        className="vin-input resize-none vin-t-sm"
       />
     </div>
   );
@@ -337,7 +337,7 @@ function DiagnosticoTouring({
             <div className="vin-eyebrow mb-2">Diagnóstico de plazas</div>
             <div className="flex flex-wrap items-center gap-2.5">
               <span
-                className="rounded-sm px-2.5 py-1 text-[12px] font-medium"
+                className="rounded-xl px-2.5 py-1 vin-t-sm font-medium"
                 style={{
                   color: diag.listoParaGira ? "#5cc98e" : "#e0a83a",
                   border: `1px solid ${diag.listoParaGira ? "#5cc98e" : "#e0a83a"}66`,
@@ -349,12 +349,12 @@ function DiagnosticoTouring({
               <EvidenceTag nivel={diag.nivelGlobal} />
             </div>
           </div>
-          <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
+          <button onClick={onEliminar} className="vin-faint vin-no-print px-1 vin-t-xs hover:underline" title="Eliminar">
             ✕
           </button>
         </div>
-        <p className="text-[15px] leading-relaxed">{diag.lecturaGeneral}</p>
-        <p className="vin-faint mt-2.5 text-xs">
+        <p className="vin-t-base leading-relaxed">{diag.lecturaGeneral}</p>
+        <p className="vin-faint mt-2.5 vin-t-xs">
           Generado el{" "}
           {new Date(diag.generadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
         </p>
@@ -371,9 +371,9 @@ function DiagnosticoTouring({
                 style={{ borderLeftColor: VEREDICTO_COLOR[pl.veredicto] }}
               >
                 <div className="mb-2 flex flex-wrap items-center gap-2.5">
-                  <span className="text-[15px] font-medium">{pl.ciudad}</span>
+                  <span className="vin-t-base font-medium">{pl.ciudad}</span>
                   <span
-                    className="rounded-full border px-2 py-0.5 text-[10.5px] font-medium"
+                    className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
                     style={{
                       color: VEREDICTO_COLOR[pl.veredicto],
                       borderColor: `${VEREDICTO_COLOR[pl.veredicto]}66`,
@@ -383,17 +383,17 @@ function DiagnosticoTouring({
                   </span>
                   <EvidenceTag nivel={pl.nivel} />
                 </div>
-                <p className="mb-2.5 text-[14px] leading-relaxed">{pl.lectura}</p>
+                <p className="mb-2.5 vin-t-base leading-relaxed">{pl.lectura}</p>
                 <div className="grid gap-2.5 md:grid-cols-2">
-                  <div className="rounded-sm p-3" style={{ background: "var(--vin-surface)" }}>
-                    <div className="vin-faint mb-1 text-[10.5px] uppercase tracking-[0.08em]">Sala que aguanta</div>
-                    <p className="text-[13.5px] leading-relaxed">{pl.tamanoSala}</p>
+                  <div className="rounded-xl p-3" style={{ background: "var(--vin-surface)" }}>
+                    <div className="vin-faint mb-1 vin-t-xs uppercase tracking-[0.08em]">Sala que aguanta</div>
+                    <p className="vin-t-base leading-relaxed">{pl.tamanoSala}</p>
                   </div>
-                  <div className="rounded-sm p-3" style={{ background: "var(--vin-surface)" }}>
-                    <div className="vin-faint mb-1 text-[10.5px] uppercase tracking-[0.08em]">
+                  <div className="rounded-xl p-3" style={{ background: "var(--vin-surface)" }}>
+                    <div className="vin-faint mb-1 vin-t-xs uppercase tracking-[0.08em]">
                       De escucha a asistencia
                     </div>
-                    <p className="text-[13.5px] leading-relaxed">{pl.senalDeConversion}</p>
+                    <p className="vin-t-base leading-relaxed">{pl.senalDeConversion}</p>
                   </div>
                 </div>
               </div>
@@ -405,7 +405,7 @@ function DiagnosticoTouring({
       {diag.ruta.length > 0 && (
         <section>
           <PanelLabel>Ruta sugerida</PanelLabel>
-          <p className="vin-faint mb-3 text-xs leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
             Se arranca donde hay certeza y se cierra donde hay riesgo — una plaza dudosa al principio contamina la
             gira entera.
           </p>
@@ -413,14 +413,14 @@ function DiagnosticoTouring({
             {diag.ruta.map((t) => (
               <div key={t.orden} className="flex gap-3">
                 <div
-                  className="vin-serif flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px]"
+                  className="vin-serif flex h-7 w-7 shrink-0 items-center justify-center rounded-full vin-t-sm"
                   style={{ border: "1px solid var(--vin-border-strong)", color: "var(--vin-accent)" }}
                 >
                   {t.orden}
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="text-[14.5px] font-medium">{t.ciudad}</div>
-                  <p className="vin-muted text-[13px] leading-relaxed">{t.porQueVaAqui}</p>
+                  <div className="vin-t-base font-medium">{t.ciudad}</div>
+                  <p className="vin-muted vin-t-sm leading-relaxed">{t.porQueVaAqui}</p>
                 </div>
               </div>
             ))}
@@ -430,19 +430,19 @@ function DiagnosticoTouring({
 
       {diag.trampas.length > 0 && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
         >
           <PanelLabel>
             <span style={{ color: "var(--vin-accent)" }}>Plazas trampa</span>
           </PanelLabel>
-          <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
             Las que la data hace ver bien y no lo están. Es lo que evita el show con sala vacía en la ciudad de más
             streams.
           </p>
           <ul className="space-y-2">
             {diag.trampas.map((t, i) => (
-              <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed">
+              <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                 <span style={{ color: "var(--vin-accent)" }}>—</span>
                 <span>{t}</span>
               </li>
@@ -456,7 +456,7 @@ function DiagnosticoTouring({
           <PanelLabel>Qué averiguar antes de reservar</PanelLabel>
           <ul className="space-y-2">
             {diag.queFaltaSaber.map((q, i) => (
-              <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+              <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                 <span className="vin-faint tabular-nums">{i + 1}.</span>
                 <span>{q}</span>
               </li>
@@ -466,13 +466,13 @@ function DiagnosticoTouring({
       )}
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
         </PanelLabel>
-        <p className="text-[15px] leading-relaxed">{diag.veredicto}</p>
+        <p className="vin-t-base leading-relaxed">{diag.veredicto}</p>
       </div>
 
       <div className="vin-no-print">

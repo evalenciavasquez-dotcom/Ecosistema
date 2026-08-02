@@ -60,7 +60,7 @@ export default function VincereHydration({ children }: { children: React.ReactNo
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center text-sm text-muted">Cargando VINCERE…</div>
+      <div className="flex min-h-[60vh] items-center justify-center vin-t-sm text-muted">Cargando VINCERE…</div>
     );
   }
 

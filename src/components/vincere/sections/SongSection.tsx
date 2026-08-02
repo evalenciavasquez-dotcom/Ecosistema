@@ -28,7 +28,7 @@ function PotencialBadge({ tipo }: { tipo: VincerePotencialCancion }) {
   const color = POTENCIAL_COLOR[tipo];
   return (
     <span
-      className="inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium tracking-wide"
+      className="inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 vin-t-xs font-medium tracking-wide"
       style={{ color, borderColor: `${color}66` }}
     >
       {VINCERE_POTENCIAL_LABEL[tipo]}
@@ -40,7 +40,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <div className="vin-label mb-1.5">{label}</div>
-      <p className="text-sm leading-relaxed">{children}</p>
+      <p className="vin-t-sm leading-relaxed">{children}</p>
     </div>
   );
 }
@@ -93,7 +93,7 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
       }
     >
       <div className="flex justify-end">
-        <button className="vin-faint text-xs hover:underline" onClick={() => setAdding((v) => !v)}>
+        <button className="vin-faint vin-t-xs hover:underline" onClick={() => setAdding((v) => !v)}>
           {adding ? "Cancelar" : "+ Agregar canción"}
         </button>
       </div>
@@ -113,7 +113,7 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
 
       {songs.length === 0 ? (
         <Panel>
-          <p className="vin-muted text-sm">Sin canciones cargadas. Agrega la primera para activar esta sección.</p>
+          <p className="vin-muted vin-t-sm">Sin canciones cargadas. Agrega la primera para activar esta sección.</p>
         </Panel>
       ) : (
         <div className="space-y-2.5">
@@ -123,13 +123,13 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
               <div
                 key={song.id}
                 onClick={() => setSelectedId(song.id)}
-                className="grid cursor-pointer grid-cols-2 items-center gap-3 rounded-sm p-4 md:grid-cols-[1.4fr_2fr_0.7fr_0.7fr_0.7fr_0.9fr_auto]"
+                className="grid cursor-pointer grid-cols-2 items-center gap-3 rounded-xl p-4 md:grid-cols-[1.4fr_2fr_0.7fr_0.7fr_0.7fr_0.9fr_auto]"
                 style={{
                   background: active ? "rgba(224,72,58,0.08)" : "transparent",
                   border: `1px solid ${active ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
                 }}
               >
-                <div className="flex items-center gap-2 text-[15px]">
+                <div className="flex items-center gap-2 vin-t-base">
                   {song.analisis && (
                     <span
                       className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -142,16 +142,16 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
                 <div className="vin-bar-track hidden h-2 md:block">
                   <div className="vin-bar-fill h-full" style={{ width: `${(song.streams / maxStreams) * 100}%` }} />
                 </div>
-                <div className="vin-muted text-[13px]">{formatStreams(song.streams)}</div>
-                <div className="vin-muted text-[13px]">ret. {song.retencionPct}%</div>
-                <div className="vin-muted text-[13px]">skip {song.skipPct}%</div>
-                <div className="vin-muted text-[13px]">{song.playlistAdds} adds</div>
+                <div className="vin-muted vin-t-sm">{formatStreams(song.streams)}</div>
+                <div className="vin-muted vin-t-sm">ret. {song.retencionPct}%</div>
+                <div className="vin-muted vin-t-sm">skip {song.skipPct}%</div>
+                <div className="vin-muted vin-t-sm">{song.playlistAdds} adds</div>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteCancion(proyecto.id, song.id);
                   }}
-                  className="vin-faint justify-self-end px-2 text-xs hover:underline"
+                  className="vin-faint justify-self-end px-2 vin-t-xs hover:underline"
                   title="Eliminar"
                 >
                   ✕
@@ -287,10 +287,10 @@ function SongDetail({
     <Panel>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
-          <span className="vin-serif text-xl">{song.nombre}</span>
+          <span className="vin-serif vin-t-xl">{song.nombre}</span>
           {analisis && <PotencialBadge tipo={analisis.clasificacionPotencial} />}
         </div>
-        <span className="vin-faint text-xs">
+        <span className="vin-faint vin-t-xs">
           {song.streams > 0 ? `${formatStreams(song.streams)} · ret. ${song.retencionPct}% · skip ${song.skipPct}%` : "sin métricas"}
         </span>
       </div>
@@ -313,14 +313,14 @@ function SongDetail({
           {loading ? "Analizando la letra…" : analisis ? "Volver a analizar" : "Analizar canción con VINCERE"}
         </button>
         {analisis && (
-          <span className="vin-faint text-xs">
+          <span className="vin-faint vin-t-xs">
             Analizada el {new Date(analisis.generadoEn).toLocaleDateString("es", { day: "numeric", month: "short" })}
           </span>
         )}
       </div>
 
       {error && (
-        <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+        <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
           {error}
         </p>
       )}
@@ -360,7 +360,7 @@ function SongDetail({
               <div className="vin-label mb-1.5">Qué reescribiría</div>
               <ul className="space-y-1.5">
                 {analisis.reescrituras.map((r, i) => (
-                  <li key={i} className="flex gap-2 text-sm leading-relaxed">
+                  <li key={i} className="flex gap-2 vin-t-sm leading-relaxed">
                     <span style={{ color: "var(--vin-accent)" }}>—</span>
                     <span>{r}</span>
                   </li>
@@ -370,13 +370,13 @@ function SongDetail({
           )}
 
           <div
-            className="mt-4 rounded-sm p-4"
+            className="mt-4 rounded-xl p-4"
             style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.25)" }}
           >
             <div className="vin-label mb-1.5" style={{ color: "var(--vin-accent)" }}>
               La decisión
             </div>
-            <p className="text-sm leading-relaxed">{analisis.decision}</p>
+            <p className="vin-t-sm leading-relaxed">{analisis.decision}</p>
           </div>
         </div>
       )}

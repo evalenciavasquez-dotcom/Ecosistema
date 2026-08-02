@@ -28,14 +28,14 @@ export default function DiagnosticoSection({ proyecto }: { proyecto: VincereProy
       aiTitle="Lectura VINCERE — Diagnóstico"
     >
       <div className="flex justify-end">
-        <button className="vin-faint text-xs hover:underline" onClick={() => setEditing((v) => !v)}>
+        <button className="vin-faint vin-t-xs hover:underline" onClick={() => setEditing((v) => !v)}>
           {editing ? "Cerrar edición" : "Editar data"}
         </button>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {FIELDS.map((f) => (
           <Panel key={f.key}>
-            <div className="vin-faint mb-2 text-[11px] uppercase tracking-[0.08em]">{f.label}</div>
+            <div className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">{f.label}</div>
             {editing ? (
               <textarea
                 value={d[f.key]}
@@ -44,7 +44,7 @@ export default function DiagnosticoSection({ proyecto }: { proyecto: VincereProy
                 className="vin-input resize-none"
               />
             ) : (
-              <div className="text-base leading-relaxed">{d[f.key] || <span className="vin-faint">—</span>}</div>
+              <div className="vin-t-base leading-relaxed">{d[f.key] || <span className="vin-faint">—</span>}</div>
             )}
           </Panel>
         ))}

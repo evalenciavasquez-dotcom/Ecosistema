@@ -80,10 +80,10 @@ export default function ARSection({ proyecto }: { proyecto: VincereProyecto }) {
     >
       {sinMarca && (
         <div
-          className="rounded-sm p-4"
+          className="rounded-xl p-4"
           style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.3)" }}
         >
-          <p className="text-[13.5px] leading-relaxed">
+          <p className="vin-t-base leading-relaxed">
             <span style={{ color: "#e0a83a" }}>Sin marca declarada.</span> Este motor juzga sobre todo contra el
             antipatrón — lo que el artista dijo que <em>no</em> es. Sin eso, un nombre grande que rompa la identidad no
             se puede señalar con solidez. Declárala en <strong>Marca</strong> primero.
@@ -94,7 +94,7 @@ export default function ARSection({ proyecto }: { proyecto: VincereProyecto }) {
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <PanelLabel>Candidatos</PanelLabel>
-          <button onClick={() => setAgregando((v) => !v)} className="vin-faint text-xs hover:underline">
+          <button onClick={() => setAgregando((v) => !v)} className="vin-faint vin-t-xs hover:underline">
             {agregando ? "Cancelar" : "+ Añadir candidato"}
           </button>
         </div>
@@ -111,7 +111,7 @@ export default function ARSection({ proyecto }: { proyecto: VincereProyecto }) {
 
         {candidatos.length === 0 && !agregando && (
           <Panel>
-            <p className="vin-muted text-sm">
+            <p className="vin-muted vin-t-sm">
               Sin candidatos. El motor funciona igual y devuelve qué perfil de colaborador le falta hoy a este artista,
               que suele ser más útil que evaluar una lista que alguien más armó.
             </p>
@@ -137,7 +137,7 @@ export default function ARSection({ proyecto }: { proyecto: VincereProyecto }) {
 
       <Panel>
         <PanelLabel>Evaluar candidatos</PanelLabel>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           Cruza cada candidato con la marca declarada, la audiencia que ya tienes y lo que se haya investigado de
           ellos.
         </p>
@@ -151,10 +151,10 @@ export default function ARSection({ proyecto }: { proyecto: VincereProyecto }) {
           <button onClick={analizar} disabled={cargando} className="vin-btn-primary">
             {cargando ? "Cruzando marca, audiencia y tamaño…" : diag ? "Volver a evaluar" : "Evaluar candidatos"}
           </button>
-          {cargando && <span className="vin-faint text-xs">Buscando solapamientos y asimetrías.</span>}
+          {cargando && <span className="vin-faint vin-t-xs">Buscando solapamientos y asimetrías.</span>}
         </div>
         {error && (
-          <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
@@ -184,17 +184,17 @@ function FormularioCandidato({
     <Panel className="mb-3">
       <div className="grid gap-3 md:grid-cols-2">
         <div>
-          <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">Nombre</div>
+          <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">Nombre</div>
           <input value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} className="vin-input" />
         </div>
         <div>
-          <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">Tipo</div>
+          <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">Tipo</div>
           <div className="flex gap-1.5">
             {TIPOS.map((t) => (
               <button
                 key={t}
                 onClick={() => setF({ ...f, tipo: t })}
-                className="rounded-full border px-2.5 py-1 text-[11.5px] transition-colors"
+                className="rounded-full border px-2.5 py-1 vin-t-sm transition-colors"
                 style={{
                   color: f.tipo === t ? "var(--vin-text)" : "var(--vin-dim)",
                   borderColor: f.tipo === t ? "var(--vin-accent)" : "var(--vin-border)",
@@ -209,7 +209,7 @@ function FormularioCandidato({
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div>
-          <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">Qué aporta</div>
+          <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">Qué aporta</div>
           <input
             value={f.queAporta}
             onChange={(e) => setF({ ...f, queAporta: e.target.value })}
@@ -218,7 +218,7 @@ function FormularioCandidato({
           />
         </div>
         <div>
-          <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">De dónde salió</div>
+          <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">De dónde salió</div>
           <input
             value={f.origen}
             onChange={(e) => setF({ ...f, origen: e.target.value })}
@@ -258,8 +258,8 @@ function FilaCandidato({
     <div className="vin-card border-l-2 p-4" style={{ borderLeftColor: ESTADO_COLOR[candidato.estado] }}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-baseline gap-2.5">
-          <span className="text-[15px] font-medium">{candidato.nombre}</span>
-          <span className="vin-faint text-[11.5px] uppercase tracking-wide">
+          <span className="vin-t-base font-medium">{candidato.nombre}</span>
+          <span className="vin-faint vin-t-sm uppercase tracking-wide">
             {VINCERE_CANDIDATO_TIPO_LABEL[candidato.tipo]}
           </span>
         </div>
@@ -268,7 +268,7 @@ function FilaCandidato({
             <button
               key={e}
               onClick={() => onUpdate({ estado: e })}
-              className="rounded-full border px-2 py-0.5 text-[10.5px] transition-colors"
+              className="rounded-full border px-2 py-0.5 vin-t-xs transition-colors"
               style={{
                 color: candidato.estado === e ? ESTADO_COLOR[e] : "var(--vin-dim)",
                 borderColor: candidato.estado === e ? `${ESTADO_COLOR[e]}66` : "var(--vin-border)",
@@ -278,7 +278,7 @@ function FilaCandidato({
               {VINCERE_CANDIDATO_ESTADO_LABEL[e]}
             </button>
           ))}
-          <button onClick={onDelete} className="vin-faint px-1 text-xs hover:underline" title="Eliminar">
+          <button onClick={onDelete} className="vin-faint px-1 vin-t-xs hover:underline" title="Eliminar">
             ✕
           </button>
         </div>
@@ -288,14 +288,14 @@ function FilaCandidato({
         value={candidato.queAporta}
         onChange={(e) => onUpdate({ queAporta: e.target.value })}
         placeholder="Qué aporta esta colaboración"
-        className="vin-input mb-2 text-[13.5px]"
+        className="vin-input mb-2 vin-t-base"
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {candidato.origen && <span className="vin-faint text-[11.5px]">Origen: {candidato.origen}</span>}
+        {candidato.origen && <span className="vin-faint vin-t-sm">Origen: {candidato.origen}</span>}
         {/* Sin investigación, el solapamiento de audiencia es suposición: este
             atajo es el que convierte el candidato en evidencia. */}
-        <button onClick={onInvestigar} className="vin-faint text-[11.5px] hover:underline">
+        <button onClick={onInvestigar} className="vin-faint vin-t-sm hover:underline">
           Investigar a {candidato.nombre} →
         </button>
       </div>
@@ -311,13 +311,13 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
           <div className="vin-eyebrow">Evaluación de A&amp;R</div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={diag.nivelGlobal} />
-            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
+            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 vin-t-xs hover:underline" title="Eliminar">
               ✕
             </button>
           </div>
         </div>
-        <p className="text-[15px] leading-relaxed">{diag.lecturaGeneral}</p>
-        <p className="vin-faint mt-2.5 text-xs">
+        <p className="vin-t-base leading-relaxed">{diag.lecturaGeneral}</p>
+        <p className="vin-faint mt-2.5 vin-t-xs">
           Generado el{" "}
           {new Date(diag.generadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
         </p>
@@ -325,13 +325,13 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
 
       {diag.primeroPerseguir && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{ background: "rgba(92,201,142,0.07)", border: "1px solid rgba(92,201,142,0.28)" }}
         >
           <PanelLabel>
             <span style={{ color: "#5cc98e" }}>A quién ir primero</span>
           </PanelLabel>
-          <p className="text-[15px] leading-relaxed">{diag.primeroPerseguir}</p>
+          <p className="vin-t-base leading-relaxed">{diag.primeroPerseguir}</p>
         </div>
       )}
 
@@ -342,9 +342,9 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
             {diag.candidatos.map((c, i) => (
               <div key={i} className="vin-card border-l-2 p-4" style={{ borderLeftColor: VEREDICTO_COLOR[c.veredicto] }}>
                 <div className="mb-2.5 flex flex-wrap items-center gap-2.5">
-                  <span className="text-[15px] font-medium">{c.nombre}</span>
+                  <span className="vin-t-base font-medium">{c.nombre}</span>
                   <span
-                    className="rounded-full border px-2 py-0.5 text-[10.5px] font-medium"
+                    className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
                     style={{ color: VEREDICTO_COLOR[c.veredicto], borderColor: `${VEREDICTO_COLOR[c.veredicto]}66` }}
                   >
                     {VINCERE_VEREDICTO_COLAB_LABEL[c.veredicto]}
@@ -360,17 +360,17 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
 
                 <div className="mt-2.5 grid gap-2.5 md:grid-cols-2">
                   <div>
-                    <div className="vin-faint mb-1 text-[10.5px] uppercase tracking-[0.08em]">Gana</div>
-                    <p className="text-[13.5px] leading-relaxed">{c.queGana}</p>
+                    <div className="vin-faint mb-1 vin-t-xs uppercase tracking-[0.08em]">Gana</div>
+                    <p className="vin-t-base leading-relaxed">{c.queGana}</p>
                   </div>
                   <div>
                     <div
-                      className="mb-1 text-[10.5px] uppercase tracking-[0.08em]"
+                      className="mb-1 vin-t-xs uppercase tracking-[0.08em]"
                       style={{ color: "var(--vin-accent)" }}
                     >
                       Arriesga
                     </div>
-                    <p className="text-[13.5px] leading-relaxed">{c.queArriesga}</p>
+                    <p className="vin-t-base leading-relaxed">{c.queArriesga}</p>
                   </div>
                 </div>
               </div>
@@ -381,19 +381,19 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
 
       {diag.senalesDeAlerta.length > 0 && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
         >
           <PanelLabel>
             <span style={{ color: "var(--vin-accent)" }}>Señales de alerta</span>
           </PanelLabel>
-          <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
             Colaboraciones que se ven bien y no lo son: el nombre grande que rompe la marca, el amigo del circuito que
             ya comparte tu público.
           </p>
           <ul className="space-y-2">
             {diag.senalesDeAlerta.map((s, i) => (
-              <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed">
+              <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                 <span style={{ color: "var(--vin-accent)" }}>—</span>
                 <span>{s}</span>
               </li>
@@ -406,10 +406,10 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
         {diag.perfilQueFalta && (
           <Panel>
             <PanelLabel>El perfil que falta</PanelLabel>
-            <p className="vin-faint mb-2 text-[11.5px] leading-relaxed">
+            <p className="vin-faint mb-2 vin-t-sm leading-relaxed">
               Qué tipo de colaborador necesita hoy, mire o no la lista actual.
             </p>
-            <p className="text-[14px] leading-relaxed">{diag.perfilQueFalta}</p>
+            <p className="vin-t-base leading-relaxed">{diag.perfilQueFalta}</p>
           </Panel>
         )}
 
@@ -418,7 +418,7 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
             <PanelLabel>Qué averiguar antes de mover</PanelLabel>
             <ul className="space-y-2">
               {diag.queFaltaSaber.map((q, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint tabular-nums">{i + 1}.</span>
                   <span>{q}</span>
                 </li>
@@ -429,13 +429,13 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
       </div>
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
         </PanelLabel>
-        <p className="text-[15px] leading-relaxed">{diag.veredicto}</p>
+        <p className="vin-t-base leading-relaxed">{diag.veredicto}</p>
       </div>
 
       <div className="vin-no-print">
@@ -450,7 +450,7 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
 function Celda({ label, texto, destacado = false }: { label: string; texto: string; destacado?: boolean }) {
   return (
     <div
-      className="rounded-sm p-3"
+      className="rounded-xl p-3"
       style={
         destacado
           ? { background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.22)" }
@@ -458,12 +458,12 @@ function Celda({ label, texto, destacado = false }: { label: string; texto: stri
       }
     >
       <div
-        className="mb-1 text-[10.5px] uppercase tracking-[0.08em]"
+        className="mb-1 vin-t-xs uppercase tracking-[0.08em]"
         style={destacado ? { color: "var(--vin-accent)" } : undefined}
       >
         <span className={destacado ? "" : "vin-faint"}>{label}</span>
       </div>
-      <p className="text-[13px] leading-relaxed">{texto}</p>
+      <p className="vin-t-sm leading-relaxed">{texto}</p>
     </div>
   );
 }

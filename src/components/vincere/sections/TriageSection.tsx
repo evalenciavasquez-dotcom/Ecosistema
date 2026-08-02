@@ -133,7 +133,7 @@ export default function TriageSection() {
             {/* Cuánta data hay. Es lo que decide hasta dónde puede llegar el
                 veredicto: el techo de nivel se aplica también en el cliente. */}
             <div>
-              <p className="vin-faint mb-2 text-[10.5px] uppercase tracking-[0.08em]">Cantidad de data disponible</p>
+              <p className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">Cantidad de data disponible</p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {CANTIDADES.map((c) => {
                   const activa = form.dataDisponible === c;
@@ -142,14 +142,14 @@ export default function TriageSection() {
                       key={c}
                       type="button"
                       onClick={() => setForm({ ...form, dataDisponible: c })}
-                      className="rounded-sm border p-2.5 text-left transition-colors"
+                      className="rounded-xl border p-2.5 text-left transition-colors"
                       style={{
                         borderColor: activa ? "var(--vin-accent)" : "var(--vin-border)",
                         background: activa ? "var(--vin-surface-2)" : "transparent",
                       }}
                     >
-                      <span className="block text-[13px] font-medium">{VINCERE_CANTIDAD_DATA_LABEL[c]}</span>
-                      <span className="vin-faint mt-1 block text-[11px] leading-relaxed">
+                      <span className="block vin-t-sm font-medium">{VINCERE_CANTIDAD_DATA_LABEL[c]}</span>
+                      <span className="vin-faint mt-1 block vin-t-xs leading-relaxed">
                         {VINCERE_CANTIDAD_DATA_DESC[c]}
                       </span>
                     </button>
@@ -158,23 +158,23 @@ export default function TriageSection() {
               </div>
             </div>
 
-            <details className="rounded-sm" style={{ border: "1px solid var(--vin-border)" }}>
-              <summary className="vin-muted cursor-pointer px-3 py-2 text-[12px]">
+            <details className="rounded-xl" style={{ border: "1px solid var(--vin-border)" }}>
+              <summary className="vin-muted cursor-pointer px-3 py-2 vin-t-sm">
                 Qué data hace un análisis más completo
               </summary>
               <ul className="space-y-1.5 px-3 pb-3">
                 {VINCERE_DATA_QUE_SIRVE.map((d, i) => (
-                  <li key={i} className="vin-faint text-[11.5px] leading-relaxed">
+                  <li key={i} className="vin-faint vin-t-sm leading-relaxed">
                     · {d}
                   </li>
                 ))}
               </ul>
-              <p className="vin-faint px-3 pb-3 text-[11px] leading-relaxed">
+              <p className="vin-faint px-3 pb-3 vin-t-xs leading-relaxed">
                 Pídela antes de decir que sí. Después del primer análisis, pedirla se ve como que no sabías.
               </p>
             </details>
 
-            {error && <p className="text-xs" style={{ color: "var(--vin-accent)" }}>{error}</p>}
+            {error && <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>{error}</p>}
             <button onClick={run} disabled={loading} className="vin-btn-primary justify-self-start">
               {loading ? "Analizando…" : "Analizar caso"}
             </button>
@@ -187,16 +187,16 @@ export default function TriageSection() {
               <div key={c.id} className="vin-accent-card p-5">
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div>
-                    <span className="text-[15px] font-medium">{c.nombre}</span>
-                    {c.genero && <span className="vin-faint ml-2 text-xs">{c.genero}</span>}
-                    <span className="vin-faint ml-2 text-xs">· {c.fase}</span>
+                    <span className="vin-t-base font-medium">{c.nombre}</span>
+                    {c.genero && <span className="vin-faint ml-2 vin-t-xs">{c.genero}</span>}
+                    <span className="vin-faint ml-2 vin-t-xs">· {c.fase}</span>
                     {c.dataDisponible && (
-                      <span className="vin-faint ml-2 text-xs">
+                      <span className="vin-faint ml-2 vin-t-xs">
                         · data {VINCERE_CANTIDAD_DATA_LABEL[c.dataDisponible].toLowerCase()}
                       </span>
                     )}
                   </div>
-                  <button onClick={() => deleteTriageCaso(c.id)} className="vin-faint text-xs hover:underline">
+                  <button onClick={() => deleteTriageCaso(c.id)} className="vin-faint vin-t-xs hover:underline">
                     ✕
                   </button>
                 </div>
@@ -205,46 +205,46 @@ export default function TriageSection() {
                     <div className="mb-2.5 flex flex-wrap items-center gap-2">
                       {c.prioridad && (
                         <span
-                          className="rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                          className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
                           style={{ color: PRIORIDAD_COLOR[c.prioridad], borderColor: `${PRIORIDAD_COLOR[c.prioridad]}66` }}
                         >
                           Prioridad {c.prioridad}
                         </span>
                       )}
                       {c.motorRecomendado && (
-                        <span className="vin-muted rounded-full px-2 py-0.5 text-[11px]" style={{ background: "var(--vin-surface-2)" }}>
+                        <span className="vin-muted rounded-full px-2 py-0.5 vin-t-xs" style={{ background: "var(--vin-surface-2)" }}>
                           Entrada: {c.motorRecomendado}
                         </span>
                       )}
                       {c.nivel && <EvidenceTag nivel={c.nivel} />}
                     </div>
-                    <p className="text-sm leading-relaxed">{c.veredicto}</p>
+                    <p className="vin-t-sm leading-relaxed">{c.veredicto}</p>
 
                     {/* El encuadre comercial: cómo entrar y qué cuesta en
                         tiempo. Es una propuesta para confirmar, no un acuerdo. */}
                     {(c.vinculoSugerido || c.comoCobrarlo || c.horasSemanalesEstimadas != null) && (
                       <div
-                        className="mt-3 rounded-sm p-3"
+                        className="mt-3 rounded-xl p-3"
                         style={{ background: "var(--vin-surface)", border: "1px solid var(--vin-border)" }}
                       >
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                          <span className="vin-faint text-[10.5px] uppercase tracking-[0.08em]">Encuadre sugerido</span>
+                          <span className="vin-faint vin-t-xs uppercase tracking-[0.08em]">Encuadre sugerido</span>
                           {c.vinculoSugerido && (
                             <span
-                              className="rounded-full border px-2 py-0.5 text-[11px]"
+                              className="rounded-full border px-2 py-0.5 vin-t-xs"
                               style={{ color: "var(--vin-muted)", borderColor: "var(--vin-border-strong)" }}
                             >
                               {VINCERE_VINCULO_LABEL[c.vinculoSugerido]}
                             </span>
                           )}
                           {c.horasSemanalesEstimadas != null && (
-                            <span className="vin-faint text-[11.5px] tabular-nums">
+                            <span className="vin-faint vin-t-sm tabular-nums">
                               ~{c.horasSemanalesEstimadas}h/semana
                             </span>
                           )}
                         </div>
-                        {c.comoCobrarlo && <p className="vin-muted text-[13px] leading-relaxed">{c.comoCobrarlo}</p>}
-                        <p className="vin-faint mt-2 text-[11px] leading-relaxed">
+                        {c.comoCobrarlo && <p className="vin-muted vin-t-sm leading-relaxed">{c.comoCobrarlo}</p>}
+                        <p className="vin-faint mt-2 vin-t-xs leading-relaxed">
                           Es una propuesta para que la confirmes, no un acuerdo. Al crear el proyecto, defínela en
                           Oportunidad → Tu vínculo.
                         </p>
@@ -252,7 +252,7 @@ export default function TriageSection() {
                     )}
                   </>
                 ) : (
-                  <p className="vin-muted text-sm">Analizando…</p>
+                  <p className="vin-muted vin-t-sm">Analizando…</p>
                 )}
               </div>
             ))}

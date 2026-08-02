@@ -73,9 +73,9 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <div className="vin-eyebrow mb-1.5">Proyectos</div>
-            <h2 className="vin-serif text-xl">Gestionar proyectos</h2>
+            <h2 className="vin-serif vin-t-xl">Gestionar proyectos</h2>
           </div>
-          <button onClick={onClose} className="vin-faint px-2 text-lg leading-none hover:underline" aria-label="Cerrar">
+          <button onClick={onClose} className="vin-faint px-2 vin-t-lg leading-none hover:underline" aria-label="Cerrar">
             ✕
           </button>
         </div>
@@ -121,7 +121,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
               Crear proyecto
             </button>
           </div>
-          <p className="vin-faint mt-2.5 text-xs leading-relaxed">
+          <p className="vin-faint mt-2.5 vin-t-xs leading-relaxed">
             Una <span className="vin-muted">referencia de mercado</span> es un artista que no diriges, cargado para
             comparar. Su data suele ser pública o parcial, así que la IA la lee con nivel de evidencia más bajo.
           </p>
@@ -136,11 +136,11 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                   <input
                     value={p.nombre}
                     onChange={(e) => updateProyectoMeta(p.id, { nombre: e.target.value })}
-                    className="vin-input !w-auto flex-1 !py-1.5 !text-sm"
+                    className="vin-input !w-auto flex-1 !py-1.5 vin-t-sm"
                     aria-label="Nombre"
                   />
                   <select
-                    className="vin-select !py-1.5 !text-xs"
+                    className="vin-select !py-1.5 vin-t-xs"
                     value={p.fase}
                     onChange={(e) => updateProyectoMeta(p.id, { fase: e.target.value as VincereFase })}
                     aria-label="Fase"
@@ -152,7 +152,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                     ))}
                   </select>
                   <span
-                    className="rounded-full border px-2 py-0.5 text-[10px]"
+                    className="rounded-full border px-2 py-0.5 vin-t-xs"
                     style={{
                       color: p.tipo === "propio" ? "var(--vin-accent)" : "var(--vin-muted)",
                       borderColor: p.tipo === "propio" ? "rgba(224,72,58,0.4)" : "var(--vin-border-strong)",
@@ -162,7 +162,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                   </span>
 
                   {confirmarBorrado === p.id ? (
-                    <span className="flex items-center gap-2 text-xs">
+                    <span className="flex items-center gap-2 vin-t-xs">
                       <button
                         onClick={() => eliminar(p.id, p.nombre)}
                         className="hover:underline"
@@ -175,7 +175,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                       </button>
                     </span>
                   ) : confirmarVaciado === p.id ? (
-                    <span className="flex items-center gap-2 text-xs">
+                    <span className="flex items-center gap-2 vin-t-xs">
                       <button
                         onClick={() => vaciar(p.id, p.nombre)}
                         className="hover:underline"
@@ -194,7 +194,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                           setConfirmarBorrado(null);
                           setConfirmarVaciado(p.id);
                         }}
-                        className="vin-faint px-1 text-xs hover:underline"
+                        className="vin-faint px-1 vin-t-xs hover:underline"
                         title="Borrar la data pero conservar el proyecto"
                       >
                         Empezar de 0
@@ -204,7 +204,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                           setConfirmarVaciado(null);
                           setConfirmarBorrado(p.id);
                         }}
-                        className="vin-faint px-1 text-xs hover:underline"
+                        className="vin-faint px-1 vin-t-xs hover:underline"
                         title="Eliminar el proyecto entero"
                       >
                         Eliminar
@@ -213,21 +213,21 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                   )}
                 </div>
                 {confirmarVaciado === p.id && (
-                  <p className="mt-2 text-xs leading-relaxed" style={{ color: "#e0a83a" }}>
+                  <p className="mt-2 vin-t-xs leading-relaxed" style={{ color: "#e0a83a" }}>
                     Se borra la data de {p.nombre} —cifras, canciones, shows, lecturas, informes e histórico— pero el
                     proyecto se conserva con su nombre, género y fase. No se puede deshacer.
                   </p>
                 )}
                 {confirmarBorrado === p.id && (
-                  <p className="mt-2 text-xs" style={{ color: "var(--vin-accent)" }}>
+                  <p className="mt-2 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
                     Se borra toda la data de {p.nombre}: canciones, lecturas de IA e informe. No se puede deshacer.
                   </p>
                 )}
-                {p.id === selectedId && <div className="vin-faint mt-1.5 text-[11px]">Proyecto abierto ahora</div>}
+                {p.id === selectedId && <div className="vin-faint mt-1.5 vin-t-xs">Proyecto abierto ahora</div>}
               </div>
             ))}
             {proyectos.length === 0 && (
-              <p className="vin-muted text-[13px] leading-relaxed">
+              <p className="vin-muted vin-t-sm leading-relaxed">
                 No hay ningún proyecto. Crea el primero arriba.
               </p>
             )}
@@ -242,33 +242,33 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
             <div className="vin-label mb-2">Empezar de cero</div>
             {confirmarTodo ? (
               <div
-                className="rounded-sm p-4"
+                className="rounded-xl p-4"
                 style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.3)" }}
               >
-                <p className="mb-3 text-[13px] leading-relaxed">
+                <p className="mb-3 vin-t-sm leading-relaxed">
                   Se borran los {proyectos.length} proyectos con toda su data, los casos de triage y las
                   comparaciones. Si tienes base de datos conectada, también se borra allá. No se puede deshacer.
                 </p>
-                <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+                <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
                   Si quieres guardar algo antes, sal de VINCERE y usa C.C.O. → Configuración → «Exportar todos los
                   datos».
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <button onClick={borrarTodo} className="vin-btn-primary !py-1.5 !text-xs">
+                  <button onClick={borrarTodo} className="vin-btn-primary !py-1.5 vin-t-xs">
                     Sí, borrar todo
                   </button>
-                  <button onClick={() => setConfirmarTodo(false)} className="vin-faint text-xs hover:underline">
+                  <button onClick={() => setConfirmarTodo(false)} className="vin-faint vin-t-xs hover:underline">
                     Cancelar
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                <p className="vin-muted mb-2.5 text-[13px] leading-relaxed">
+                <p className="vin-muted mb-2.5 vin-t-sm leading-relaxed">
                   SETTE y LUNA REBEL vienen cargados como ejemplo para que veas la plataforma funcionando. Cuando
                   tengas data real, esto los saca a todos de una.
                 </p>
-                <button onClick={() => setConfirmarTodo(true)} className="vin-btn-ghost !py-1.5 !text-xs">
+                <button onClick={() => setConfirmarTodo(true)} className="vin-btn-ghost !py-1.5 vin-t-xs">
                   Borrar todos los proyectos
                 </button>
               </>

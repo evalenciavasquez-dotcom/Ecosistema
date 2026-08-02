@@ -84,7 +84,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
         <section>
           <PanelLabel>De dónde viene el dinero</PanelLabel>
           {resumen.variasMonedas && (
-            <p className="mb-3 text-[11.5px] leading-relaxed" style={{ color: "#e0a83a" }}>
+            <p className="mb-3 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
               Hay ingresos en {resumen.monedas.map((m) => m.moneda).join(", ")} y no se convierten entre sí — sumar
               monedas con un tipo de cambio inventado daría un número falso. Todo lo de abajo es solo sobre {moneda}.
             </p>
@@ -111,7 +111,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
           </div>
 
           {/* Barra de reparto: la concentración se ve antes de leer nada. */}
-          <div className="mb-2 flex h-3 overflow-hidden rounded-sm">
+          <div className="mb-2 flex h-3 overflow-hidden rounded-xl">
             {resumen.porFuente.map((f) => (
               <div
                 key={f.tipo}
@@ -122,7 +122,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
           </div>
           <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1.5">
             {resumen.porFuente.map((f) => (
-              <span key={f.tipo} className="flex items-center gap-1.5 text-[12px]">
+              <span key={f.tipo} className="flex items-center gap-1.5 vin-t-sm">
                 <span
                   className="inline-block h-2 w-2 shrink-0 rounded-full"
                   style={{ background: VINCERE_FUENTE_COLOR[f.tipo] }}
@@ -135,7 +135,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
           </div>
 
           {resumen.concentracionPct >= 70 && resumen.fuenteDominante && (
-            <p className="mb-3 text-[12.5px] leading-relaxed" style={{ color: "#e0a83a" }}>
+            <p className="mb-3 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
               El {resumen.concentracionPct}% entra por {VINCERE_FUENTE_LABEL[resumen.fuenteDominante].toLowerCase()}.
               El negocio depende de una sola pata.
             </p>
@@ -146,7 +146,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
       {/* VISTA 2 — lo que te queda */}
       {loMio.aplica && loMio.mensual != null && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{
             background: loMio.hipotetico ? "rgba(224,168,58,0.07)" : "rgba(92,201,142,0.07)",
             border: `1px solid ${loMio.hipotetico ? "rgba(224,168,58,0.3)" : "rgba(92,201,142,0.3)"}`,
@@ -158,19 +158,19 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
             </span>
           </PanelLabel>
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="vin-serif text-3xl tabular-nums" style={{ color: loMio.hipotetico ? "#e0a83a" : "#5cc98e" }}>
+            <span className="vin-serif vin-t-display tabular-nums" style={{ color: loMio.hipotetico ? "#e0a83a" : "#5cc98e" }}>
               {money(loMio.mensual, loMio.moneda ?? moneda)}
             </span>
-            <span className="vin-faint text-xs">al mes</span>
+            <span className="vin-faint vin-t-xs">al mes</span>
           </div>
-          <p className="vin-muted mt-2 text-[13px] leading-relaxed">{loMio.explicacion}</p>
+          <p className="vin-muted mt-2 vin-t-sm leading-relaxed">{loMio.explicacion}</p>
           {loMio.hipotetico && (
-            <p className="mt-2 text-[11.5px] leading-relaxed" style={{ color: "#e0a83a" }}>
+            <p className="mt-2 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
               El vínculo está sin confirmar, así que esto es un escenario y no un ingreso. Se marca así a propósito.
             </p>
           )}
           {cargaSemanalTotal > 0 && proyecto.vinculo?.horasSemanales ? (
-            <p className="vin-faint mt-2 text-[11.5px] leading-relaxed">
+            <p className="vin-faint mt-2 vin-t-sm leading-relaxed">
               Este proyecto ocupa {proyecto.vinculo.horasSemanales}h de tus {cargaSemanalTotal}h semanales
               comprometidas.
             </p>
@@ -181,8 +181,8 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
       {!loMio.aplica && loMio.explicacion && (
         <Panel>
           <PanelLabel>Lo tuyo</PanelLabel>
-          <p className="vin-muted text-[13.5px] leading-relaxed">{loMio.explicacion}</p>
-          <p className="vin-faint mt-2 text-[11.5px]">Se define en Oportunidad de Negocio → Tu vínculo.</p>
+          <p className="vin-muted vin-t-base leading-relaxed">{loMio.explicacion}</p>
+          <p className="vin-faint mt-2 vin-t-sm">Se define en Oportunidad de Negocio → Tu vínculo.</p>
         </Panel>
       )}
 
@@ -190,11 +190,11 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <PanelLabel>Registro de ingresos</PanelLabel>
-          <button onClick={() => setAgregando((v) => !v)} className="vin-faint text-xs hover:underline">
+          <button onClick={() => setAgregando((v) => !v)} className="vin-faint vin-t-xs hover:underline">
             {agregando ? "Cancelar" : "+ Registrar ingreso"}
           </button>
         </div>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           Los shows entran solos desde Shows y Touring con su ingreso neto — no los cargues otra vez.
         </p>
 
@@ -211,7 +211,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
 
         {resumen.ingresos.length === 0 && !agregando && (
           <Panel>
-            <p className="vin-muted text-sm">
+            <p className="vin-muted vin-t-sm">
               Sin ingresos cargados. El motor funciona igual y te dice por dónde <em>podría</em> monetizar según su
               audiencia y sus plazas — pero no puede decirte de qué vive hoy.
             </p>
@@ -228,19 +228,19 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
                 style={{ borderLeftColor: VINCERE_FUENTE_COLOR[i.tipo] }}
               >
                 <div className="flex min-w-0 flex-wrap items-baseline gap-2.5">
-                  <span className="text-[13.5px]">{VINCERE_FUENTE_LABEL[i.tipo]}</span>
-                  <span className="vin-faint text-[11.5px] tabular-nums">{i.periodo}</span>
-                  {i.nota && <span className="vin-faint text-[11.5px]">{i.nota}</span>}
+                  <span className="vin-t-base">{VINCERE_FUENTE_LABEL[i.tipo]}</span>
+                  <span className="vin-faint vin-t-sm tabular-nums">{i.periodo}</span>
+                  {i.nota && <span className="vin-faint vin-t-sm">{i.nota}</span>}
                   {esDeShow && (
-                    <span className="vin-faint text-[10.5px] uppercase tracking-wide">desde Touring</span>
+                    <span className="vin-faint vin-t-xs uppercase tracking-wide">desde Touring</span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[13.5px] tabular-nums">{money(i.monto, i.moneda)}</span>
+                  <span className="vin-t-base tabular-nums">{money(i.monto, i.moneda)}</span>
                   {!esDeShow && (
                     <button
                       onClick={() => deleteIngreso(proyecto.id, i.id)}
-                      className="vin-faint px-1 text-xs hover:underline"
+                      className="vin-faint px-1 vin-t-xs hover:underline"
                       title="Eliminar"
                     >
                       ✕
@@ -255,7 +255,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
 
       <Panel>
         <PanelLabel>Analizar la monetización</PanelLabel>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           Cruza el reparto de ingresos con el alcance, la audiencia, las plazas y la marca, y devuelve por dónde más
           podría entrar — solo vías que se justifiquen con la data de este artista.
         </p>
@@ -271,7 +271,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
           </button>
         </div>
         {error && (
-          <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
@@ -286,12 +286,12 @@ function Cifra({ valor, label, acento = false }: { valor: string; label: string;
   return (
     <div className="vin-card p-4">
       <div
-        className="vin-serif text-xl leading-none tabular-nums"
+        className="vin-serif vin-t-xl leading-none tabular-nums"
         style={acento ? { color: "var(--vin-accent)" } : undefined}
       >
         {valor}
       </div>
-      <div className="vin-faint mt-2 text-[11px] leading-relaxed">{label}</div>
+      <div className="vin-faint mt-2 vin-t-xs leading-relaxed">{label}</div>
     </div>
   );
 }
@@ -320,7 +320,7 @@ function FormularioIngreso({
           <button
             key={t}
             onClick={() => setF({ ...f, tipo: t })}
-            className="rounded-full border px-2.5 py-1 text-[11.5px] transition-colors"
+            className="rounded-full border px-2.5 py-1 vin-t-sm transition-colors"
             style={{
               color: f.tipo === t ? VINCERE_FUENTE_COLOR[t] : "var(--vin-dim)",
               borderColor: f.tipo === t ? `${VINCERE_FUENTE_COLOR[t]}66` : "var(--vin-border)",
@@ -375,7 +375,7 @@ function Campo({
 }) {
   return (
     <div>
-      <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">{label}</div>
+      <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">{label}</div>
       <input type={tipo} value={valor} onChange={(e) => onChange(e.target.value)} className="vin-input" />
     </div>
   );
@@ -395,39 +395,39 @@ function Diagnostico({
           <div className="vin-eyebrow">Lectura de monetización</div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={diag.nivelGlobal} />
-            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
+            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 vin-t-xs hover:underline" title="Eliminar">
               ✕
             </button>
           </div>
         </div>
-        <p className="text-[15px] leading-relaxed">{diag.lecturaGeneral}</p>
-        <p className="vin-faint mt-2.5 text-xs">
+        <p className="vin-t-base leading-relaxed">{diag.lecturaGeneral}</p>
+        <p className="vin-faint mt-2.5 vin-t-xs">
           Generado el{" "}
           {new Date(diag.generadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
         </p>
       </div>
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Dónde va la atención, dónde entra el dinero</span>
         </PanelLabel>
-        <p className="text-[15px] leading-relaxed">{diag.brechaAtencionIngreso}</p>
+        <p className="vin-t-base leading-relaxed">{diag.brechaAtencionIngreso}</p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
         <Panel>
           <PanelLabel>Riesgo de concentración</PanelLabel>
-          <p className="text-[14px] leading-relaxed">{diag.riesgoDeConcentracion}</p>
+          <p className="vin-t-base leading-relaxed">{diag.riesgoDeConcentracion}</p>
         </Panel>
         {diag.loQueYaFunciona.length > 0 && (
           <Panel>
             <PanelLabel>Lo que ya funciona</PanelLabel>
             <ul className="space-y-2">
               {diag.loQueYaFunciona.map((x, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span style={{ color: "#5cc98e" }}>✓</span>
                   <span>{x}</span>
                 </li>
@@ -440,7 +440,7 @@ function Diagnostico({
       {diag.viasSinExplotar.length > 0 && (
         <section>
           <PanelLabel>Por dónde más podría entrar</PanelLabel>
-          <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
             Cada vía justificada con la data de este artista. Un catálogo genérico que le sirve a cualquiera no vale
             nada.
           </p>
@@ -448,17 +448,17 @@ function Diagnostico({
             {diag.viasSinExplotar.map((v, i) => (
               <div key={i} className="vin-card p-4">
                 <div className="mb-2 flex flex-wrap items-center gap-2.5">
-                  <span className="text-[15px] font-medium">{v.via}</span>
+                  <span className="vin-t-base font-medium">{v.via}</span>
                   <span
-                    className="rounded-full border px-2 py-0.5 text-[10.5px]"
+                    className="rounded-full border px-2 py-0.5 vin-t-xs"
                     style={{ color: ESFUERZO_COLOR[v.esfuerzo], borderColor: `${ESFUERZO_COLOR[v.esfuerzo]}66` }}
                   >
                     esfuerzo {v.esfuerzo}
                   </span>
                   <EvidenceTag nivel={v.nivel} />
                 </div>
-                <p className="mb-2 text-[14px] leading-relaxed">{v.porQueEncaja}</p>
-                <p className="vin-muted text-[13px] leading-relaxed">
+                <p className="mb-2 vin-t-base leading-relaxed">{v.porQueEncaja}</p>
+                <p className="vin-muted vin-t-sm leading-relaxed">
                   <span className="vin-faint">Hace falta: </span>
                   {v.queHaceFalta}
                 </p>
@@ -471,7 +471,7 @@ function Diagnostico({
       {diag.lecturaDeLoMio && (
         <Panel>
           <PanelLabel>Qué significa para ti</PanelLabel>
-          <p className="text-[14.5px] leading-relaxed">{diag.lecturaDeLoMio}</p>
+          <p className="vin-t-base leading-relaxed">{diag.lecturaDeLoMio}</p>
         </Panel>
       )}
 
@@ -481,7 +481,7 @@ function Diagnostico({
             <PanelLabel>Qué mover este mes</PanelLabel>
             <ul className="space-y-2">
               {diag.queMoverAhora.map((x, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint tabular-nums">{i + 1}.</span>
                   <span>{x}</span>
                 </li>
@@ -494,7 +494,7 @@ function Diagnostico({
             <PanelLabel>Qué falta saber</PanelLabel>
             <ul className="space-y-2">
               {diag.queFaltaSaber.map((x, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint">—</span>
                   <span>{x}</span>
                 </li>
@@ -505,13 +505,13 @@ function Diagnostico({
       </div>
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
         </PanelLabel>
-        <p className="text-[15px] leading-relaxed">{diag.veredicto}</p>
+        <p className="vin-t-base leading-relaxed">{diag.veredicto}</p>
       </div>
 
       <div className="vin-no-print">

@@ -103,21 +103,21 @@ export default function InformeSection({ proyecto }: { proyecto: VincereProyecto
       </div>
 
       {informe && editando && (
-        <p className="vin-no-print vin-faint mb-4 text-xs leading-relaxed">
+        <p className="vin-no-print vin-faint mb-4 vin-t-xs leading-relaxed">
           Modo edición: toca cualquier texto para corregirlo. Los cambios se guardan solos. «Volver a emitir» genera un
           borrador nuevo y archiva este — lo editado no se pierde, queda en «Informes anteriores».
         </p>
       )}
 
       {error && (
-        <p className="vin-no-print mb-4 text-xs" style={{ color: "var(--vin-accent)" }}>
+        <p className="vin-no-print mb-4 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
           {error}
         </p>
       )}
 
       {loading && !informe && (
         <Panel>
-          <p className="vin-muted text-sm">
+          <p className="vin-muted vin-t-sm">
             Cruzando momentum, catálogo, audiencia, zonas, decisiones y KPIs… El informe tarda más que una lectura de
             sección porque razona sobre todo el proyecto junto.
           </p>
@@ -126,7 +126,7 @@ export default function InformeSection({ proyecto }: { proyecto: VincereProyecto
 
       {!informe && !loading && (
         <Panel>
-          <p className="vin-muted text-sm">
+          <p className="vin-muted vin-t-sm">
             Todavía no se ha emitido un informe para {proyecto.nombre}. Cuanta más data y más lecturas VINCERE tengas
             generadas en las secciones, más sólido sale — el informe las integra y las lleva más lejos.
           </p>
@@ -141,7 +141,7 @@ export default function InformeSection({ proyecto }: { proyecto: VincereProyecto
         <div className="vin-no-print mt-5">
           <Panel>
             <PanelLabel>Informes anteriores · {proyecto.informesArchivados!.length}</PanelLabel>
-            <p className="vin-faint mb-3 text-xs leading-relaxed">
+            <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
               Cada vez que emites uno nuevo, el anterior se archiva aquí con lo que hubieras editado. Recuperar uno
               intercambia: el activo pasa al archivo.
             </p>
@@ -153,15 +153,15 @@ export default function InformeSection({ proyecto }: { proyecto: VincereProyecto
                   style={{ borderColor: "var(--vin-border)" }}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] leading-snug">{a.titulo}</div>
-                    <div className="vin-faint mt-0.5 text-[11px]">
+                    <div className="vin-t-base leading-snug">{a.titulo}</div>
+                    <div className="vin-faint mt-0.5 vin-t-xs">
                       {new Date(a.generadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
                       {" · "}
                       {a.proximosPasos.filter((p) => p.hecho).length} de {a.proximosPasos.length} pasos cumplidos
                       {a.editadoEn ? " · trabajado a mano" : ""}
                     </div>
                   </div>
-                  <span className="flex shrink-0 items-center gap-3 text-xs">
+                  <span className="flex shrink-0 items-center gap-3 vin-t-xs">
                     <button
                       onClick={() => {
                         restaurarArchivado(proyecto.id, a.generadoEn);
@@ -228,7 +228,7 @@ function Editable({
 
 function BotonQuitar({ onClick, label = "Quitar" }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="vin-faint shrink-0 px-2 text-xs hover:underline" title={label}>
+    <button onClick={onClick} className="vin-faint shrink-0 px-2 vin-t-xs hover:underline" title={label}>
       ✕
     </button>
   );
@@ -236,7 +236,7 @@ function BotonQuitar({ onClick, label = "Quitar" }: { onClick: () => void; label
 
 function BotonAnadir({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className="vin-faint vin-no-print mt-2 text-xs hover:underline">
+    <button onClick={onClick} className="vin-faint vin-no-print mt-2 vin-t-xs hover:underline">
       + {children}
     </button>
   );
@@ -245,7 +245,7 @@ function BotonAnadir({ onClick, children }: { onClick: () => void; children: Rea
 function SelectorNivel({ nivel, onChange }: { nivel: VincereNivel; onChange: (n: VincereNivel) => void }) {
   return (
     <select
-      className="vin-select !py-1 !text-xs"
+      className="vin-select !py-1 vin-t-xs"
       value={nivel}
       onChange={(e) => onChange(Number(e.target.value) as VincereNivel)}
       aria-label="Nivel de evidencia"
@@ -299,14 +299,14 @@ function InformeDocumento({
             value={informe.titulo}
             onChange={(titulo) => patch({ titulo })}
             editando
-            className="vin-serif mb-3 !text-2xl"
+            className="vin-serif mb-3 vin-t-xl"
             charsPorLinea={55}
             minFilas={2}
           />
         ) : (
-          <h2 className="vin-serif mb-3 text-2xl font-medium leading-snug md:text-[32px]">{informe.titulo}</h2>
+          <h2 className="vin-serif mb-3 vin-t-xl font-medium leading-snug md:vin-t-display">{informe.titulo}</h2>
         )}
-        <div className="vin-muted flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
+        <div className="vin-muted flex flex-wrap items-center gap-x-3 gap-y-1.5 vin-t-sm">
           <span style={{ color: "var(--vin-text)" }}>{proyecto.nombre}</span>
           <span>·</span>
           <span>{proyecto.genero}</span>
@@ -324,18 +324,18 @@ function InformeDocumento({
       </header>
 
       <section className="mb-8">
-        <h3 className="vin-serif mb-3 text-xl">Sinopsis Central</h3>
+        <h3 className="vin-serif mb-3 vin-t-xl">Sinopsis Central</h3>
         <Editable
           value={informe.sinopsis}
           onChange={(sinopsis) => patch({ sinopsis })}
           editando={editando}
-          className="text-[15px] leading-[1.75]"
+          className="vin-t-base leading-[1.75]"
           minFilas={4}
         />
       </section>
 
       <section
-        className="mb-8 rounded-sm p-5"
+        className="mb-8 rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <div className="vin-label mb-2" style={{ color: "var(--vin-accent)" }}>
@@ -345,7 +345,7 @@ function InformeDocumento({
           value={informe.veredicto}
           onChange={(veredicto) => patch({ veredicto })}
           editando={editando}
-          className="text-[15px] leading-relaxed"
+          className="vin-t-base leading-relaxed"
           placeholder="La postura: qué se hace con este proyecto ahora y por qué."
         />
       </section>
@@ -358,11 +358,11 @@ function InformeDocumento({
                 value={bloque.titulo}
                 onChange={(titulo) => setBloques(informe.bloques.map((b, j) => (j === i ? { ...b, titulo } : b)))}
                 editando
-                className="vin-serif flex-1 !text-lg"
+                className="vin-serif flex-1 vin-t-lg"
                 charsPorLinea={70}
               />
             ) : (
-              <h3 className="vin-serif text-lg">
+              <h3 className="vin-serif vin-t-lg">
                 {i + 1}. {bloque.titulo}
               </h3>
             )}
@@ -391,7 +391,7 @@ function InformeDocumento({
                   )
                 }
                 editando={editando}
-                className="flex-1 text-[15px] leading-[1.7]"
+                className="flex-1 vin-t-base leading-[1.7]"
               />
               {editando && bloque.parrafos.length > 1 && (
                 <BotonQuitar
@@ -432,7 +432,7 @@ function InformeDocumento({
       {(informe.riesgos.length > 0 || informe.oportunidades.length > 0 || editando) && (
         <div className="mb-8 mt-8 grid gap-5 md:grid-cols-2">
           <section>
-            <h3 className="vin-serif mb-3 text-lg">Riesgos</h3>
+            <h3 className="vin-serif mb-3 vin-t-lg">Riesgos</h3>
             <ul className="space-y-3.5">
               {informe.riesgos.map((r, i) => (
                 <li key={i} className="border-l-2 pl-3.5" style={{ borderColor: "var(--vin-accent)" }}>
@@ -441,7 +441,7 @@ function InformeDocumento({
                       value={r.riesgo}
                       onChange={(riesgo) => setRiesgos(informe.riesgos.map((x, j) => (j === i ? { ...x, riesgo } : x)))}
                       editando={editando}
-                      className="flex-1 text-sm font-medium"
+                      className="flex-1 vin-t-sm font-medium"
                       charsPorLinea={38}
                     />
                     {editando ? (
@@ -460,7 +460,7 @@ function InformeDocumento({
                       setRiesgos(informe.riesgos.map((x, j) => (j === i ? { ...x, consecuencia } : x)))
                     }
                     editando={editando}
-                    className="vin-muted text-[13.5px] leading-relaxed"
+                    className="vin-muted vin-t-base leading-relaxed"
                     charsPorLinea={44}
                   />
                 </li>
@@ -476,7 +476,7 @@ function InformeDocumento({
           </section>
 
           <section>
-            <h3 className="vin-serif mb-3 text-lg">Oportunidades</h3>
+            <h3 className="vin-serif mb-3 vin-t-lg">Oportunidades</h3>
             <ul className="space-y-3.5">
               {informe.oportunidades.map((o, i) => (
                 <li key={i} className="border-l-2 pl-3.5" style={{ borderColor: "#5cc98e" }}>
@@ -487,7 +487,7 @@ function InformeDocumento({
                         setOportunidades(informe.oportunidades.map((x, j) => (j === i ? { ...x, oportunidad } : x)))
                       }
                       editando={editando}
-                      className="flex-1 text-sm font-medium"
+                      className="flex-1 vin-t-sm font-medium"
                       charsPorLinea={38}
                     />
                     {editando ? (
@@ -510,7 +510,7 @@ function InformeDocumento({
                       setOportunidades(informe.oportunidades.map((x, j) => (j === i ? { ...x, porQue } : x)))
                     }
                     editando={editando}
-                    className="vin-muted text-[13.5px] leading-relaxed"
+                    className="vin-muted vin-t-base leading-relaxed"
                     charsPorLinea={44}
                   />
                 </li>
@@ -531,9 +531,9 @@ function InformeDocumento({
 
       <section className="border-t pt-6" style={{ borderColor: "var(--vin-border)" }}>
         <div className="mb-4 flex items-baseline justify-between gap-3">
-          <h3 className="vin-serif text-lg">Próximos Pasos</h3>
+          <h3 className="vin-serif vin-t-lg">Próximos Pasos</h3>
           {informe.proximosPasos.length > 0 && (
-            <span className="vin-faint text-xs">
+            <span className="vin-faint vin-t-xs">
               {pasosHechos} de {informe.proximosPasos.length} cumplidos
             </span>
           )}
@@ -565,12 +565,12 @@ function InformeDocumento({
                     setPasos(informe.proximosPasos.map((x, j) => (j === i ? { ...x, accion } : x)))
                   }
                   editando={editando}
-                  className={`flex-1 text-sm leading-relaxed ${p.hecho && !editando ? "line-through opacity-55" : ""}`}
+                  className={`flex-1 vin-t-sm leading-relaxed ${p.hecho && !editando ? "line-through opacity-55" : ""}`}
                   charsPorLinea={52}
                 />
               </label>
 
-              <div className="vin-muted flex flex-wrap items-center gap-2 text-xs">
+              <div className="vin-muted flex flex-wrap items-center gap-2 vin-t-xs">
                 {editando ? (
                   <>
                     <Editable
@@ -579,7 +579,7 @@ function InformeDocumento({
                         setPasos(informe.proximosPasos.map((x, j) => (j === i ? { ...x, responsable } : x)))
                       }
                       editando
-                      className="!w-32 !py-1 !text-xs"
+                      className="!w-32 !py-1 vin-t-xs"
                       charsPorLinea={16}
                       placeholder="Responsable"
                     />
@@ -589,12 +589,12 @@ function InformeDocumento({
                         setPasos(informe.proximosPasos.map((x, j) => (j === i ? { ...x, plazo } : x)))
                       }
                       editando
-                      className="!w-32 !py-1 !text-xs"
+                      className="!w-32 !py-1 vin-t-xs"
                       charsPorLinea={16}
                       placeholder="Plazo"
                     />
                     <select
-                      className="vin-select !py-1 !text-xs"
+                      className="vin-select !py-1 vin-t-xs"
                       value={p.prioridad}
                       onChange={(e) =>
                         setPasos(
@@ -619,17 +619,17 @@ function InformeDocumento({
                     <span>·</span>
                     <span>{p.plazo}</span>
                     <span
-                      className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                      className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
                       style={{ color: PRIORIDAD_COLOR[p.prioridad], borderColor: `${PRIORIDAD_COLOR[p.prioridad]}66` }}
                     >
                       {p.prioridad}
                     </span>
                     {yaEsPrediccion(p.accion) ? (
-                      <span className="vin-faint vin-no-print text-[10.5px]">· ya es predicción</span>
+                      <span className="vin-faint vin-no-print vin-t-xs">· ya es predicción</span>
                     ) : (
                       <button
                         onClick={() => setPredDe(predDe === i ? null : i)}
-                        className="vin-faint vin-no-print text-[10.5px] hover:underline"
+                        className="vin-faint vin-no-print vin-t-xs hover:underline"
                       >
                         · {predDe === i ? "cancelar" : "→ predicción"}
                       </button>
@@ -650,7 +650,7 @@ function InformeDocumento({
         </ul>
 
         {!editando && informe.proximosPasos.length > 0 && (
-          <p className="vin-faint vin-no-print mt-3 text-[11px] leading-relaxed">
+          <p className="vin-faint vin-no-print mt-3 vin-t-xs leading-relaxed">
             Un paso dice qué vas a hacer. Una predicción dice qué esperas que pase — con fecha y con una forma de
             saber que falló. Sin eso, el informe nunca se puede evaluar.
           </p>
@@ -670,7 +670,7 @@ function InformeDocumento({
         )}
       </section>
 
-      <footer className="vin-faint mt-8 border-t pt-4 text-[11px] leading-relaxed" style={{ borderColor: "var(--vin-border)" }}>
+      <footer className="vin-faint mt-8 border-t pt-4 vin-t-xs leading-relaxed" style={{ borderColor: "var(--vin-border)" }}>
         Emitido por VINCERE Intelligence Platform · Cada afirmación lleva nivel de evidencia 1-4 (4 alta evidencia · 3
         evidencia sólida · 2 evidencia parcial · 1 especulativo).
       </footer>
@@ -736,24 +736,24 @@ function PrediccionDesdePaso({
 
   return (
     <div
-      className="vin-no-print mt-3 w-full rounded-sm p-3.5"
+      className="vin-no-print mt-3 w-full rounded-xl p-3.5"
       style={{ background: "var(--vin-surface)", border: "1px solid var(--vin-border)" }}
     >
-      <p className="vin-faint mb-2.5 text-[10.5px] uppercase tracking-[0.08em]">Convertir en predicción</p>
+      <p className="vin-faint mb-2.5 vin-t-xs uppercase tracking-[0.08em]">Convertir en predicción</p>
 
       <div className="grid gap-2.5">
         <textarea
           value={afirmacion}
           onChange={(e) => setAfirmacion(e.target.value)}
           rows={2}
-          className="vin-input resize-none !text-[13px]"
+          className="vin-input resize-none vin-t-sm"
           placeholder="Qué esperas que pase"
         />
         <textarea
           value={comoSeVerifica}
           onChange={(e) => setComoSeVerifica(e.target.value)}
           rows={2}
-          className="vin-input resize-none !text-[13px]"
+          className="vin-input resize-none vin-t-sm"
           placeholder="Cómo se verifica: qué habría que ver para decir que falló"
         />
         <div className="flex flex-wrap items-center gap-2.5">
@@ -761,11 +761,11 @@ function PrediccionDesdePaso({
             type="date"
             value={venceEn}
             onChange={(e) => setVenceEn(e.target.value)}
-            className="vin-input !w-auto !py-1.5 !text-xs"
+            className="vin-input !w-auto !py-1.5 vin-t-xs"
             aria-label="Vence en"
           />
           <select
-            className="vin-select !py-1.5 !text-xs"
+            className="vin-select !py-1.5 vin-t-xs"
             value={nivel}
             onChange={(e) => setNivel(Number(e.target.value) as VincereNivel)}
             aria-label="Nivel al emitir"
@@ -776,12 +776,12 @@ function PrediccionDesdePaso({
               </option>
             ))}
           </select>
-          <button onClick={crear} disabled={!listo} className="vin-btn-primary !px-3.5 !py-1.5 !text-xs">
+          <button onClick={crear} disabled={!listo} className="vin-btn-primary !px-3.5 !py-1.5 vin-t-xs">
             Abrir predicción
           </button>
         </div>
         {!comoSeVerifica.trim() && (
-          <p className="vin-faint text-[11px] leading-relaxed">
+          <p className="vin-faint vin-t-xs leading-relaxed">
             Sin &ldquo;cómo se verifica&rdquo; no es una predicción, es una opinión con fecha.
           </p>
         )}

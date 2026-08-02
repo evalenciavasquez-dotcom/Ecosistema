@@ -31,7 +31,7 @@ function SyncIndicator() {
   const estado = useVincereSync();
   const info = SYNC_TEXTO[estado] ?? SYNC_TEXTO.desconocido;
   return (
-    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: info.color }} title={info.title}>
+    <span className="flex items-center gap-1.5 vin-t-xs" style={{ color: info.color }} title={info.title}>
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: info.color }} />
       {info.label}
     </span>
@@ -82,15 +82,15 @@ export default function VincereHeader() {
       style={{ borderBottom: "1px solid var(--vin-border)" }}
     >
       <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-        <span className="vin-serif text-[22px] tracking-tight">VINCERE</span>
-        <span className="vin-faint text-[11px] uppercase tracking-[0.14em]">Intelligence Platform</span>
+        <span className="vin-serif vin-t-xl tracking-tight">VINCERE</span>
+        <span className="vin-faint vin-t-xs uppercase tracking-[0.14em]">Intelligence Platform</span>
         <SyncIndicator />
         {/* Estar dentro de una referencia tiene que verse: su data suele ser
             pública o parcial, y confundirla con la del artista propio es el
             peor error que se puede cometer leyendo estos paneles. */}
         {selected?.tipo === "competencia" && (
           <span
-            className="rounded-full border px-2 py-0.5 text-[10.5px]"
+            className="rounded-full border px-2 py-0.5 vin-t-xs"
             style={{ color: "var(--vin-muted)", borderColor: "var(--vin-border-strong)" }}
             title="Este proyecto es una referencia de mercado, no un artista que dirijas. Su data suele ser pública o parcial."
           >
@@ -149,7 +149,7 @@ export default function VincereHeader() {
           {registering ? "Registrando…" : "Registrar en Notion"}
         </button>
 
-        <Link href="/inicio" className="vin-faint px-2 text-xs hover:underline" title="Volver a C.C.O. E.V.">
+        <Link href="/inicio" className="vin-faint px-2 vin-t-xs hover:underline" title="Volver a C.C.O. E.V.">
           ← C.C.O.
         </Link>
       </div>

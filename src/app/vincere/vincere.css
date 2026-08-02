@@ -4,20 +4,80 @@
    solo dentro de .vincere-scope para no contaminar el resto de la app. */
 
 .vincere-scope {
-  --vin-bg: #0d0c0a;
-  --vin-surface: #15130f;
-  --vin-surface-2: #1e1b17;
-  --vin-border: rgba(255, 255, 255, 0.08);
-  --vin-border-strong: rgba(255, 255, 255, 0.14);
-  --vin-text: #f3efe8;
-  --vin-muted: #a39c92;
-  --vin-faint: #6f6a61;
-  --vin-dim: #524d46;
+  /* Superficies con separación real. Antes bg y surface se distinguían por
+     ocho puntos de luminancia y todo se veía plano; el borde tenía que hacer
+     todo el trabajo de separar, y por eso cada dato terminaba encajonado. */
+  --vin-bg: #0a0907;
+  --vin-surface: #16130f;
+  --vin-surface-2: #211d17;
+  --vin-surface-3: #2b2620;
+  --vin-border: rgba(255, 255, 255, 0.07);
+  --vin-border-strong: rgba(255, 255, 255, 0.13);
+  /* Luz desde arriba: el borde superior más claro es lo que da volumen a una
+     tarjeta oscura sin necesidad de sombra. */
+  --vin-edge: rgba(255, 255, 255, 0.06);
+
+  --vin-text: #f5f1ea;
+  --vin-muted: #a8a196;
+  --vin-faint: #7a746a;
+  --vin-dim: #565049;
+
   --vin-accent: #e0483a;
+  --vin-accent-soft: rgba(224, 72, 58, 0.13);
+  --vin-accent-glow: rgba(224, 72, 58, 0.28);
+
+  /* Semáforo. Vive aparte del acento aunque el rojo se parezca: uno es marca,
+     el otro es estado, y mezclarlos hace que una alerta y un título se lean
+     igual. */
+  --vin-ok: #4ec98a;
+  --vin-warn: #e5a93c;
+  --vin-risk: #f05a48;
+
+  /* Escala tipográfica de seis pasos. Antes había quince tamaños arbitrarios
+     entre 9.5px y 32px, y esa es la razón de que la interfaz se leyera sin
+     jerarquía: con quince pesos visuales, ninguno manda. */
+  --t-xs: 11.5px;
+  --t-sm: 13px;
+  --t-base: 15px;
+  --t-lg: 17px;
+  --t-xl: 24px;
+  --t-display: 34px;
+  --t-stat: 30px;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
 
   background: var(--vin-bg);
   color: var(--vin-text);
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--t-base);
+}
+
+/* Los seis pasos, como clases. Cualquier tamaño fuera de esta lista es un
+   error de dibujo, no una decisión.
+   Van con .vincere-scope delante a propósito: así ganan por especificidad a
+   .vin-input y .vin-btn-*, que también fijan tamaño. Sin eso haría falta
+   !important en cada uso, y el modificador ! de Tailwind no aplica a clases
+   que no son suyas. */
+.vincere-scope .vin-t-xs { font-size: var(--t-xs); line-height: 1.45; }
+.vincere-scope .vin-t-sm { font-size: var(--t-sm); line-height: 1.55; }
+.vincere-scope .vin-t-base { font-size: var(--t-base); line-height: 1.6; }
+.vincere-scope .vin-t-lg { font-size: var(--t-lg); line-height: 1.5; }
+.vincere-scope .vin-t-xl { font-size: var(--t-xl); line-height: 1.28; }
+.vincere-scope .vin-t-display {
+  font-size: var(--t-display);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+/* Cifra grande. Tabular para que las columnas de números no bailen. */
+.vin-stat {
+  font-size: var(--t-stat);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .vincere-scope ::-webkit-scrollbar {
@@ -35,28 +95,33 @@
 
 .vin-card {
   border: 1px solid var(--vin-border);
+  border-top-color: var(--vin-edge);
   background: var(--vin-surface);
-  border-radius: 4px;
+  border-radius: var(--r-md);
 }
 
+/* Tarjeta destacada: el acento entra como resplandor de borde, no como marco
+   grueso. Un borde de color saturado alrededor de todo compite con el
+   contenido; un halo lo sostiene. */
 .vin-accent-card {
-  border: 1px solid rgba(224, 72, 58, 0.25);
+  border: 1px solid var(--vin-accent-glow);
   background: var(--vin-surface);
-  border-radius: 4px;
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 1px rgba(224, 72, 58, 0.06), 0 8px 28px -18px var(--vin-accent-glow);
 }
 
 .vin-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: var(--t-xs);
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--vin-accent);
 }
 
 .vin-label {
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--t-xs);
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--vin-muted);
+  color: var(--vin-faint);
 }
 
 .vin-muted {
@@ -69,64 +134,87 @@
 .vin-input {
   background: var(--vin-surface-2);
   border: 1px solid var(--vin-border-strong);
-  border-radius: 3px;
+  border-radius: var(--r-sm);
   color: var(--vin-text);
-  font-size: 14px;
-  padding: 10px 12px;
+  font-size: var(--t-base);
+  padding: 11px 13px;
   outline: none;
   width: 100%;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
 .vin-input::placeholder {
   color: var(--vin-faint);
 }
 .vin-input:focus {
-  border-color: rgba(224, 72, 58, 0.55);
+  border-color: rgba(224, 72, 58, 0.6);
+  box-shadow: 0 0 0 3px var(--vin-accent-soft);
 }
 
 .vin-btn-primary {
   background: var(--vin-accent);
-  color: var(--vin-text);
+  color: #fff;
   border: none;
-  border-radius: 3px;
-  padding: 10px 18px;
-  font-size: 13px;
+  border-radius: var(--r-sm);
+  padding: 11px 20px;
+  font-size: var(--t-sm);
+  font-weight: 500;
   cursor: pointer;
+  transition: filter 0.14s ease, box-shadow 0.14s ease;
+  box-shadow: 0 6px 20px -12px var(--vin-accent-glow);
+}
+.vin-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 .vin-btn-primary:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: default;
+  box-shadow: none;
 }
 
 .vin-btn-ghost {
   background: transparent;
   color: var(--vin-muted);
   border: 1px solid var(--vin-border-strong);
-  border-radius: 3px;
-  padding: 9px 16px;
-  font-size: 13px;
+  border-radius: var(--r-sm);
+  padding: 10px 17px;
+  font-size: var(--t-sm);
   cursor: pointer;
+  transition: color 0.14s ease, border-color 0.14s ease, background 0.14s ease;
 }
-.vin-btn-ghost:hover {
+.vin-btn-ghost:hover:not(:disabled) {
   color: var(--vin-text);
+  border-color: var(--vin-border-strong);
+  background: var(--vin-surface-2);
+}
+.vin-btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.vincere-scope :focus-visible {
+  outline: 2px solid var(--vin-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .vin-bar-track {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
   overflow: hidden;
 }
 .vin-bar-fill {
   background: var(--vin-accent);
   height: 100%;
+  border-radius: 99px;
 }
 
 .vin-select {
   background: var(--vin-surface-2);
   border: 1px solid var(--vin-border-strong);
-  border-radius: 3px;
+  border-radius: var(--r-sm);
   color: var(--vin-text);
-  font-size: 13px;
-  padding: 9px 12px;
+  font-size: var(--t-sm);
+  padding: 10px 13px;
   outline: none;
 }
 .vin-select option {

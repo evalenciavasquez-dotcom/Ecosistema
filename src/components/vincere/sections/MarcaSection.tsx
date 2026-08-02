@@ -96,7 +96,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
       aiTitle="Lectura VINCERE — Marca"
     >
       <div className="flex justify-end">
-        <button className="vin-faint text-xs hover:underline" onClick={() => setEditing((v) => !v)}>
+        <button className="vin-faint vin-t-xs hover:underline" onClick={() => setEditing((v) => !v)}>
           {editing ? "Cerrar edición" : "Editar marca"}
         </button>
       </div>
@@ -104,7 +104,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
       <div className="grid gap-4 md:grid-cols-3">
         {CAMPOS.map((c) => (
           <Panel key={c.key}>
-            <div className="vin-faint mb-2 text-[11px] uppercase tracking-[0.08em]">{c.label}</div>
+            <div className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">{c.label}</div>
             {editing ? (
               <>
                 <textarea
@@ -113,10 +113,10 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                   rows={3}
                   className="vin-input resize-none"
                 />
-                <p className="vin-faint mt-2 text-[11px] leading-relaxed">{c.hint}</p>
+                <p className="vin-faint mt-2 vin-t-xs leading-relaxed">{c.hint}</p>
               </>
             ) : (
-              <div className="text-[15px] leading-relaxed">
+              <div className="vin-t-base leading-relaxed">
                 {m?.[c.key]?.trim() || <span className="vin-faint">—</span>}
               </div>
             )}
@@ -142,14 +142,14 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                 placeholder="íntimo, nocturno, melancólico"
                 className="vin-input"
               />
-              <p className="vin-faint mt-2 text-[11px]">Separados por coma. Tres o cuatro bastan; diez no definen nada.</p>
+              <p className="vin-faint mt-2 vin-t-xs">Separados por coma. Tres o cuatro bastan; diez no definen nada.</p>
             </>
           ) : atributos.length ? (
             <div className="flex flex-wrap gap-1.5">
               {atributos.map((a) => (
                 <span
                   key={a}
-                  className="rounded-full px-2.5 py-1 text-[12px]"
+                  className="rounded-full px-2.5 py-1 vin-t-sm"
                   style={{ border: "1px solid var(--vin-border-strong)", color: "var(--vin-muted)" }}
                 >
                   {a}
@@ -157,7 +157,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
               ))}
             </div>
           ) : (
-            <span className="vin-faint text-sm">—</span>
+            <span className="vin-faint vin-t-sm">—</span>
           )}
         </Panel>
 
@@ -171,12 +171,12 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                 rows={2}
                 className="vin-input resize-none"
               />
-              <p className="vin-faint mt-2 text-[11px] leading-relaxed">
+              <p className="vin-faint mt-2 vin-t-xs leading-relaxed">
                 El campo que casi nadie llena. Una marca que no excluye nada no distingue nada.
               </p>
             </>
           ) : (
-            <div className="text-[15px] leading-relaxed">
+            <div className="vin-t-base leading-relaxed">
               {m?.antipatron?.trim() || (
                 <span className="vin-faint">
                   Sin definir — es la pieza que más filo le daría a esta marca.
@@ -189,20 +189,20 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
 
       <section>
         <PanelLabel>Puntos de contacto</PanelLabel>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           Donde la marca se toca de verdad. Un posicionamiento impecable no sirve si tres canales dicen cosas distintas.
         </p>
         <div className="space-y-2.5">
           {puntos.map((pc) => (
             <div key={pc.id} className="vin-card border-l-2 p-4" style={{ borderLeftColor: COHERENCIA_COLOR[pc.coherencia] }}>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[14.5px] font-medium">{pc.canal}</span>
+                <span className="vin-t-base font-medium">{pc.canal}</span>
                 <div className="flex items-center gap-1.5">
                   {COHERENCIAS.map((c) => (
                     <button
                       key={c}
                       onClick={() => updatePunto(proyecto.id, pc.id, { coherencia: c })}
-                      className="rounded-full border px-2 py-0.5 text-[10.5px] transition-colors"
+                      className="rounded-full border px-2 py-0.5 vin-t-xs transition-colors"
                       style={{
                         color: pc.coherencia === c ? COHERENCIA_COLOR[c] : "var(--vin-dim)",
                         borderColor: pc.coherencia === c ? `${COHERENCIA_COLOR[c]}66` : "var(--vin-border)",
@@ -214,7 +214,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                   ))}
                   <button
                     onClick={() => deletePunto(proyecto.id, pc.id)}
-                    className="vin-faint px-1 text-xs hover:underline"
+                    className="vin-faint px-1 vin-t-xs hover:underline"
                     title="Eliminar"
                   >
                     ✕
@@ -226,7 +226,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                 onChange={(e) => updatePunto(proyecto.id, pc.id, { queProyecta: e.target.value })}
                 rows={2}
                 placeholder="Qué dice hoy este canal sobre quién es el artista"
-                className="vin-input resize-none text-[13.5px]"
+                className="vin-input resize-none vin-t-base"
               />
             </div>
           ))}
@@ -262,7 +262,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
 
       <Panel>
         <PanelLabel>Contrastar contra la data</PanelLabel>
-        <p className="vin-faint mb-3 text-xs leading-relaxed">
+        <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
           {declarada
             ? "El sistema cruza esta marca con el catálogo, la audiencia, las zonas y los canales, y devuelve dónde se abre la brecha."
             : "Todavía no hay marca declarada. Se puede analizar igual: el sistema trabaja al revés y deduce qué marca tiene hoy este artista según su data."}
@@ -277,10 +277,10 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
           <button onClick={analizar} disabled={cargando} className="vin-btn-primary">
             {cargando ? "Contrastando marca y data…" : diag ? "Volver a analizar" : "Analizar marca"}
           </button>
-          {cargando && <span className="vin-faint text-xs">Cruzando canales, catálogo y audiencia.</span>}
+          {cargando && <span className="vin-faint vin-t-xs">Cruzando canales, catálogo y audiencia.</span>}
         </div>
         {error && (
-          <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
@@ -300,23 +300,23 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
             <div className="vin-eyebrow mb-2">Diagnóstico de marca</div>
             <div className="flex items-baseline gap-3">
               <span
-                className="vin-serif text-4xl leading-none"
+                className="vin-serif vin-t-display leading-none"
                 style={{ color: puntuacionColor(diag.puntuacionCoherencia) }}
               >
                 {diag.puntuacionCoherencia}
               </span>
-              <span className="vin-faint text-xs">de coherencia entre lo declarado y lo recibido</span>
+              <span className="vin-faint vin-t-xs">de coherencia entre lo declarado y lo recibido</span>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={diag.nivelGlobal} />
-            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
+            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 vin-t-xs hover:underline" title="Eliminar">
               ✕
             </button>
           </div>
         </div>
-        <p className="text-[15px] leading-relaxed">{diag.coherencia}</p>
-        <p className="vin-faint mt-2.5 text-xs">
+        <p className="vin-t-base leading-relaxed">{diag.coherencia}</p>
+        <p className="vin-faint mt-2.5 vin-t-xs">
           Generado el{" "}
           {new Date(diag.generadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
         </p>
@@ -330,22 +330,22 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
               <div key={i} className="vin-card p-4">
                 <div className="mb-3 grid gap-3 md:grid-cols-2">
                   <div>
-                    <div className="vin-faint mb-1 text-[10.5px] uppercase tracking-[0.08em]">Declara</div>
-                    <p className="text-[13.5px] leading-relaxed">{b.declarado}</p>
+                    <div className="vin-faint mb-1 vin-t-xs uppercase tracking-[0.08em]">Declara</div>
+                    <p className="vin-t-base leading-relaxed">{b.declarado}</p>
                   </div>
                   <div
-                    className="rounded-sm p-3"
+                    className="rounded-xl p-3"
                     style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.22)" }}
                   >
-                    <div className="mb-1 text-[10.5px] uppercase tracking-[0.08em]" style={{ color: "var(--vin-accent)" }}>
+                    <div className="mb-1 vin-t-xs uppercase tracking-[0.08em]" style={{ color: "var(--vin-accent)" }}>
                       Recibe
                     </div>
-                    <p className="text-[13.5px] leading-relaxed">{b.recibido}</p>
+                    <p className="vin-t-base leading-relaxed">{b.recibido}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <EvidenceTag nivel={b.nivel} />
-                  <p className="vin-muted flex-1 text-[13.5px] leading-relaxed">{b.lectura}</p>
+                  <p className="vin-muted flex-1 vin-t-base leading-relaxed">{b.lectura}</p>
                 </div>
               </div>
             ))}
@@ -356,16 +356,16 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
       <div className="grid gap-5 md:grid-cols-2">
         <Panel>
           <PanelLabel>Diferenciación</PanelLabel>
-          <p className="text-[14px] leading-relaxed">{diag.diferenciacion}</p>
+          <p className="vin-t-base leading-relaxed">{diag.diferenciacion}</p>
         </Panel>
 
         {diag.senalesDeMarca.length > 0 && (
           <Panel>
             <PanelLabel>La marca que la data revela</PanelLabel>
-            <p className="vin-faint mb-3 text-[11px] leading-relaxed">Lo que este artista ya proyecta, se declare o no.</p>
+            <p className="vin-faint mb-3 vin-t-xs leading-relaxed">Lo que este artista ya proyecta, se declare o no.</p>
             <ul className="space-y-2">
               {diag.senalesDeMarca.map((s, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint">—</span>
                   <span>{s}</span>
                 </li>
@@ -378,7 +378,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
       <div className="grid gap-5 md:grid-cols-2">
         {diag.riesgos.length > 0 && (
           <div
-            className="rounded-sm p-5"
+            className="rounded-xl p-5"
             style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
           >
             <PanelLabel>
@@ -386,7 +386,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
             </PanelLabel>
             <ul className="space-y-2">
               {diag.riesgos.map((r, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span style={{ color: "var(--vin-accent)" }}>—</span>
                   <span>{r}</span>
                 </li>
@@ -400,7 +400,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
             <PanelLabel>Movimientos</PanelLabel>
             <ul className="space-y-2">
               {diag.movimientos.map((mv, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint tabular-nums">{i + 1}.</span>
                   <span>{mv}</span>
                 </li>
@@ -411,13 +411,13 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
       </div>
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
         </PanelLabel>
-        <p className="text-[15px] leading-relaxed">{diag.veredicto}</p>
+        <p className="vin-t-base leading-relaxed">{diag.veredicto}</p>
       </div>
 
       <div className="vin-no-print">

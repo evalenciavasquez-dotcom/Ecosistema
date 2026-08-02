@@ -62,7 +62,7 @@ export default function VincereApp() {
 
       {toast && (
         <div
-          className="fixed bottom-6 right-6 z-50 rounded-sm px-4 py-3 text-[13px]"
+          className="fixed bottom-6 right-6 z-50 rounded-xl px-4 py-3 vin-t-sm"
           style={{ background: "var(--vin-surface-2)", border: "1px solid rgba(224,72,58,0.4)", color: "var(--vin-text)" }}
         >
           {toast}
@@ -79,8 +79,8 @@ function SinProyectos() {
   return (
     <div className="py-6">
       <div className="vin-eyebrow mb-2.5">VINCERE</div>
-      <h2 className="vin-serif mb-3 text-2xl leading-snug">No hay ningún proyecto</h2>
-      <p className="vin-muted mb-5 max-w-xl text-[14.5px] leading-relaxed">
+      <h2 className="vin-serif mb-3 vin-t-xl leading-snug">No hay ningún proyecto</h2>
+      <p className="vin-muted mb-5 max-w-xl vin-t-base leading-relaxed">
         Crea el primero con el nombre del artista, su género y en qué fase está. Después, en «Cargar data», sueltas
         una captura o un archivo y se reparte solo a los motores que corresponda.
       </p>

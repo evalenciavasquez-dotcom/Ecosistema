@@ -65,7 +65,7 @@ function ProjectCard({ proyecto, accent = false }: { proyecto: VincereProyecto; 
   return (
     <div className="vin-card p-6">
       <div
-        className="mb-3.5 text-[11px] uppercase tracking-[0.1em]"
+        className="mb-3.5 vin-t-xs uppercase tracking-[0.1em]"
         style={{ color: accent ? "var(--vin-accent)" : "var(--vin-muted)" }}
       >
         {proyecto.nombre}
@@ -75,7 +75,7 @@ function ProjectCard({ proyecto, accent = false }: { proyecto: VincereProyecto; 
         <Metric value={formatStreams(r.streamsMes)} label={`Streams/mes · ${signed(r.streamsCambioPct)}`} />
         <Metric value={formatFollowers(r.seguidores)} label={`Seguidores · ${signed(r.seguidoresCambioPct)}`} />
         <Metric value={`${r.momentumIndex}/100`} label="Momentum Index" />
-        <Metric value={<span className="text-[15px]">{proyecto.fase}</span>} label="Fase" />
+        <Metric value={<span className="vin-t-base">{proyecto.fase}</span>} label="Fase" />
       </div>
     </div>
   );
@@ -84,8 +84,8 @@ function ProjectCard({ proyecto, accent = false }: { proyecto: VincereProyecto; 
 function Metric({ value, label }: { value: React.ReactNode; label: string }) {
   return (
     <div>
-      <div className="vin-serif text-[26px] leading-none">{value}</div>
-      <div className="vin-faint mt-1.5 text-xs">{label}</div>
+      <div className="vin-serif vin-t-display leading-none">{value}</div>
+      <div className="vin-faint mt-1.5 vin-t-xs">{label}</div>
     </div>
   );
 }
