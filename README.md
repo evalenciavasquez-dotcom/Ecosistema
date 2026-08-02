@@ -4,6 +4,8 @@
 
 Aplicación privada de análisis estratégico y dirección ejecutiva, construida a partir del PRD v1 (2026-07-16). Implementa el alcance de MVP descrito en la sección 12 del PRD: bandeja de entrada con clasificación asistida, proyectos, acciones, decisiones (con comparación de 8 escenarios), economía, evidencias, un motor de análisis con recomendaciones basadas en reglas, y configuración.
 
+El repositorio aloja tres sistemas con superficies propias: **C.C.O. E.V.** (`/inicio`), la **VINCERE Intelligence Platform** (`/vincere`) y **El Cuartel de mis Decisiones** (`/cuartel`). Comparten despliegue y acceso, no datos.
+
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
@@ -230,6 +232,43 @@ src/
                              schema, context, manual (contenido de "Cómo se opera"),
                              informe-export (Markdown + descarga)
 ```
+
+## 🪖 El Cuartel de mis Decisiones (`/cuartel`)
+
+Tercer sistema del repositorio, construido a partir de su PRD v1 (2026-08-01). Es una aplicación privada de **análisis de decisiones personales**: toma una situación de vida sin resolución obvia —una relación, algo con la familia, salud, vocación, tiempo y energía— y la convierte en rutas comparables, con una recomendación y un registro de qué pasó después.
+
+> Ningún escenario se decide sin ver las 3 rutas completas.
+
+No es un diario, ni un chat de desahogo, ni terapia. El centro es forzar la comparación explícita de rutas **antes** de que la inercia decida por default. El balance del producto es deliberado: ~80% análisis de decisión, ~20% registro.
+
+- **Separación estricta**: tabla propia (`cuartel_escenarios`), store propio, rutas de API propias. Nada de este contenido se cruza con proyectos de negocio, con VINCERE ni con el resto del C.C.O. E.V. — es un requisito del PRD, no una preferencia de implementación.
+- **Las 3 rutas base** (`Cortar / Sostener / Rediseñar`) nacen con el escenario, en el propio `crearEscenario` del store. No hay techo de rutas, pero el store impide bajar de tres: volver a una decisión binaria es exactamente lo que el sistema existe para evitar.
+- **Los 6 sombreros por ruta** (hechos, emoción, riesgos, beneficio real, alternativas, meta) son la estructura de análisis obligatoria. Una ruta con sombreros vacíos no llega a tener validez calculada.
+- **Semáforo de 4 métricas** — desgaste, repetición de patrón, costo de oportunidad, dependencia del otro — siempre las mismas, para que dos rutas de dos escenarios distintos sigan siendo comparables.
+- **El candado** (`src/lib/cuartel/candado.ts`): si la ruta es *Sostener* y tiene **2 de 4 métricas en rojo**, se descarta automáticamente. Vive en un archivo aparte del store y de la interfaz a propósito: la validez es una función pura de la ruta y **no existe ninguna acción que permita editarla a mano**. La ruta descartada no se borra ni se esconde — queda tachada, para que se vea qué quedó afuera y por qué.
+- **El Instructor** (`/api/cuartel/instructor`): ninguna ruta obtiene validez sin al menos una pregunta de **Contraste o Confrontación respondida**. La regla se verifica en dos lugares: el prompt exige ese tipo de pregunta en la primera vuelta y la ruta de API **rechaza** la respuesta si el modelo devuelve otra cosa, para que una pregunta de consuelo no desbloquee la validez. Una pregunta hecha y no contestada tampoco cuenta. Si aparece una justificación nueva, se pone a prueba una vez más — una, no infinitas.
+- **Capa legal/fiscal**, separada de los 6 sombreros: tres niveles (no aplica / recomendable / necesario antes de actuar), alcance exclusivamente personal. Identifica cuándo llamar a un abogado o contador colombiano; nunca actúa en su lugar.
+- **Niveles de certeza** (hecho verificable / reportado por Eduardo / interpretación del sistema / hipótesis) pegados al dato en Riesgos y en el patrón repetido — no en una leyenda al pie. Una lectura del sistema nunca se muestra como algo confirmado.
+- **Análisis con IA** (`/api/cuartel/analizar`): corre las rutas × los 6 sombreros y propone el semáforo. Solo llena campos vacíos — lo escrito por Eduardo no se pisa — y no toca ni la validez ni los turnos del Instructor: esas dos cosas no se pueden generar solas.
+- **Recomendación** (`/api/cuartel/recomendar`): recibe únicamente las rutas válidas, devuelve una sola ruta con su movida concreta (ejecutable, verificable, con plazo) y el supuesto que la sostiene. Si apunta a una ruta que no está en las válidas, la respuesta se descarta. La ruta recomendada y la elegida se guardan por separado: pueden diferir, y esa diferencia es data.
+- **Libro Rojo** (Historial): escenarios decididos con su resultado real y si el patrón identificado se confirmó o se refutó. El escenario no se puede cerrar sin resultado registrado — sin eso, esto sería un archivo de decisiones y no un registro que enseñe algo al siguiente. El contexto del Libro Rojo viaja a todos los prompts, que es lo que permite las preguntas de consistencia.
+- **Honestidad de estado**: el indicador del encabezado dice dónde quedó la data de verdad (Guardado / Solo este dispositivo / Sin guardar). Un guardado que falló nunca se muestra como exitoso.
+- **Reversibilidad**: borrar un escenario o una ruta exige una confirmación explícita que dice qué se pierde.
+
+```
+src/
+  app/cuartel/               Superficie propia (tema oscuro, acento ámbar, Fraunces + Work Sans + IBM Plex Mono)
+  app/api/cuartel/
+      state/                 GET: escenarios desde Postgres
+      sync/                  POST: guarda los escenarios que cambiaron
+      analizar/              Rutas × 6 sombreros + semáforo + capa legal (IA)
+      instructor/            Preguntas de criterio, con la regla de secuencia verificada (IA)
+      recomendar/            Recomendación sobre las rutas válidas + movida concreta (IA)
+  components/cuartel/        Header, Nav, escenario, ruta, comparación, cierre
+  lib/cuartel/               types, candado (regla pura), store, db, prompt, schema, ai-client
+```
+
+**Sobre el backend de datos**: el PRD (sección 18) decidió Notion vía API. Esta implementación usa el Postgres que el ecosistema ya tiene, en tablas propias del Cuartel, por dos razones — la separación de datos que exige el PRD se cumple igual (tabla, store y rutas aparte), y el mecanismo de sincronización ya está probado en VINCERE. Sin `DATABASE_URL`, todo funciona igual contra el navegador y la interfaz lo dice. Si se quiere Notion como respaldo, hace falta una integración y una base **distintas** de las de VINCERE: reutilizar `NOTION_DATABASE_ID` mezclaría vida personal con trabajo, que es justo lo que el PRD prohíbe.
 
 ## Alcance y limitaciones de este v1
 

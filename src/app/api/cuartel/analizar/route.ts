@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { analisisResponseSchema } from "@/lib/cuartel/schema";
+import { CUARTEL_ANALISIS_SYSTEM_PROMPT, buildAnalisisPrompt } from "@/lib/cuartel/prompt";
+
+// Análisis completo: las rutas del escenario × los 6 sombreros, más el
+// semáforo y la capa legal. Lo que devuelve entra al store como propuesta —
+// el candado y El Instructor siguen corriendo del lado del sistema.
+export async function POST(request: Request) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
+  }
+
+  const body = await request.json().catch(() => null);
+  if (!body?.escenario || !Array.isArray(body?.rutas) || body.rutas.length === 0) {
+    return NextResponse.json({ error: "Falta el escenario o las rutas a analizar" }, { status: 400 });
+  }
+
+  const client = new Anthropic({ apiKey });
+
+  try {
+    const response = await client.messages.parse({
+      model: "claude-sonnet-5",
+      max_tokens: 4000,
+      output_config: { format: zodOutputFormat(analisisResponseSchema) },
+      system: CUARTEL_ANALISIS_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildAnalisisPrompt(body.escenario, body.rutas) }],
+    });
+
+    if (response.parsed_output == null) {
+      return NextResponse.json({ error: "No se pudo generar el análisis" }, { status: 502 });
+    }
+
+    return NextResponse.json({ result: response.parsed_output });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error llamando a Claude";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+}

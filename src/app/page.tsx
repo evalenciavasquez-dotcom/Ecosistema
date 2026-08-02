@@ -45,6 +45,16 @@ const SISTEMAS: {
     accent: "#a13a44",
     accentDim: "rgba(161, 58, 68, 0.16)",
   },
+  {
+    href: "/cuartel",
+    nombre: "🪖 El Cuartel",
+    icono: null,
+    logo: null,
+    tagline: "De mis Decisiones",
+    detalle: "Ningún escenario se decide sin ver las 3 rutas completas.",
+    accent: "#d99a2b",
+    accentDim: "rgba(217, 154, 43, 0.16)",
+  },
 ];
 
 export default function HubPage() {
