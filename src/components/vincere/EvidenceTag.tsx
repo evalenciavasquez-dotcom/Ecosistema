@@ -11,7 +11,7 @@ export default function EvidenceTag({ nivel }: { nivel: VincereNivel }) {
   const color = NIVEL_COLOR[nivel];
   return (
     <span
-      className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide"
+      className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 vin-t-xs font-medium tracking-wide"
       style={{ color, borderColor: `${color}66` }}
       title={`Nivel de evidencia ${nivel} — ${VINCERE_NIVEL_LABEL[nivel]}`}
     >

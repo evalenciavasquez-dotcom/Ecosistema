@@ -42,7 +42,7 @@ function Item({
   return (
     <button
       onClick={onClick}
-      className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2 text-left text-[13.5px] transition-colors"
+      className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2 text-left vin-t-base transition-colors"
       style={{
         borderLeft: activo ? "2px solid var(--vin-accent)" : "2px solid transparent",
         background: activo ? "rgba(224,72,58,0.12)" : "transparent",
@@ -125,7 +125,7 @@ export default function VincereNav() {
       </div>
       <div className="hidden md:block">
         {PROXIMAMENTE.map((label) => (
-          <div key={label} className="px-3 py-1.5 text-[12.5px]" style={{ color: "var(--vin-dim)" }}>
+          <div key={label} className="px-3 py-1.5 vin-t-sm" style={{ color: "var(--vin-dim)" }}>
             {label} · pronto
           </div>
         ))}

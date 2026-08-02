@@ -105,19 +105,19 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
             <button
               key={d}
               onClick={() => setDestino(d)}
-              className="rounded-sm p-3 text-left transition-colors"
+              className="rounded-xl p-3 text-left transition-colors"
               style={{
                 border: `1px solid ${destino === d ? "var(--vin-accent)" : "var(--vin-border)"}`,
                 background: destino === d ? "rgba(224,72,58,0.08)" : "transparent",
               }}
             >
               <div
-                className="mb-1 text-[13.5px] font-medium"
+                className="mb-1 vin-t-base font-medium"
                 style={{ color: destino === d ? "var(--vin-text)" : "var(--vin-muted)" }}
               >
                 {VINCERE_PITCH_DESTINO_LABEL[d]}
               </div>
-              <div className="vin-faint text-[11.5px] leading-relaxed">{VINCERE_PITCH_DESTINO_DESC[d]}</div>
+              <div className="vin-faint vin-t-sm leading-relaxed">{VINCERE_PITCH_DESTINO_DESC[d]}</div>
             </button>
           ))}
         </div>
@@ -125,7 +125,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
         {destino === "promotor" && (
           <div className="mb-3">
             <PanelLabel>En qué plaza</PanelLabel>
-            <p className="vin-faint mb-2 text-[11.5px] leading-relaxed">
+            <p className="vin-faint mb-2 vin-t-sm leading-relaxed">
               Ordenadas por calor: arriba está donde hay más demanda que reforzar. Un empresario no compra la audiencia
               nacional del artista — compra la suya.
             </p>
@@ -138,7 +138,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
                     <button
                       key={z.id}
                       onClick={() => setPlaza(z.ciudad)}
-                      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition-colors"
+                      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 vin-t-sm transition-colors"
                       style={{
                         border: `1px solid ${sel ? VINCERE_TEMPERATURA_COLOR[t] : "var(--vin-border)"}`,
                         color: sel ? "var(--vin-text)" : "var(--vin-muted)",
@@ -156,7 +156,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
                 })}
               </div>
             ) : (
-              <p className="vin-faint mb-2 text-[11.5px] leading-relaxed">
+              <p className="vin-faint mb-2 vin-t-sm leading-relaxed">
                 No hay zonas de calor cargadas. Puedes escribir la ciudad igual, pero el pitch va a ir sin medida de
                 demanda local y lo va a decir.
               </p>
@@ -179,7 +179,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
         />
 
         {destino !== "dsp" && (
-          <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
             {personas.length > 0
               ? `Se van a revisar tus ${personas.length} contactos del C.C.O. para ver si alguno sirve de puente hacia el destinatario.`
               : "No tienes contactos cargados en el C.C.O., así que el pitch no va a proponer puentes personales. Cárgalos en Personas si quieres que los use."}
@@ -191,12 +191,12 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
             {cargando ? "Escribiendo el pitch…" : "Generar pitch"}
           </button>
           {faltaPlaza && !cargando && (
-            <span className="vin-faint text-xs">Elige la ciudad: sin plaza saldría el pitch genérico que esto evita.</span>
+            <span className="vin-faint vin-t-xs">Elige la ciudad: sin plaza saldría el pitch genérico que esto evita.</span>
           )}
-          {cargando && <span className="vin-faint text-xs">Sale como texto final, listo para mandar.</span>}
+          {cargando && <span className="vin-faint vin-t-xs">Sale como texto final, listo para mandar.</span>}
         </div>
         {error && (
-          <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
@@ -208,7 +208,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
             <button
               key={x.id}
               onClick={() => setAbierto(x.id)}
-              className="rounded-sm px-2.5 py-1 text-[11.5px] transition-colors"
+              className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
               style={{
                 background: activo?.id === x.id ? "rgba(224,72,58,0.14)" : "transparent",
                 color: activo?.id === x.id ? "var(--vin-text)" : "var(--vin-muted)",
@@ -255,20 +255,20 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={pitch.nivelGlobal} />
-            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
+            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 vin-t-xs hover:underline" title="Eliminar">
               ✕
             </button>
           </div>
         </div>
-        <h2 className="vin-serif mb-3 text-2xl leading-snug">{pitch.titular}</h2>
-        <p className="text-[15px] leading-relaxed">{pitch.apertura}</p>
-        {pitch.objetivo && <p className="vin-faint mt-3 text-xs">Objetivo declarado: {pitch.objetivo}</p>}
+        <h2 className="vin-serif mb-3 vin-t-xl leading-snug">{pitch.titular}</h2>
+        <p className="vin-t-base leading-relaxed">{pitch.apertura}</p>
+        {pitch.objetivo && <p className="vin-faint mt-3 vin-t-xs">Objetivo declarado: {pitch.objetivo}</p>}
       </div>
 
       {/* Solo DSP: el texto literal, con su contador y su botón de copiar. */}
       {pitch.pitchCorto && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{ background: "rgba(45,212,191,0.06)", border: "1px solid rgba(45,212,191,0.3)" }}
         >
           <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
@@ -277,17 +277,17 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
             </PanelLabel>
             <div className="flex items-center gap-3">
               <span
-                className="vin-faint text-[11px] tabular-nums"
+                className="vin-faint vin-t-xs tabular-nums"
                 style={{ color: pitch.pitchCorto.length > 480 ? "#e0a83a" : undefined }}
               >
                 {pitch.pitchCorto.length}/500
               </span>
-              <button onClick={copiarCorto} className="vin-btn-ghost vin-no-print px-3 py-1 text-[11.5px]">
+              <button onClick={copiarCorto} className="vin-btn-ghost vin-no-print px-3 py-1 vin-t-sm">
                 {copiado ? "Copiado ✓" : "Copiar"}
               </button>
             </div>
           </div>
-          <p className="text-[14px] leading-relaxed">{pitch.pitchCorto}</p>
+          <p className="vin-t-base leading-relaxed">{pitch.pitchCorto}</p>
         </div>
       )}
 
@@ -298,7 +298,7 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
             {pitch.etiquetas.map((e) => (
               <span
                 key={e}
-                className="rounded-full px-2.5 py-1 text-[12px]"
+                className="rounded-full px-2.5 py-1 vin-t-sm"
                 style={{ border: "1px solid var(--vin-border-strong)", color: "var(--vin-muted)" }}
               >
                 {e}
@@ -313,20 +313,20 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
           con 310 adentro se ve peor que una de 300 llena. */}
       {pitch.aforoSugerido != null && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.3)" }}
         >
           <PanelLabel>
             <span style={{ color: "#e0a83a" }}>Aforo que aguanta esta plaza hoy</span>
           </PanelLabel>
-          <p className="vin-serif mb-2 text-3xl tabular-nums leading-none">
+          <p className="vin-serif mb-2 vin-t-display tabular-nums leading-none">
             {pitch.aforoSugerido.toLocaleString("es-CO")}
-            <span className="vin-faint ml-2 align-middle text-[13px]">personas</span>
+            <span className="vin-faint ml-2 align-middle vin-t-sm">personas</span>
           </p>
           {pitch.porQueEseAforo && (
-            <p className="text-[14px] leading-relaxed">{pitch.porQueEseAforo}</p>
+            <p className="vin-t-base leading-relaxed">{pitch.porQueEseAforo}</p>
           )}
-          <p className="vin-faint mt-2.5 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mt-2.5 vin-t-sm leading-relaxed">
             Es deliberadamente conservador. Quedarse corto se arregla subiendo de sala; pasarse deja media sala vacía y
             un empresario que no vuelve a llamar.
           </p>
@@ -336,14 +336,14 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
       {pitch.bloques.map((b, i) => (
         <Panel key={i}>
           <PanelLabel>{b.titulo}</PanelLabel>
-          <p className="whitespace-pre-line text-[14.5px] leading-relaxed">{b.contenido}</p>
+          <p className="whitespace-pre-line vin-t-base leading-relaxed">{b.contenido}</p>
         </Panel>
       ))}
 
       {pitch.evidencia.length > 0 && (
         <section>
           <PanelLabel>La evidencia, con su nivel</PanelLabel>
-          <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
             Va declarada a propósito. Marcar qué dato es sólido y cuál es parcial es lo que separa esto de una lista de
             números buenos.
           </p>
@@ -351,8 +351,8 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
             {pitch.evidencia.map((e, i) => (
               <div key={i} className="vin-card flex flex-wrap items-start justify-between gap-3 p-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] leading-relaxed">{e.dato}</p>
-                  <p className="vin-faint mt-1 text-[11.5px]">{e.deDondeSale}</p>
+                  <p className="vin-t-base leading-relaxed">{e.dato}</p>
+                  <p className="vin-faint mt-1 vin-t-sm">{e.deDondeSale}</p>
                 </div>
                 <EvidenceTag nivel={e.nivel} />
               </div>
@@ -362,27 +362,27 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
       )}
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>El riesgo, dicho por nosotros</span>
         </PanelLabel>
-        <p className="mb-3 text-[15px] leading-relaxed">{pitch.riesgoQueNombramos}</p>
+        <p className="mb-3 vin-t-base leading-relaxed">{pitch.riesgoQueNombramos}</p>
         <div className="border-t pt-3" style={{ borderColor: "rgba(224,72,58,0.22)" }}>
-          <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">Y por qué igual funciona</div>
-          <p className="text-[14.5px] leading-relaxed">{pitch.porQueIgualFunciona}</p>
+          <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">Y por qué igual funciona</div>
+          <p className="vin-t-base leading-relaxed">{pitch.porQueIgualFunciona}</p>
         </div>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
         <Panel>
           <PanelLabel>El pedido</PanelLabel>
-          <p className="text-[14.5px] leading-relaxed">{pitch.elPedido}</p>
+          <p className="vin-t-base leading-relaxed">{pitch.elPedido}</p>
         </Panel>
         <Panel>
           <PanelLabel>Qué damos a cambio</PanelLabel>
-          <p className="text-[14.5px] leading-relaxed">{pitch.queDamosACambio}</p>
+          <p className="vin-t-base leading-relaxed">{pitch.queDamosACambio}</p>
         </Panel>
       </div>
 
@@ -391,18 +391,18 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
           {pitch.destinatarioSugerido && (
             <>
               <PanelLabel>A quién llevarlo</PanelLabel>
-              <p className="mb-2 text-[14.5px] leading-relaxed">{pitch.destinatarioSugerido}</p>
+              <p className="mb-2 vin-t-base leading-relaxed">{pitch.destinatarioSugerido}</p>
               {pitch.porQueEseDestinatario && (
-                <p className="vin-muted mb-3 text-[13.5px] leading-relaxed">{pitch.porQueEseDestinatario}</p>
+                <p className="vin-muted mb-3 vin-t-base leading-relaxed">{pitch.porQueEseDestinatario}</p>
               )}
             </>
           )}
           {pitch.contactosRelevantes.length > 0 && (
             <>
-              <div className="vin-faint mb-2 text-[10.5px] uppercase tracking-[0.08em]">Puentes que ya tienes</div>
+              <div className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">Puentes que ya tienes</div>
               <ul className="space-y-1.5">
                 {pitch.contactosRelevantes.map((c, i) => (
-                  <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                  <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                     <span className="vin-faint">→</span>
                     <span>{c}</span>
                   </li>
@@ -416,13 +416,13 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
       {pitch.queNoDecir.length > 0 && (
         <Panel className="vin-no-print">
           <PanelLabel>Qué no decir en esta sala</PanelLabel>
-          <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
             No es ocultar el riesgo — ese va declarado arriba. Es no debilitarse con información que no aporta a esta
             conversación. Esta nota es para ti; no va en el documento.
           </p>
           <ul className="space-y-2">
             {pitch.queNoDecir.map((q, i) => (
-              <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+              <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                 <span className="vin-faint">—</span>
                 <span>{q}</span>
               </li>
@@ -433,13 +433,13 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
 
       {pitch.siguientePaso && (
         <div
-          className="rounded-sm p-5"
+          className="rounded-xl p-5"
           style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.28)" }}
         >
           <PanelLabel>
             <span style={{ color: "#5cc98e" }}>Siguiente paso</span>
           </PanelLabel>
-          <p className="text-[15px] leading-relaxed">{pitch.siguientePaso}</p>
+          <p className="vin-t-base leading-relaxed">{pitch.siguientePaso}</p>
         </div>
       )}
 

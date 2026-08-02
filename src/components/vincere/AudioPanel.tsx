@@ -14,9 +14,9 @@ function mmss(seg: number): string {
 function Dato({ valor, etiqueta, nota }: { valor: string; etiqueta: string; nota?: string }) {
   return (
     <div>
-      <div className="vin-serif text-xl leading-none">{valor}</div>
-      <div className="vin-faint mt-1.5 text-[10.5px] uppercase tracking-wide">{etiqueta}</div>
-      {nota && <div className="vin-faint mt-0.5 text-[10.5px]">{nota}</div>}
+      <div className="vin-serif vin-t-xl leading-none">{valor}</div>
+      <div className="vin-faint mt-1.5 vin-t-xs uppercase tracking-wide">{etiqueta}</div>
+      {nota && <div className="vin-faint mt-0.5 vin-t-xs">{nota}</div>}
     </div>
   );
 }
@@ -63,7 +63,7 @@ function CurvaEnergia({ audio }: { audio: VincereAudioAnalisis }) {
           />
         )}
       </svg>
-      <div className="vin-faint mt-1 flex justify-between text-[10.5px] tabular-nums">
+      <div className="vin-faint mt-1 flex justify-between vin-t-xs tabular-nums">
         <span>0:00</span>
         {audio.ganchoSeg !== null && (
           <span style={{ color: "#5cc98e" }}>gancho en {mmss(audio.ganchoSeg)}</span>
@@ -108,7 +108,7 @@ export function AudioPanel({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <PanelLabel>Audio</PanelLabel>
         {audio && (
-          <button onClick={onQuitar} className="vin-faint text-xs hover:underline">
+          <button onClick={onQuitar} className="vin-faint vin-t-xs hover:underline">
             Quitar análisis
           </button>
         )}
@@ -128,7 +128,7 @@ export function AudioPanel({
             if (f) procesar(f);
           }}
           onClick={() => inputRef.current?.click()}
-          className="cursor-pointer rounded-sm p-5 text-center transition-colors"
+          className="cursor-pointer rounded-xl p-5 text-center transition-colors"
           style={{
             border: `1px dashed ${arrastrando ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
             background: arrastrando ? "rgba(224,72,58,0.06)" : "transparent",
@@ -144,22 +144,22 @@ export function AudioPanel({
               if (f) procesar(f);
             }}
           />
-          <p className="vin-muted text-sm">Suelta aquí el MP3 o WAV de la canción, o haz clic para elegirlo</p>
-          <p className="vin-faint mt-1.5 text-xs">
+          <p className="vin-muted vin-t-sm">Suelta aquí el MP3 o WAV de la canción, o haz clic para elegirlo</p>
+          <p className="vin-faint mt-1.5 vin-t-xs">
             Se analiza en tu navegador y el archivo no se sube a ningún servidor.
           </p>
         </div>
       )}
 
       {etapa && (
-        <div className="rounded-sm p-5 text-center" style={{ border: "1px dashed var(--vin-border-strong)" }}>
-          <p className="text-sm">{etapa}</p>
-          <p className="vin-faint mt-1.5 text-xs">Un tema de tres minutos tarda unos segundos.</p>
+        <div className="rounded-xl p-5 text-center" style={{ border: "1px dashed var(--vin-border-strong)" }}>
+          <p className="vin-t-sm">{etapa}</p>
+          <p className="vin-faint mt-1.5 vin-t-xs">Un tema de tres minutos tarda unos segundos.</p>
         </div>
       )}
 
       {error && (
-        <p className="mt-3 text-xs" style={{ color: "var(--vin-accent)" }}>
+        <p className="mt-3 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
           {error}
         </p>
       )}
@@ -193,29 +193,29 @@ export function AudioPanel({
 
           <div>
             <div className="vin-label mb-1.5">Textura</div>
-            <p className="vin-muted text-[13.5px] leading-relaxed">{describirTextura(audio)}</p>
+            <p className="vin-muted vin-t-base leading-relaxed">{describirTextura(audio)}</p>
           </div>
 
           {/* Lo que la medición no alcanza, dicho donde importa: justo después
               de ver el resultado, no escondido en la documentación. */}
           <div
-            className="rounded-sm p-4"
+            className="rounded-xl p-4"
             style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.28)" }}
           >
             <div className="vin-label mb-1.5" style={{ color: "#e0a83a" }}>
               Lo que esto no mide
             </div>
-            <p className="text-[13px] leading-relaxed">
+            <p className="vin-t-sm leading-relaxed">
               La textura describe el espectro, no reconoce instrumentos: el sistema puede decir que el tema es oscuro
               y con base pesada, no que haya una guitarra. Tampoco da mood, género ni artistas similares.
             </p>
-            <p className="vin-muted mt-2 text-[12.5px] leading-relaxed">
+            <p className="vin-muted mt-2 vin-t-sm leading-relaxed">
               Si tienes el análisis de un servicio externo (Cyanite, Music.ai) o las notas del productor, pégalas
               abajo: la lectura de la canción las cruzará con lo medido aquí.
             </p>
           </div>
 
-          <p className="vin-faint text-[11px]">
+          <p className="vin-faint vin-t-xs">
             {audio.archivo} · analizado el{" "}
             {new Date(audio.analizadoEn).toLocaleDateString("es", { day: "numeric", month: "short" })}
           </p>
@@ -251,7 +251,7 @@ export function NotasProduccionPanel({
         className="vin-input"
         style={{ resize: "vertical", lineHeight: "1.6" }}
       />
-      <p className="vin-faint mt-2 text-[11.5px] leading-relaxed">
+      <p className="vin-faint mt-2 vin-t-sm leading-relaxed">
         Entra a la lectura marcado como observación externa, nunca como algo medido por la plataforma.
       </p>
       {valor.trim().length > 8 && (
@@ -278,7 +278,7 @@ export function MetricaPanel({ metrica }: { metrica: VincereLetraMetrica }) {
   };
 
   return (
-    <div className="mt-4 rounded-sm p-4" style={{ border: "1px solid var(--vin-border)" }}>
+    <div className="mt-4 rounded-xl p-4" style={{ border: "1px solid var(--vin-border)" }}>
       <PanelLabel>Métrica de la letra</PanelLabel>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Dato
@@ -299,7 +299,7 @@ export function MetricaPanel({ metrica }: { metrica: VincereLetraMetrica }) {
         />
       </div>
       {metrica.repeticiones.length > 0 && (
-        <p className="vin-faint mt-3 text-[11.5px] leading-relaxed">
+        <p className="vin-faint mt-3 vin-t-sm leading-relaxed">
           Verso más repetido: «{metrica.repeticiones[0].texto}» ×{metrica.repeticiones[0].veces} · {metrica.versos} versos,{" "}
           {metrica.palabrasTotal} palabras
         </p>

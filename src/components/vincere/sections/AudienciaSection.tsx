@@ -46,20 +46,20 @@ export default function AudienciaSection({ proyecto }: { proyecto: VincereProyec
       <Panel>
         <div className="mb-1 flex items-center justify-between">
           <PanelLabel>Países</PanelLabel>
-          <button className="vin-faint text-xs hover:underline" onClick={() => setEditing(editing === "paises" ? null : "paises")}>
+          <button className="vin-faint vin-t-xs hover:underline" onClick={() => setEditing(editing === "paises" ? null : "paises")}>
             {editing === "paises" ? "Cerrar" : "Editar"}
           </button>
         </div>
         {editing === "paises" ? (
           <SegmentEditor segmentos={a.paises} onChange={(segs) => setSegmentos(proyecto.id, "paises", segs)} />
         ) : a.paises.length === 0 ? (
-          <p className="vin-muted text-sm">Sin data de países.</p>
+          <p className="vin-muted vin-t-sm">Sin data de países.</p>
         ) : (
           <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
             {a.paises.map((c) => (
               <div key={c.label} className="text-center">
-                <div className="vin-serif text-[22px]">{c.pct}%</div>
-                <div className="vin-faint mt-1 text-xs">{c.label}</div>
+                <div className="vin-serif vin-t-xl">{c.pct}%</div>
+                <div className="vin-faint mt-1 vin-t-xs">{c.label}</div>
               </div>
             ))}
           </div>
@@ -89,14 +89,14 @@ function SegmentPanel({
     <Panel>
       <div className="mb-1 flex items-center justify-between">
         <PanelLabel>{label}</PanelLabel>
-        <button className="vin-faint text-xs hover:underline" onClick={onToggle}>
+        <button className="vin-faint vin-t-xs hover:underline" onClick={onToggle}>
           {editing ? "Cerrar" : "Editar"}
         </button>
       </div>
       {editing ? (
         <SegmentEditor segmentos={segmentos} onChange={onChange} />
       ) : segmentos.length === 0 ? (
-        <p className="vin-muted text-sm">Sin data.</p>
+        <p className="vin-muted vin-t-sm">Sin data.</p>
       ) : (
         segmentos.map((seg) => <BarRow key={seg.label} label={seg.label} pct={seg.pct} labelWidth={labelWidth} />)
       )}
@@ -130,7 +130,7 @@ function SegmentEditor({
           />
           <button
             onClick={() => onChange(segmentos.filter((_, j) => j !== i))}
-            className="vin-faint px-1 text-xs hover:underline"
+            className="vin-faint px-1 vin-t-xs hover:underline"
           >
             ✕
           </button>

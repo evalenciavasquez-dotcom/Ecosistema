@@ -37,7 +37,7 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <PanelLabel>Evolución</PanelLabel>
-            <p className="vin-muted text-sm">
+            <p className="vin-muted vin-t-sm">
               {historial.length === 0
                 ? "Sin fotos guardadas todavía. Cada carga de data guarda una automáticamente."
                 : "Hay una sola foto. Con la próxima carga aparece la trayectoria y la IA podrá leer la evolución, no solo el estado de hoy."}
@@ -79,7 +79,7 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
             <button
               key={m.key}
               onClick={() => setMetrica(m.key)}
-              className="rounded-sm px-2.5 py-1 text-[11.5px] transition-colors"
+              className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
               style={{
                 background: metrica === m.key ? "rgba(224,72,58,0.14)" : "transparent",
                 color: metrica === m.key ? "var(--vin-text)" : "var(--vin-muted)",
@@ -93,13 +93,13 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
       </div>
 
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="vin-serif text-2xl">{activa.formato(ultimo[metrica])}</span>
-        <span className="text-[13px]" style={{ color: colorDelta }}>
+        <span className="vin-serif vin-t-xl">{activa.formato(ultimo[metrica])}</span>
+        <span className="vin-t-sm" style={{ color: colorDelta }}>
           {delta > 0 ? "+" : ""}
           {activa.formato(Math.abs(delta)).replace(/^/, delta < 0 ? "−" : "")}
           {deltaPct !== null && metrica !== "momentumIndex" ? ` (${delta > 0 ? "+" : ""}${deltaPct}%)` : ""}
         </span>
-        <span className="vin-faint text-xs">
+        <span className="vin-faint vin-t-xs">
           desde {fechaCorta(primero.fecha)} · {historial.length} cargas
         </span>
       </div>
@@ -122,15 +122,15 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
       </div>
 
       <div className="mt-2 flex justify-between">
-        <span className="vin-faint text-[11px]">{fechaCorta(primero.fecha)}</span>
-        <span className="vin-faint text-[11px]">{fechaCorta(ultimo.fecha)}</span>
+        <span className="vin-faint vin-t-xs">{fechaCorta(primero.fecha)}</span>
+        <span className="vin-faint vin-t-xs">{fechaCorta(ultimo.fecha)}</span>
       </div>
 
       <div className="mt-3.5 flex flex-wrap items-center gap-3 border-t pt-3.5" style={{ borderColor: "var(--vin-border)" }}>
-        <button onClick={() => setDetalle((v) => !v)} className="vin-faint text-xs hover:underline">
+        <button onClick={() => setDetalle((v) => !v)} className="vin-faint vin-t-xs hover:underline">
           {detalle ? "Ocultar capturas" : "Ver todas las capturas"}
         </button>
-        <button onClick={() => capturar(proyecto.id, "Captura manual")} className="vin-faint text-xs hover:underline">
+        <button onClick={() => capturar(proyecto.id, "Captura manual")} className="vin-faint vin-t-xs hover:underline">
           Guardar foto de hoy
         </button>
       </div>
@@ -152,8 +152,8 @@ function FilaCaptura({ snapshot, onEliminar }: { snapshot: VincereSnapshot; onEl
       className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b pb-2"
       style={{ borderColor: "var(--vin-border)" }}
     >
-      <span className="text-[13px]">{fechaCorta(snapshot.fecha)}</span>
-      <span className="vin-muted flex flex-wrap items-center gap-2.5 text-xs">
+      <span className="vin-t-sm">{fechaCorta(snapshot.fecha)}</span>
+      <span className="vin-muted flex flex-wrap items-center gap-2.5 vin-t-xs">
         <span>{formatStreams(snapshot.streamsMes)}</span>
         <span>{formatFollowers(snapshot.seguidores)} seg.</span>
         <span>{snapshot.momentumIndex}/100</span>

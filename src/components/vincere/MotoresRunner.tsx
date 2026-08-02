@@ -91,7 +91,7 @@ export default function MotoresRunner({ proyecto }: { proyecto: VincereProyecto 
     return (
       <Panel>
         <PanelLabel>Correr los motores</PanelLabel>
-        <p className="vin-muted text-[13.5px] leading-relaxed">
+        <p className="vin-muted vin-t-base leading-relaxed">
           Todavía no hay data para interpretar. Empieza por «Cargar data»: sueltas una captura o un archivo y se
           reparte solo a los motores que corresponda.
         </p>
@@ -103,12 +103,12 @@ export default function MotoresRunner({ proyecto }: { proyecto: VincereProyecto 
     <Panel>
       <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
         <PanelLabel>Correr los motores</PanelLabel>
-        <button onClick={() => setAbierto((v) => !v)} className="vin-faint text-[11.5px] hover:underline">
+        <button onClick={() => setAbierto((v) => !v)} className="vin-faint vin-t-sm hover:underline">
           {abierto ? "ocultar detalle" : `ver los ${motores.length}`}
         </button>
       </div>
 
-      <p className="vin-muted mb-3 text-[13.5px] leading-relaxed">
+      <p className="vin-muted mb-3 vin-t-base leading-relaxed">
         {listos.length} {listos.length === 1 ? "motor tiene" : "motores tienen"} data con qué trabajar
         {vacios.length > 0 && `; ${vacios.length} se ${vacios.length === 1 ? "salta" : "saltan"}`}. Los vacíos no se
         corren a propósito: darían una lectura educada sobre nada, y después entraría al informe como si fuera
@@ -120,7 +120,7 @@ export default function MotoresRunner({ proyecto }: { proyecto: VincereProyecto 
           {motores.map((m) => {
             const e: Estado = m.listo ? (estados[m.seccion] ?? "espera") : "saltado";
             return (
-              <div key={m.seccion} className="flex items-baseline gap-2.5 text-[12.5px]">
+              <div key={m.seccion} className="flex items-baseline gap-2.5 vin-t-sm">
                 <span className="w-3 shrink-0 tabular-nums" style={{ color: COLOR[e] }}>
                   {MARCA[e]}
                 </span>
@@ -139,12 +139,12 @@ export default function MotoresRunner({ proyecto }: { proyecto: VincereProyecto 
           {corriendo ? "Leyendo…" : `Correr los ${listos.length} motores con data`}
         </button>
         {corriendo && (
-          <span className="vin-faint text-xs">
+          <span className="vin-faint vin-t-xs">
             Van en fila, uno por uno. Toma un rato — puedes dejarlo corriendo.
           </span>
         )}
         {!corriendo && !terminado && yaTienenLectura > 0 && (
-          <span className="vin-faint text-xs">
+          <span className="vin-faint vin-t-xs">
             {yaTienenLectura} ya {yaTienenLectura === 1 ? "tiene" : "tienen"} lectura; se {yaTienenLectura === 1 ? "reemplaza" : "reemplazan"}.
           </span>
         )}
@@ -156,7 +156,7 @@ export default function MotoresRunner({ proyecto }: { proyecto: VincereProyecto 
       </div>
 
       {terminado && Object.keys(fallas).length > 0 && (
-        <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--vin-accent)" }}>
+        <p className="mt-3 vin-t-sm leading-relaxed" style={{ color: "var(--vin-accent)" }}>
           Los que fallaron se pueden reintentar desde su propia sección, o volviendo a correr esto.
         </p>
       )}

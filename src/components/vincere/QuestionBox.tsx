@@ -38,8 +38,8 @@ export default function QuestionBox({ log, onAsk, placeholder }: Props) {
         <ul className="mb-4 space-y-3">
           {log.map((entry) => (
             <li key={entry.id} className="rounded-md p-3" style={{ background: "var(--vin-surface-2)" }}>
-              <p className="vin-muted text-xs font-medium">{entry.pregunta}</p>
-              <p className="mt-1.5 text-sm leading-relaxed">{entry.respuesta}</p>
+              <p className="vin-muted vin-t-xs font-medium">{entry.pregunta}</p>
+              <p className="mt-1.5 vin-t-sm leading-relaxed">{entry.respuesta}</p>
               <div className="mt-2">
                 <EvidenceTag nivel={entry.nivel} />
               </div>
@@ -48,7 +48,7 @@ export default function QuestionBox({ log, onAsk, placeholder }: Props) {
         </ul>
       )}
 
-      {error && <p className="mb-2 text-xs" style={{ color: "var(--vin-accent)" }}>{error}</p>}
+      {error && <p className="mb-2 vin-t-xs" style={{ color: "var(--vin-accent)" }}>{error}</p>}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <input

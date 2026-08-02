@@ -165,13 +165,13 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
             ofrece justo después de aplicar, que es cuando tiene sentido. */}
         {acabaDeAplicar && !resultado && (
           <div
-            className="rounded-sm p-5"
+            className="rounded-xl p-5"
             style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.3)" }}
           >
             <PanelLabel>
               <span style={{ color: "#5cc98e" }}>Data aplicada</span>
             </PanelLabel>
-            <p className="vin-muted mb-3 text-[13.5px] leading-relaxed">
+            <p className="vin-muted mb-3 vin-t-base leading-relaxed">
               Ya está repartida por sus motores, pero todavía nadie la ha interpretado. El siguiente paso es correr los
               motores que quedaron con data.
             </p>
@@ -202,7 +202,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                 if (f) setArchivo(f);
               }}
               onClick={() => inputRef.current?.click()}
-              className="cursor-pointer rounded-sm p-8 text-center transition-colors"
+              className="cursor-pointer rounded-xl p-8 text-center transition-colors"
               style={{
                 border: `1px dashed ${arrastrando ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
                 background: arrastrando ? "rgba(224,72,58,0.06)" : "var(--vin-surface)",
@@ -217,15 +217,15 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
               />
               {archivo ? (
                 <>
-                  <p className="text-sm">{archivo.name}</p>
-                  <p className="vin-faint mt-1 text-xs">
+                  <p className="vin-t-sm">{archivo.name}</p>
+                  <p className="vin-faint mt-1 vin-t-xs">
                     {(archivo.size / 1024).toFixed(0)} KB · haz clic para cambiarlo
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm">Suelta aquí una captura o un PDF, o haz clic para elegirlo</p>
-                  <p className="vin-faint mt-1.5 text-xs leading-relaxed">
+                  <p className="vin-t-sm">Suelta aquí una captura o un PDF, o haz clic para elegirlo</p>
+                  <p className="vin-faint mt-1.5 vin-t-xs leading-relaxed">
                     Capturas de Spotify for Artists, Instagram, YouTube Studio · PDF de informes o contratos
                   </p>
                 </>
@@ -263,7 +263,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                     setNota("");
                     if (inputRef.current) inputRef.current.value = "";
                   }}
-                  className="vin-faint text-xs hover:underline"
+                  className="vin-faint vin-t-xs hover:underline"
                 >
                   Limpiar
                 </button>
@@ -271,7 +271,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
             </div>
 
             {error && (
-              <p className="text-xs" style={{ color: "var(--vin-accent)" }}>
+              <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>
                 {error}
               </p>
             )}
@@ -318,13 +318,13 @@ function Revision({
           </div>
           <EvidenceTag nivel={resultado.confianza} />
         </div>
-        <p className="mb-1.5 text-[15px] leading-relaxed">{resultado.lectura}</p>
-        <p className="vin-faint text-xs">Fuente reconocida: {resultado.fuente}</p>
+        <p className="mb-1.5 vin-t-base leading-relaxed">{resultado.lectura}</p>
+        <p className="vin-faint vin-t-xs">Fuente reconocida: {resultado.fuente}</p>
       </div>
 
       {bloques.length === 0 ? (
         <Panel>
-          <p className="vin-muted text-sm">
+          <p className="vin-muted vin-t-sm">
             No se pudo extraer data estructurada de este material. Revisa lo que quedó anotado abajo, o cárgalo a mano
             en la sección correspondiente.
           </p>
@@ -349,16 +349,16 @@ function Revision({
           <ul className="space-y-3">
             {resultado.alertas.map((a, i) => (
               <li key={i} className="flex flex-col gap-1.5">
-                <p className="text-sm leading-relaxed">{a.texto}</p>
+                <p className="vin-t-sm leading-relaxed">{a.texto}</p>
                 <div className="flex flex-wrap items-center gap-2">
                   <SeveridadTag severidad={a.severidad} />
                   <EvidenceTag nivel={a.nivel} />
-                  {a.seccion && <span className="vin-faint text-[11px]">{VINCERE_SECCION_LABEL[a.seccion]}</span>}
+                  {a.seccion && <span className="vin-faint vin-t-xs">{VINCERE_SECCION_LABEL[a.seccion]}</span>}
                 </div>
               </li>
             ))}
           </ul>
-          <p className="vin-faint mt-3 text-xs">Se guardan al aplicar, y quedan visibles hasta que las descartes.</p>
+          <p className="vin-faint mt-3 vin-t-xs">Se guardan al aplicar, y quedan visibles hasta que las descartes.</p>
         </Panel>
       )}
 
@@ -367,13 +367,13 @@ function Revision({
           <PanelLabel>Lo que no se pudo leer</PanelLabel>
           <ul className="space-y-1.5">
             {resultado.faltante.map((f, i) => (
-              <li key={i} className="vin-muted flex gap-2 text-[13.5px] leading-relaxed">
+              <li key={i} className="vin-muted flex gap-2 vin-t-base leading-relaxed">
                 <span style={{ color: "var(--vin-accent)" }}>—</span>
                 <span>{f}</span>
               </li>
             ))}
           </ul>
-          <p className="vin-faint mt-3 text-xs">Complétalo a mano en su sección después de aplicar.</p>
+          <p className="vin-faint mt-3 vin-t-xs">Complétalo a mano en su sección después de aplicar.</p>
         </Panel>
       )}
 
@@ -402,7 +402,7 @@ function BloquePropuesto({
 }) {
   return (
     <div
-      className="rounded-sm p-4"
+      className="rounded-xl p-4"
       style={{
         border: `1px solid ${aceptado ? "rgba(224,72,58,0.35)" : "var(--vin-border)"}`,
         background: aceptado ? "rgba(224,72,58,0.05)" : "var(--vin-surface)",
@@ -415,7 +415,7 @@ function BloquePropuesto({
           onChange={onToggle}
           style={{ accentColor: "var(--vin-accent)" }}
         />
-        <span className="text-[14.5px] font-medium">→ {BLOQUE_DESTINO[clave]}</span>
+        <span className="vin-t-base font-medium">→ {BLOQUE_DESTINO[clave]}</span>
       </label>
       <div className="mt-2.5 pl-7">
         <DetalleBloque clave={clave} propuesta={propuesta} />
@@ -425,7 +425,7 @@ function BloquePropuesto({
 }
 
 function DetalleBloque({ clave, propuesta }: { clave: BloqueKey; propuesta: VincereIngestaPropuesta }) {
-  const fila = "flex flex-wrap gap-x-2 text-[13px] leading-relaxed";
+  const fila = "flex flex-wrap gap-x-2 vin-t-sm leading-relaxed";
 
   if (clave === "resumen" && propuesta.resumen) {
     return (
@@ -500,7 +500,7 @@ function DetalleBloque({ clave, propuesta }: { clave: BloqueKey; propuesta: Vinc
 
   if (clave === "zonasCalor" && propuesta.zonasCalor) {
     return (
-      <p className="text-[13px] leading-relaxed">
+      <p className="vin-t-sm leading-relaxed">
         {propuesta.zonasCalor.map((z) => `${z.ciudad} ${z.calor}`).join(" · ")}
       </p>
     );

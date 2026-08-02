@@ -22,7 +22,7 @@ export function SeveridadTag({ severidad }: { severidad: VincereAlertaSeveridad 
   const color = SEVERIDAD_COLOR[severidad];
   return (
     <span
-      className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide"
+      className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 vin-t-xs font-medium tracking-wide"
       style={{ color, borderColor: `${color}66` }}
     >
       {VINCERE_SEVERIDAD_LABEL[severidad]}
@@ -58,7 +58,7 @@ export default function AlertasPanel({
           </span>
         </div>
         {!compacto && alertas.length > 1 && (
-          <button onClick={() => descartarTodas(proyecto.id)} className="vin-faint text-xs hover:underline">
+          <button onClick={() => descartarTodas(proyecto.id)} className="vin-faint vin-t-xs hover:underline">
             Descartar todas
           </button>
         )}
@@ -68,10 +68,10 @@ export default function AlertasPanel({
         {visibles.map((a) => (
           <li key={a.id} className="border-l-2 pl-3.5" style={{ borderColor: SEVERIDAD_COLOR[a.severidad] }}>
             <div className="flex items-start justify-between gap-3">
-              <p className="flex-1 text-sm leading-relaxed">{a.texto}</p>
+              <p className="flex-1 vin-t-sm leading-relaxed">{a.texto}</p>
               <button
                 onClick={() => descartarAlerta(proyecto.id, a.id)}
-                className="vin-faint shrink-0 px-1 text-xs hover:underline"
+                className="vin-faint shrink-0 px-1 vin-t-xs hover:underline"
                 title="Descartar"
               >
                 ✕
@@ -83,13 +83,13 @@ export default function AlertasPanel({
               {a.seccion && (
                 <button
                   onClick={() => setSeccion(a.seccion!)}
-                  className="vin-faint text-[11px] hover:underline"
+                  className="vin-faint vin-t-xs hover:underline"
                   title="Ir a esa sección"
                 >
                   {VINCERE_SECCION_LABEL[a.seccion]} →
                 </button>
               )}
-              <span className="vin-faint text-[11px]">· {a.origen}</span>
+              <span className="vin-faint vin-t-xs">· {a.origen}</span>
             </div>
           </li>
         ))}
@@ -98,7 +98,7 @@ export default function AlertasPanel({
       {compacto && alertas.length > visibles.length && (
         <button
           onClick={() => setSeccion("ingesta")}
-          className="vin-faint mt-3.5 text-xs hover:underline"
+          className="vin-faint mt-3.5 vin-t-xs hover:underline"
         >
           Ver las {alertas.length} alertas →
         </button>

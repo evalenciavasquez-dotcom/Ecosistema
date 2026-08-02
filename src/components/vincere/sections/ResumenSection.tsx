@@ -48,30 +48,62 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
     >
       <AlertasPanel proyecto={proyecto} compacto />
 
-      <MotoresRunner proyecto={proyecto} />
+      {/* La cifra principal manda: ocupa el ancho, lleva su curva adentro y el
+          resto queda a su lado. Cuatro tarjetas iguales no dicen cuál importa. */}
+      <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr]">
+        <div className="vin-card flex flex-col gap-5 p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="vin-stat vin-serif" style={{ fontSize: "42px" }}>
+                {formatStreams(r.streamsMes)}
+              </div>
+              <div className="vin-faint vin-t-sm mt-2">Streams al mes</div>
+            </div>
+            <span
+              className="vin-t-base shrink-0 rounded-full px-3 py-1 tabular-nums"
+              style={{
+                color: r.streamsCambioPct >= 0 ? "var(--vin-ok)" : "var(--vin-risk)",
+                background: r.streamsCambioPct >= 0 ? "rgba(78,201,138,0.11)" : "rgba(240,90,72,0.11)",
+              }}
+            >
+              {signed(r.streamsCambioPct)}
+            </span>
+          </div>
+          <div>
+            <StreamsChart serie={r.serie} />
+            <div className="vin-faint vin-t-xs mt-2">Últimos meses, en miles</div>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard value={formatStreams(r.streamsMes)} label={`Streams/mes · ${signed(r.streamsCambioPct)}`} />
-        <StatCard value={formatFollowers(r.seguidores)} label={`Seguidores · ${signed(r.seguidoresCambioPct)}`} />
-        <StatCard value={`${r.momentumIndex}/100`} label="Momentum Index" />
-        <StatCard value={<span className="text-lg">{proyecto.fase}</span>} label="Fase de carrera" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
+          <StatCard
+            value={formatFollowers(r.seguidores)}
+            label="Seguidores"
+            delta={signed(r.seguidoresCambioPct)}
+            tono={r.seguidoresCambioPct >= 0 ? "bueno" : "malo"}
+          />
+          <StatCard value={`${r.momentumIndex}`} label="Momentum Index · sobre 100" />
+          <div className="vin-card col-span-2 flex flex-col justify-center gap-1.5 p-5 lg:col-span-1">
+            <div className="vin-serif vin-t-lg">{proyecto.fase}</div>
+            <div className="vin-faint vin-t-sm">Fase de carrera</div>
+          </div>
+        </div>
       </div>
 
-      <Panel>
-        <PanelLabel>Streams · últimos meses (miles)</PanelLabel>
-        <StreamsChart serie={r.serie} />
-      </Panel>
+      {/* Después de las cifras, no antes: primero se ve dónde está el artista,
+          después se ofrece interpretarlo. */}
+      <MotoresRunner proyecto={proyecto} />
 
       <EvolucionPanel proyecto={proyecto} />
 
       <Panel>
         <div className="mb-1 flex items-center justify-between">
           <PanelLabel>Ajuste de escenario</PanelLabel>
-          <button className="vin-faint text-xs hover:underline" onClick={() => setEditing((v) => !v)}>
+          <button className="vin-faint vin-t-xs hover:underline" onClick={() => setEditing((v) => !v)}>
             {editing ? "Cerrar edición" : "Editar data"}
           </button>
         </div>
-        <p className="vin-faint mb-3.5 text-[13px]">Crecimiento mensual esperado: {growth}%</p>
+        <p className="vin-faint mb-3.5 vin-t-sm">Crecimiento mensual esperado: {growth}%</p>
         <input
           type="range"
           min={-10}
@@ -81,7 +113,7 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
           onChange={(e) => setGrowth(Number(e.target.value))}
           className="vin-range mb-4"
         />
-        <p className="vin-serif mb-4 text-xl">
+        <p className="vin-serif mb-4 vin-t-xl">
           {formatStreams(projected)} streams proyectados a 90 días
         </p>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
@@ -91,15 +123,15 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
             return (
               <div
                 key={d.name}
-                className="rounded-sm p-3 text-center"
+                className="rounded-xl p-3 text-center"
                 style={{
                   background: active ? "var(--vin-accent)" : "var(--vin-surface-2)",
                   border: `1px solid ${active ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
                   color: active ? "var(--vin-text)" : "var(--vin-muted)",
                 }}
               >
-                <div className="mb-1.5 text-[11px]">{d.name}</div>
-                <div className="vin-serif text-[15px]">{formatStreams(val)}</div>
+                <div className="mb-1.5 vin-t-xs">{d.name}</div>
+                <div className="vin-serif vin-t-base">{formatStreams(val)}</div>
               </div>
             );
           })}
@@ -122,7 +154,7 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
 function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="vin-faint text-[11px] uppercase tracking-wide">{label}</span>
+      <span className="vin-faint vin-t-xs uppercase tracking-wide">{label}</span>
       <input
         type="number"
         value={value}

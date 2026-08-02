@@ -107,7 +107,7 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
               <button
                 key={t}
                 onClick={() => setTipo(t)}
-                className="rounded-sm px-3 py-1.5 text-[12.5px] transition-colors"
+                className="rounded-xl px-3 py-1.5 vin-t-sm transition-colors"
                 style={{
                   background: tipo === t ? "rgba(224,72,58,0.14)" : "transparent",
                   color: tipo === t ? "var(--vin-text)" : "var(--vin-muted)",
@@ -143,26 +143,26 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
             {cargando ? "Buscando en la web…" : "Investigar"}
           </button>
           {cargando && (
-            <span className="vin-faint text-xs">
+            <span className="vin-faint vin-t-xs">
               Buscando, cruzando fuentes y midiéndolo contra {proyecto.nombre} — tarda más que una lectura de sección.
             </span>
           )}
         </div>
 
         {error && (
-          <p className="text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
 
         {investigaciones.length === 0 && !cargando && (
           <Panel>
-            <p className="vin-muted text-sm leading-relaxed">
+            <p className="vin-muted vin-t-sm leading-relaxed">
               Sin investigaciones todavía. Esto reemplaza lo que buscarías a mano antes de una decisión: quién es
               realmente el artista con el que te proponen un feature, si el título que quieres usar ya está saturado,
               qué escena hay de verdad en la ciudad donde te ofrecen tocar.
             </p>
-            <p className="vin-faint mt-3 text-xs leading-relaxed">
+            <p className="vin-faint mt-3 vin-t-xs leading-relaxed">
               Cada hallazgo llega con la fuente de donde salió. Lo que no tiene fuente se marca como criterio, no como
               evidencia — y nunca pasa de nivel 2.
             </p>
@@ -175,7 +175,7 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
               <button
                 key={i.id}
                 onClick={() => setAbierta(i.id)}
-                className="rounded-sm px-2.5 py-1 text-[11.5px] transition-colors"
+                className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
                 style={{
                   background: activa?.id === i.id ? "rgba(224,72,58,0.14)" : "transparent",
                   color: activa?.id === i.id ? "var(--vin-text)" : "var(--vin-muted)",
@@ -225,21 +225,21 @@ function ResultadoInvestigacion({
             <div className="vin-eyebrow mb-2">
               Investigación · {VINCERE_INVESTIGACION_LABEL[inv.tipo]}
             </div>
-            <h2 className="vin-serif text-2xl leading-snug">{inv.titulo}</h2>
+            <h2 className="vin-serif vin-t-xl leading-snug">{inv.titulo}</h2>
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={inv.nivelGlobal} />
             <button
               onClick={onEliminar}
-              className="vin-faint vin-no-print px-1 text-xs hover:underline"
+              className="vin-faint vin-no-print px-1 vin-t-xs hover:underline"
               title="Eliminar"
             >
               ✕
             </button>
           </div>
         </div>
-        <p className="text-[15px] leading-relaxed">{inv.resumen}</p>
-        <p className="vin-faint mt-2.5 text-xs">
+        <p className="vin-t-base leading-relaxed">{inv.resumen}</p>
+        <p className="vin-faint mt-2.5 vin-t-xs">
           «{inv.consulta}» · {new Date(inv.creadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
           {inv.fuentes.length > 0 && ` · ${inv.fuentes.length} fuentes`}
         </p>
@@ -247,10 +247,10 @@ function ResultadoInvestigacion({
 
       {inv.sinFuentes && (
         <div
-          className="rounded-sm p-4"
+          className="rounded-xl p-4"
           style={{ background: "rgba(224,168,58,0.08)", border: "1px solid rgba(224,168,58,0.3)" }}
         >
-          <p className="text-[13.5px] leading-relaxed">
+          <p className="vin-t-base leading-relaxed">
             La búsqueda no devolvió fuentes utilizables sobre esto. Lo que sigue es criterio del sistema, no evidencia
             verificada — por eso nada supera el nivel 2. Prueba con un nombre más exacto o una pregunta más concreta.
           </p>
@@ -277,7 +277,7 @@ function ResultadoInvestigacion({
                             target="_blank"
                             rel="noopener noreferrer"
                             title={f.titulo}
-                            className="rounded-full px-1.5 py-0.5 text-[10px] tabular-nums transition-colors hover:underline"
+                            className="rounded-full px-1.5 py-0.5 vin-t-xs tabular-nums transition-colors hover:underline"
                             style={{ color: "var(--vin-muted)", border: "1px solid var(--vin-border-strong)" }}
                           >
                             {n}
@@ -286,11 +286,11 @@ function ResultadoInvestigacion({
                       })}
                     </span>
                   ) : (
-                    <span className="vin-faint text-[10px] uppercase tracking-wide">sin fuente · criterio</span>
+                    <span className="vin-faint vin-t-xs uppercase tracking-wide">sin fuente · criterio</span>
                   )}
                 </div>
-                <p className="mb-2 text-[14.5px] leading-relaxed">{h.texto}</p>
-                <p className="vin-muted text-[13.5px] leading-relaxed">
+                <p className="mb-2 vin-t-base leading-relaxed">{h.texto}</p>
+                <p className="vin-muted vin-t-base leading-relaxed">
                   <span className="vin-faint">Para nosotros: </span>
                   {h.implicacion}
                 </p>
@@ -312,7 +312,7 @@ function ResultadoInvestigacion({
               {inv.aplicadaEnCalor ? "Volver a aplicar a Zonas de Calor" : "Llevar a Zonas de Calor"}
             </button>
           </div>
-          <p className="vin-faint mb-3.5 text-xs leading-relaxed">
+          <p className="vin-faint mb-3.5 vin-t-xs leading-relaxed">
             Son propuestas de intensidad a partir de lo encontrado afuera. No entran solas al mapa: tú decides si pesan
             lo mismo que tus datos de plataforma.
           </p>
@@ -320,14 +320,14 @@ function ResultadoInvestigacion({
             {inv.senalesPlaza.map((s, i) => (
               <div key={i} className="flex flex-wrap items-start gap-3">
                 <div className="w-36 shrink-0">
-                  <div className="text-[13.5px] leading-snug">{s.ciudad}</div>
-                  <div className="vin-faint text-[10.5px] tabular-nums">calor {s.calorSugerido}</div>
+                  <div className="vin-t-base leading-snug">{s.ciudad}</div>
+                  <div className="vin-faint vin-t-xs tabular-nums">calor {s.calorSugerido}</div>
                 </div>
                 <div className="vin-bar-track mt-1.5 h-2 w-24 shrink-0">
                   <div className="vin-bar-fill h-full" style={{ width: `${s.calorSugerido}%` }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="vin-muted text-[13px] leading-relaxed">{s.senal}</p>
+                  <p className="vin-muted vin-t-sm leading-relaxed">{s.senal}</p>
                   <div className="mt-1.5">
                     <EvidenceTag nivel={s.nivel} />
                   </div>
@@ -336,7 +336,7 @@ function ResultadoInvestigacion({
             ))}
           </div>
           {inv.aplicadaEnCalor && (
-            <p className="vin-faint mt-3.5 text-xs">Ya aplicadas al mapa de calor de este proyecto.</p>
+            <p className="vin-faint mt-3.5 vin-t-xs">Ya aplicadas al mapa de calor de este proyecto.</p>
           )}
         </Panel>
       )}
@@ -347,7 +347,7 @@ function ResultadoInvestigacion({
             <PanelLabel>Qué le dice a nuestro catálogo</PanelLabel>
             <ul className="space-y-2">
               {inv.implicacionesCatalogo.map((x, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span style={{ color: "var(--vin-accent)" }}>—</span>
                   <span>{x}</span>
                 </li>
@@ -361,7 +361,7 @@ function ResultadoInvestigacion({
             <PanelLabel>Lo que la web no respondió</PanelLabel>
             <ul className="space-y-2">
               {inv.preguntasAbiertas.map((x, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint tabular-nums">{i + 1}.</span>
                   <span>{x}</span>
                 </li>
@@ -376,7 +376,7 @@ function ResultadoInvestigacion({
           <PanelLabel>Fuentes consultadas</PanelLabel>
           <ol className="space-y-2">
             {inv.fuentes.map((f, i) => (
-              <li key={f.url} className="flex gap-2.5 text-[13px] leading-relaxed">
+              <li key={f.url} className="flex gap-2.5 vin-t-sm leading-relaxed">
                 <span className="vin-faint shrink-0 tabular-nums">{i + 1}.</span>
                 <span className="min-w-0">
                   <a

@@ -156,7 +156,7 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
             if (f) setArchivo(f);
           }}
           onClick={() => inputRef.current?.click()}
-          className="cursor-pointer rounded-sm p-6 text-center transition-colors"
+          className="cursor-pointer rounded-xl p-6 text-center transition-colors"
           style={{
             border: `1px dashed ${arrastrando ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
             background: arrastrando ? "rgba(224,72,58,0.06)" : "var(--vin-surface)",
@@ -170,9 +170,9 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
             onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
           />
           {archivo ? (
-            <p className="text-sm">{archivo.name}</p>
+            <p className="vin-t-sm">{archivo.name}</p>
           ) : (
-            <p className="vin-muted text-sm">Suelta aquí el PDF o la captura del plan, o haz clic para elegirlo</p>
+            <p className="vin-muted vin-t-sm">Suelta aquí el PDF o la captura del plan, o haz clic para elegirlo</p>
           )}
         </div>
 
@@ -200,21 +200,21 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
             {cargando ? "Sometiendo el plan a prueba…" : "Evaluar plan"}
           </button>
           {cargando && (
-            <span className="vin-faint text-xs">
+            <span className="vin-faint vin-t-xs">
               Cruzando el plan con fase, catálogo, audiencia y KPIs — tarda más que una lectura de sección.
             </span>
           )}
         </div>
 
         {error && (
-          <p className="text-xs" style={{ color: "var(--vin-accent)" }}>
+          <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>
             {error}
           </p>
         )}
 
         {tests.length === 0 && !cargando && (
           <Panel>
-            <p className="vin-muted text-sm">
+            <p className="vin-muted vin-t-sm">
               Sin planes evaluados todavía. Sirve para cualquier propuesta que te llegue: un contrato de sello, una
               oferta de booking, un plan de lanzamiento de un manager, una gira que te proponen.
             </p>
@@ -227,7 +227,7 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
               <button
                 key={t.id}
                 onClick={() => setAbierto(t.id)}
-                className="rounded-sm px-2.5 py-1 text-[11.5px] transition-colors"
+                className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
                 style={{
                   background: activo?.id === t.id ? "rgba(224,72,58,0.14)" : "transparent",
                   color: activo?.id === t.id ? "var(--vin-text)" : "var(--vin-muted)",
@@ -263,41 +263,41 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="vin-eyebrow mb-2">Stress-Test · {test.fuente}</div>
-            <h2 className="vin-serif text-2xl leading-snug">{test.titulo}</h2>
+            <h2 className="vin-serif vin-t-xl leading-snug">{test.titulo}</h2>
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={test.nivelGlobal} />
-            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
+            <button onClick={onEliminar} className="vin-faint vin-no-print px-1 vin-t-xs hover:underline" title="Eliminar">
               ✕
             </button>
           </div>
         </div>
-        <p className="text-[15px] leading-relaxed">{test.resumenPlan}</p>
-        <p className="vin-faint mt-2.5 text-xs">
+        <p className="vin-t-base leading-relaxed">{test.resumenPlan}</p>
+        <p className="vin-faint mt-2.5 vin-t-xs">
           Evaluado el{" "}
           {new Date(test.creadoEn).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
         </p>
       </div>
 
       <div
-        className="rounded-sm p-5"
+        className="rounded-xl p-5"
         style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
         </PanelLabel>
-        <p className="text-[15px] leading-relaxed">{test.veredicto}</p>
+        <p className="vin-t-base leading-relaxed">{test.veredicto}</p>
       </div>
 
       {test.supuestos.length > 0 && (
         <Panel>
           <PanelLabel>Lo que el plan da por hecho sin decirlo</PanelLabel>
-          <p className="vin-faint mb-3 text-xs leading-relaxed">
+          <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
             Los planes rara vez se caen por lo que declaran. Se caen por esto.
           </p>
           <ul className="space-y-2">
             {test.supuestos.map((s, i) => (
-              <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed">
+              <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                 <span style={{ color: "var(--vin-accent)" }}>—</span>
                 <span>{s}</span>
               </li>
@@ -313,17 +313,17 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
             {variables.map((v, i) => (
               <div key={i} className="vin-card border-l-2 p-4" style={{ borderLeftColor: TIPO_COLOR[v.tipo] }}>
                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className="text-[14.5px] font-medium">{v.variable}</span>
+                  <span className="vin-t-base font-medium">{v.variable}</span>
                   <span
-                    className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                    className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
                     style={{ color: TIPO_COLOR[v.tipo], borderColor: `${TIPO_COLOR[v.tipo]}66` }}
                   >
                     {VINCERE_VARIABLE_LABEL[v.tipo]}
                   </span>
-                  <span className="vin-faint text-[10px] uppercase tracking-wide">impacto {v.impacto}</span>
+                  <span className="vin-faint vin-t-xs uppercase tracking-wide">impacto {v.impacto}</span>
                   <EvidenceTag nivel={v.nivel} />
                 </div>
-                <p className="vin-muted text-[13.5px] leading-relaxed">{v.lectura}</p>
+                <p className="vin-muted vin-t-base leading-relaxed">{v.lectura}</p>
               </div>
             ))}
           </div>
@@ -337,7 +337,7 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
             <div key={e.nombre} className="vin-card p-4">
               <div className="mb-2 flex flex-wrap items-center gap-2.5">
                 <span
-                  className="rounded-sm px-2 py-0.5 text-[11px] font-medium"
+                  className="rounded-xl px-2 py-0.5 vin-t-xs font-medium"
                   style={{
                     color: ESCENARIO_ACENTO[e.nombre] ?? "var(--vin-muted)",
                     border: `1px solid ${ESCENARIO_ACENTO[e.nombre] ?? "var(--vin-border-strong)"}66`,
@@ -347,13 +347,13 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
                 </span>
                 <EvidenceTag nivel={e.nivel} />
               </div>
-              <p className="mb-2 text-[14px] leading-relaxed">{e.queOcurre}</p>
+              <p className="mb-2 vin-t-base leading-relaxed">{e.queOcurre}</p>
               <div className="grid gap-2 md:grid-cols-2">
-                <p className="vin-muted text-[13px] leading-relaxed">
+                <p className="vin-muted vin-t-sm leading-relaxed">
                   <span className="vin-faint">En la carrera: </span>
                   {e.quePasaSiSeDa}
                 </p>
-                <p className="vin-muted text-[13px] leading-relaxed">
+                <p className="vin-muted vin-t-sm leading-relaxed">
                   <span className="vin-faint">Qué tan plausible: </span>
                   {e.probabilidad}
                 </p>
@@ -366,13 +366,13 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
       <div className="grid gap-5 md:grid-cols-2">
         {test.puntoDeQuiebre && (
           <div
-            className="rounded-sm p-5"
+            className="rounded-xl p-5"
             style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
           >
             <PanelLabel>
               <span style={{ color: "var(--vin-accent)" }}>Punto de quiebre</span>
             </PanelLabel>
-            <p className="text-[14px] leading-relaxed">{test.puntoDeQuiebre}</p>
+            <p className="vin-t-base leading-relaxed">{test.puntoDeQuiebre}</p>
           </div>
         )}
 
@@ -381,7 +381,7 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
             <PanelLabel>Qué exigir antes de aceptar</PanelLabel>
             <ul className="space-y-2">
               {test.condiciones.map((c, i) => (
-                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                   <span className="vin-faint tabular-nums">{i + 1}.</span>
                   <span>{c}</span>
                 </li>

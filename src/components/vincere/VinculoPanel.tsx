@@ -50,7 +50,7 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
   return (
     <Panel>
       <PanelLabel>Tu vínculo con este proyecto</PanelLabel>
-      <p className="vin-faint mb-3 text-xs leading-relaxed">
+      <p className="vin-faint mb-3 vin-t-xs leading-relaxed">
         Un cliente al que le cobras y un proyecto donde participas son negocios distintos, y el análisis cambia según
         cuál sea. Si todavía no hay acuerdo, déjalo sin confirmar: lo que se está pensando no se cuenta como ingreso.
       </p>
@@ -60,7 +60,7 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
           <button
             key={t}
             onClick={() => updateVinculo(proyecto.id, { tipo: t })}
-            className="rounded-full border px-2.5 py-1 text-[11.5px] transition-colors"
+            className="rounded-full border px-2.5 py-1 vin-t-sm transition-colors"
             style={{
               color: v.tipo === t ? TIPO_COLOR[t] : "var(--vin-dim)",
               borderColor: v.tipo === t ? `${TIPO_COLOR[t]}66` : "var(--vin-border)",
@@ -71,7 +71,7 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
           </button>
         ))}
       </div>
-      <p className="vin-muted mb-4 text-[12.5px] leading-relaxed">{VINCERE_VINCULO_DESC[v.tipo]}</p>
+      <p className="vin-muted mb-4 vin-t-sm leading-relaxed">{VINCERE_VINCULO_DESC[v.tipo]}</p>
 
       {v.tipo !== "ninguno" && (
         <>
@@ -130,11 +130,11 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
               onChange={(e) => updateVinculo(proyecto.id, { confirmado: e.target.checked })}
               className="h-4 w-4 shrink-0 accent-[var(--vin-accent)]"
             />
-            <span className="text-[13.5px]">
+            <span className="vin-t-base">
               {v.confirmado ? "Acordado y en marcha" : "Todavía lo estoy pensando"}
             </span>
             {!v.confirmado && (
-              <span className="vin-faint text-[11.5px]">— no se cuenta como ingreso ni como carga real</span>
+              <span className="vin-faint vin-t-sm">— no se cuenta como ingreso ni como carga real</span>
             )}
           </label>
 
@@ -151,8 +151,8 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
           que se puede tomar un caso más. */}
       <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <span className="vin-faint text-[10.5px] uppercase tracking-[0.08em]">Tu carga semanal, todos los proyectos</span>
-          <span className="text-[13px] tabular-nums">
+          <span className="vin-faint vin-t-xs uppercase tracking-[0.08em]">Tu carga semanal, todos los proyectos</span>
+          <span className="vin-t-sm tabular-nums">
             <span style={{ color: libres <= 0 ? "#e0483a" : libres <= 8 ? "#e0a83a" : "#5cc98e" }}>
               {comprometidas}h
             </span>
@@ -163,7 +163,7 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
           <div style={{ width: `${pctComprometido}%`, background: "#2dd4bf" }} />
           <div style={{ width: `${pctEvaluando}%`, background: "rgba(224,168,58,0.55)" }} />
         </div>
-        <p className="vin-faint mt-2 text-[11.5px] leading-relaxed">
+        <p className="vin-faint mt-2 vin-t-sm leading-relaxed">
           {libres <= 0
             ? "Sin horas libres. Tomar un caso más significa soltar otro, no sumarlo."
             : `Quedan ~${libres}h libres por semana.`}
@@ -172,7 +172,7 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
       </div>
 
       {participaDelNegocio(proyecto.vinculo) && !v.confirmado && (
-        <p className="vin-faint mt-3 text-[11.5px] leading-relaxed" style={{ color: "#e0a83a" }}>
+        <p className="vin-faint mt-3 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
           Marcado como no confirmado: los análisis van a tratar esta participación como hipótesis, no como ingreso.
         </p>
       )}
@@ -193,7 +193,7 @@ function Campo({
 }) {
   return (
     <div>
-      <div className="vin-faint mb-1.5 text-[10.5px] uppercase tracking-[0.08em]">{label}</div>
+      <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">{label}</div>
       <input type={tipo} value={valor} onChange={(e) => onChange(e.target.value)} className="vin-input" />
     </div>
   );

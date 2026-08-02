@@ -65,7 +65,7 @@ export default function ManualSection() {
 // --- Piezas compartidas -----------------------------------------------------
 
 function DocTitulo({ children }: { children: React.ReactNode }) {
-  return <h2 className="vin-serif mb-4 mt-2 text-xl">{children}</h2>;
+  return <h2 className="vin-serif mb-4 mt-2 vin-t-xl">{children}</h2>;
 }
 
 function BloqueDoc({ bloque }: { bloque: ManualBloque }) {
@@ -74,7 +74,7 @@ function BloqueDoc({ bloque }: { bloque: ManualBloque }) {
       <DocTitulo>{bloque.titulo}</DocTitulo>
       <Panel>
         {bloque.parrafos?.map((p, i) => (
-          <p key={i} className="mb-3.5 text-[14.5px] leading-relaxed">
+          <p key={i} className="mb-3.5 vin-t-base leading-relaxed">
             {p}
           </p>
         ))}
@@ -82,8 +82,8 @@ function BloqueDoc({ bloque }: { bloque: ManualBloque }) {
           <dl className="space-y-3">
             {bloque.puntos.map((p) => (
               <div key={p.termino}>
-                <dt className="text-[14px] font-medium">{p.termino}</dt>
-                <dd className="vin-muted mt-0.5 text-[13.5px] leading-relaxed">{p.texto}</dd>
+                <dt className="vin-t-base font-medium">{p.termino}</dt>
+                <dd className="vin-muted mt-0.5 vin-t-base leading-relaxed">{p.texto}</dd>
               </div>
             ))}
           </dl>
@@ -96,13 +96,13 @@ function BloqueDoc({ bloque }: { bloque: ManualBloque }) {
 function Cierre({ label, texto }: { label: string; texto: string }) {
   return (
     <div
-      className="rounded-sm p-5"
+      className="rounded-xl p-5"
       style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
     >
       <PanelLabel>
         <span style={{ color: "var(--vin-accent)" }}>{label}</span>
       </PanelLabel>
-      <p className="text-[15px] leading-relaxed">{texto}</p>
+      <p className="vin-t-base leading-relaxed">{texto}</p>
     </div>
   );
 }
@@ -113,7 +113,7 @@ function GuiaUsuario() {
   return (
     <div className="space-y-5">
       <Panel>
-        <p className="text-[15px] leading-relaxed">{GUIA_INTRO}</p>
+        <p className="vin-t-base leading-relaxed">{GUIA_INTRO}</p>
       </Panel>
 
       <BloqueDoc bloque={GUIA_PRIMEROS_PASOS} />
@@ -124,17 +124,17 @@ function GuiaUsuario() {
           {GUIA_CICLO.map((paso) => (
             <Panel key={paso.numero}>
               <div className="mb-2 flex items-baseline gap-3">
-                <span className="vin-serif shrink-0 text-lg leading-none" style={{ color: "var(--vin-accent)" }}>
+                <span className="vin-serif shrink-0 vin-t-lg leading-none" style={{ color: "var(--vin-accent)" }}>
                   {paso.numero}
                 </span>
                 <div>
-                  <h3 className="text-[15px] font-medium leading-snug">{paso.titulo}</h3>
-                  <p className="vin-muted mt-1 text-[13.5px] leading-relaxed">{paso.descripcion}</p>
+                  <h3 className="vin-t-base font-medium leading-snug">{paso.titulo}</h3>
+                  <p className="vin-muted mt-1 vin-t-base leading-relaxed">{paso.descripcion}</p>
                 </div>
               </div>
               <ul className="mt-3 space-y-2 pl-7">
                 {paso.detalle.map((d, i) => (
-                  <li key={i} className="flex gap-2 text-[13.5px] leading-relaxed">
+                  <li key={i} className="flex gap-2 vin-t-base leading-relaxed">
                     <span className="shrink-0" style={{ color: "var(--vin-accent)" }}>
                       —
                     </span>
@@ -152,10 +152,10 @@ function GuiaUsuario() {
         <div className="space-y-3">
           {GUIA_TAREAS.map((t) => (
             <Panel key={t.tarea}>
-              <h3 className="mb-2.5 text-[15px] font-medium">{t.tarea}</h3>
+              <h3 className="mb-2.5 vin-t-base font-medium">{t.tarea}</h3>
               <ol className="space-y-1.5">
                 {t.pasos.map((p, i) => (
-                  <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed">
+                  <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
                     <span className="vin-faint shrink-0 tabular-nums">{i + 1}.</span>
                     <span>{p}</span>
                   </li>
@@ -182,7 +182,7 @@ function ManualSistema() {
   return (
     <div className="space-y-5">
       <Panel>
-        <p className="text-[15px] leading-relaxed">{SISTEMA_INTRO}</p>
+        <p className="vin-t-base leading-relaxed">{SISTEMA_INTRO}</p>
       </Panel>
 
       <BloqueDoc bloque={SISTEMA_QUE_ES} />
@@ -193,9 +193,9 @@ function ManualSistema() {
         <div className="space-y-2.5">
           {SISTEMA_MOTORES.map((m) => (
             <div key={m.motor} className="vin-card p-4">
-              <div className="mb-1.5 text-[14.5px] font-medium">{m.motor}</div>
-              <p className="mb-1.5 text-[13.5px] leading-relaxed">{m.cuandoUsarlo}</p>
-              <p className="vin-faint text-[12.5px] leading-relaxed">
+              <div className="mb-1.5 vin-t-base font-medium">{m.motor}</div>
+              <p className="mb-1.5 vin-t-base leading-relaxed">{m.cuandoUsarlo}</p>
+              <p className="vin-faint vin-t-sm leading-relaxed">
                 <span className="vin-muted">Qué cargar:</span> {m.queCargar}
               </p>
             </div>
@@ -204,7 +204,7 @@ function ManualSistema() {
 
         <div className="vin-card mt-3 p-4">
           <PanelLabel>Motores de fases siguientes</PanelLabel>
-          <p className="vin-muted mb-2.5 text-[13.5px] leading-relaxed">
+          <p className="vin-muted mb-2.5 vin-t-base leading-relaxed">
             Definidos en el método y todavía no construidos. Se activan uno a uno según lo que los proyectos reales
             necesiten, no en bloque.
           </p>
@@ -212,7 +212,7 @@ function ManualSistema() {
             {SISTEMA_MOTORES_PENDIENTES.map((m) => (
               <span
                 key={m}
-                className="rounded-full border px-2.5 py-0.5 text-[11.5px]"
+                className="rounded-full border px-2.5 py-0.5 vin-t-sm"
                 style={{ color: "var(--vin-faint)", borderColor: "var(--vin-border-strong)" }}
               >
                 {m}
