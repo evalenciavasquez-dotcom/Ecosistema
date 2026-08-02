@@ -68,6 +68,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<VincereIngestaResultado | null>(null);
   const [aceptados, setAceptados] = useState<Record<string, boolean>>({});
+  const [acabaDeAplicar, setAcabaDeAplicar] = useState(false);
+  const setSeccion = useVincereStore((s) => s.setSeccion);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const contexto = {
@@ -141,6 +143,9 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
     setTexto("");
     setNota("");
     if (inputRef.current) inputRef.current.value = "";
+    // Cargar y no interpretar deja la data muerta. El paso siguiente se ofrece
+    // aquí porque es el momento en que tiene sentido, no en un menú.
+    if (bloques > 0) setAcabaDeAplicar(true);
   }
 
   const hayMaterial = !!archivo || texto.trim().length > 0;
@@ -155,6 +160,32 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
 
       <div className="space-y-5">
         <AlertasPanel proyecto={proyecto} />
+
+        {/* Cargar sin interpretar deja la data muerta. El siguiente paso se
+            ofrece justo después de aplicar, que es cuando tiene sentido. */}
+        {acabaDeAplicar && !resultado && (
+          <div
+            className="rounded-sm p-5"
+            style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.3)" }}
+          >
+            <PanelLabel>
+              <span style={{ color: "#5cc98e" }}>Data aplicada</span>
+            </PanelLabel>
+            <p className="vin-muted mb-3 text-[13.5px] leading-relaxed">
+              Ya está repartida por sus motores, pero todavía nadie la ha interpretado. El siguiente paso es correr los
+              motores que quedaron con data.
+            </p>
+            <button
+              onClick={() => {
+                setAcabaDeAplicar(false);
+                setSeccion("resumen");
+              }}
+              className="vin-btn-primary"
+            >
+              Correr los motores →
+            </button>
+          </div>
+        )}
 
         {!resultado && (
           <>
