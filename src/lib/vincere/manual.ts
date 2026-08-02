@@ -311,8 +311,20 @@ export const GUIA_TAREAS: ManualTarea[] = [
     tarea: "Evaluar un caso nuevo que llegó",
     pasos: [
       "Triage → escribe nombre, género, fase percibida y una descripción libre del caso.",
-      "«Analizar caso». Devuelve prioridad, motor de entrada recomendado y la razón.",
+      "Marca cuánta data tienes: Baja, Media o Alta. Es un techo de evidencia, no un adorno — con data Baja el veredicto no puede pasar de nivel 2 aunque suene convincente.",
+      "Si no sabes qué pedir, abre «Qué data hace un análisis más completo» ahí mismo. Pídela antes de decir que sí: después, pedirla se ve como que no sabías.",
+      "«Analizar caso». Devuelve prioridad, motor de entrada recomendado, la razón y un encuadre comercial sugerido.",
       "Si entra al sistema, créalo como proyecto y empieza por el motor que recomendó.",
+    ],
+  },
+  {
+    tarea: "Dejar constancia de qué esperas que pase",
+    pasos: [
+      "Informe Final → en Próximos Pasos, pulsa «→ predicción» sobre el paso que implique una apuesta.",
+      "Escribe cómo se verifica: qué habría que ver para decir que falló. Sin eso no es una predicción, es una opinión con fecha — y el botón no se habilita.",
+      "La fecha de vencimiento sale del plazo del paso; corrígela si el plazo estaba en texto libre.",
+      "Predicciones → cuando venza, ciérrala como acertada, fallada, parcial o no verificable, y anota qué ocurrió.",
+      "El marcador y la tabla de calibración se actualizan solos. Si los niveles altos no aciertan más que los bajos, la propia sección lo dice — y ese aviso viaja en el informe exportado.",
     ],
   },
 ];
@@ -532,6 +544,13 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
     queCargar: "Los ingresos por fuente y período: streaming, merch, sync, publishing, marcas. Los shows entran solos desde Touring con su ingreso neto — no los cargues dos veces.",
   },
   {
+    motor: "Predicciones",
+    cuandoUsarlo:
+      "Siempre que una lectura afirme algo que el tiempo pueda desmentir. Es lo que vuelve falsable al sistema: sin marcador, cualquier fallo se puede explicar como mala ejecución.",
+    queCargar:
+      "Una afirmación con fecha de vencimiento y —obligatorio— cómo se verifica: qué habría que observar para decir que falló. Los pasos del Informe Final se convierten en predicción con un clic.",
+  },
+  {
     motor: "Pitch y Presentación",
     cuandoUsarlo: "Cuando hay que presentar el artista afuera: pitchear un tema a los editores de un DSP, proponer un acuerdo a un sello, o buscar una marca.",
     queCargar: "Nada nuevo: usa lo cargado. Escribe qué quieres conseguir con ese pitch — un pedido vago produce un documento vago. Para sello o marca, tener Personas cargadas en el C.C.O. permite que señale qué contactos tienes de puente.",
@@ -544,7 +563,8 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
   {
     motor: "Triage",
     cuandoUsarlo: "Cuando entra un caso nuevo y hay que decidir si entra al sistema y por dónde.",
-    queCargar: "Nombre, género, fase percibida y una descripción libre del caso.",
+    queCargar:
+      "Nombre, género, fase percibida, una descripción libre del caso y —lo que más pesa— cuánta data hay sobre él: Baja, Media o Alta. Esa marca es un techo duro del nivel de evidencia (Baja no pasa de 2, Media no pasa de 3), no una sugerencia.",
   },
   {
     motor: "Plan Stress-Test",
@@ -564,11 +584,7 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
 ];
 
 export const SISTEMA_MOTORES_PENDIENTES = [
-  "Marca",
-  "A&R y Colaboraciones",
   "Finanzas y Presupuesto",
-  "Shows y Touring",
-  "Monetización",
   "Valoración de Carrera",
   "Legal y Derechos",
   "Relaciones de Industria",
@@ -678,6 +694,8 @@ export const SISTEMA_EVIDENCIA: ManualBloque = {
   parrafos: [
     "Es la pieza que separa este sistema de un generador de texto convincente. Una interpretación segura y una especulación se ven exactamente igual escritas; el nivel obliga a distinguirlas y deja el juicio final del lado del director.",
     "Los niveles no son solo de la IA: en el informe se pueden corregir a mano. Si tu criterio dice que una lectura es más floja de lo que declaró el modelo, se baja — y el documento queda con esa reserva registrada.",
+    "La objeción obvia es: ¿y quién dice que esos niveles significan algo? Por eso existe Predicciones. Cada predicción guarda el nivel con el que se emitió, y al cerrarse alimenta una tabla de calibración que compara el acierto de los niveles 3-4 contra el de los 1-2. Si los altos no aciertan más, la propia sección lo declara: la escala es decoración hasta que los datos digan lo contrario. Es la única forma de que la escala sea una afirmación verificable y no una convención interna.",
+    "En Triage el nivel además tiene techo por cantidad de data declarada: Baja no pasa de 2, Media no pasa de 3. Se aplica dos veces, en el prompt y en el código, porque un prompt no es una garantía.",
   ],
 };
 

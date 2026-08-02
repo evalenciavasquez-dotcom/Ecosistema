@@ -2,6 +2,7 @@ import {
   VincereAlerta,
   VincereAlertaSeveridad,
   VincereARDiagnostico,
+  VincereCantidadData,
   VincereVeredictoColab,
   VincereCancion,
   VincereCancionAnalisis,
@@ -79,6 +80,7 @@ export async function fetchTriage(input: {
   genero: string;
   fase: string;
   descripcion: string;
+  dataDisponible: VincereCantidadData;
 }): Promise<{
   veredicto: string;
   prioridad: "Alta" | "Media" | "Baja";
@@ -102,6 +104,12 @@ export async function fetchTriage(input: {
   const VINCULOS: VincereVinculoTipo[] = ["propio", "socio", "cliente", "evaluando", "ninguno"];
   const horas = typeof r.horasSemanalesEstimadas === "number" ? Math.round(r.horasSemanalesEstimadas) : null;
 
+  // Techo duro por cantidad de data. El prompt lo pide, pero un prompt no es
+  // una garantía: si el modelo devuelve un 4 sobre data baja, se corrige acá.
+  const techo: Record<VincereCantidadData, VincereNivel> = { baja: 2, media: 3, alta: 4 };
+  const nivelCrudo = clampNivel(r.nivel);
+  const nivelAcotado = Math.min(nivelCrudo, techo[input.dataDisponible]) as VincereNivel;
+
   return {
     veredicto: r.veredicto ?? "",
     prioridad: r.prioridad ?? "Media",
@@ -111,7 +119,7 @@ export async function fetchTriage(input: {
       : "evaluando",
     comoCobrarlo: r.comoCobrarlo ?? "",
     horasSemanalesEstimadas: horas != null ? Math.min(60, Math.max(0, horas)) : null,
-    nivel: clampNivel(r.nivel),
+    nivel: nivelAcotado,
   };
 }
 

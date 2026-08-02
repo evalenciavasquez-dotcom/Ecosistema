@@ -11,6 +11,7 @@ import ARSection from "./sections/ARSection";
 import OportunidadSection from "./sections/OportunidadSection";
 import PitchSection from "./sections/PitchSection";
 import MonetizacionSection from "./sections/MonetizacionSection";
+import PrediccionesSection from "./sections/PrediccionesSection";
 import SongSection from "./sections/SongSection";
 import AudienciaSection from "./sections/AudienciaSection";
 import CalorSection from "./sections/CalorSection";
@@ -93,6 +94,8 @@ function SectionRouter({
       return <PitchSection proyecto={proyecto} />;
     case "monetizacion":
       return <MonetizacionSection proyecto={proyecto} />;
+    case "predicciones":
+      return <PrediccionesSection proyecto={proyecto} />;
     case "song":
       return <SongSection proyecto={proyecto} />;
     case "audiencia":

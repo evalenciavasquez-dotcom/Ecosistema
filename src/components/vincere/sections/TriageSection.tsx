@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
-import { VincereQAEntry, VINCERE_VINCULO_LABEL } from "@/lib/vincere/types";
+import {
+  VincereCantidadData,
+  VincereQAEntry,
+  VINCERE_CANTIDAD_DATA_DESC,
+  VINCERE_CANTIDAD_DATA_LABEL,
+  VINCERE_DATA_QUE_SIRVE,
+  VINCERE_VINCULO_LABEL,
+} from "@/lib/vincere/types";
 import { fetchAsk, fetchTriage } from "@/lib/vincere/ai-client";
 import { genId } from "@/lib/id";
 import { SectionHeader, Panel } from "../primitives";
@@ -10,6 +17,8 @@ import EvidenceTag from "../EvidenceTag";
 import QuestionBox from "../QuestionBox";
 
 const FASES = ["Emergente", "Consolidación", "Establecido", "No lo sé aún"];
+
+const CANTIDADES: VincereCantidadData[] = ["baja", "media", "alta"];
 
 const PRIORIDAD_COLOR: Record<string, string> = {
   Alta: "#e0483a",
@@ -23,7 +32,13 @@ export default function TriageSection() {
   const updateVeredicto = useVincereStore((s) => s.updateTriageCasoVeredicto);
   const deleteTriageCaso = useVincereStore((s) => s.deleteTriageCaso);
 
-  const [form, setForm] = useState({ nombre: "", genero: "", fase: "Emergente", descripcion: "" });
+  const [form, setForm] = useState<{
+    nombre: string;
+    genero: string;
+    fase: string;
+    descripcion: string;
+    dataDisponible: VincereCantidadData;
+  }>({ nombre: "", genero: "", fase: "Emergente", descripcion: "", dataDisponible: "baja" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qaLog, setQaLog] = useState<VincereQAEntry[]>([]);
@@ -37,6 +52,7 @@ export default function TriageSection() {
       genero: form.genero.trim(),
       fase: form.fase,
       descripcion: form.descripcion.trim(),
+      dataDisponible: form.dataDisponible,
     });
     try {
       const r = await fetchTriage({
@@ -44,9 +60,10 @@ export default function TriageSection() {
         genero: form.genero.trim(),
         fase: form.fase,
         descripcion: form.descripcion.trim(),
+        dataDisponible: form.dataDisponible,
       });
       updateVeredicto(id, r);
-      setForm({ nombre: "", genero: "", fase: "Emergente", descripcion: "" });
+      setForm({ nombre: "", genero: "", fase: "Emergente", descripcion: "", dataDisponible: "baja" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo analizar el caso");
       deleteTriageCaso(id);
@@ -112,6 +129,51 @@ export default function TriageSection() {
               rows={3}
               className="vin-input resize-none"
             />
+
+            {/* Cuánta data hay. Es lo que decide hasta dónde puede llegar el
+                veredicto: el techo de nivel se aplica también en el cliente. */}
+            <div>
+              <p className="vin-faint mb-2 text-[10.5px] uppercase tracking-[0.08em]">Cantidad de data disponible</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {CANTIDADES.map((c) => {
+                  const activa = form.dataDisponible === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setForm({ ...form, dataDisponible: c })}
+                      className="rounded-sm border p-2.5 text-left transition-colors"
+                      style={{
+                        borderColor: activa ? "var(--vin-accent)" : "var(--vin-border)",
+                        background: activa ? "var(--vin-surface-2)" : "transparent",
+                      }}
+                    >
+                      <span className="block text-[13px] font-medium">{VINCERE_CANTIDAD_DATA_LABEL[c]}</span>
+                      <span className="vin-faint mt-1 block text-[11px] leading-relaxed">
+                        {VINCERE_CANTIDAD_DATA_DESC[c]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <details className="rounded-sm" style={{ border: "1px solid var(--vin-border)" }}>
+              <summary className="vin-muted cursor-pointer px-3 py-2 text-[12px]">
+                Qué data hace un análisis más completo
+              </summary>
+              <ul className="space-y-1.5 px-3 pb-3">
+                {VINCERE_DATA_QUE_SIRVE.map((d, i) => (
+                  <li key={i} className="vin-faint text-[11.5px] leading-relaxed">
+                    · {d}
+                  </li>
+                ))}
+              </ul>
+              <p className="vin-faint px-3 pb-3 text-[11px] leading-relaxed">
+                Pídela antes de decir que sí. Después del primer análisis, pedirla se ve como que no sabías.
+              </p>
+            </details>
+
             {error && <p className="text-xs" style={{ color: "var(--vin-accent)" }}>{error}</p>}
             <button onClick={run} disabled={loading} className="vin-btn-primary justify-self-start">
               {loading ? "Analizando…" : "Analizar caso"}
@@ -128,6 +190,11 @@ export default function TriageSection() {
                     <span className="text-[15px] font-medium">{c.nombre}</span>
                     {c.genero && <span className="vin-faint ml-2 text-xs">{c.genero}</span>}
                     <span className="vin-faint ml-2 text-xs">· {c.fase}</span>
+                    {c.dataDisponible && (
+                      <span className="vin-faint ml-2 text-xs">
+                        · data {VINCERE_CANTIDAD_DATA_LABEL[c.dataDisponible].toLowerCase()}
+                      </span>
+                    )}
                   </div>
                   <button onClick={() => deleteTriageCaso(c.id)} className="vin-faint text-xs hover:underline">
                     ✕
