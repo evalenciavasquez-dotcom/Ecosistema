@@ -51,7 +51,12 @@ export default function VincereHeader() {
   const [registering, setRegistering] = useState(false);
   const [gestionAbierta, setGestionAbierta] = useState(false);
 
+  // Todos los proyectos entran al selector, no solo los propios. Una
+  // referencia de mercado también tiene data que cargar, editar y leer: dejarla
+  // fuera del selector la volvía inalcanzable — solo existía como sombra en la
+  // comparación, sin forma de abrirla.
   const propios = proyectos.filter((p) => p.tipo === "propio");
+  const referencias = proyectos.filter((p) => p.tipo === "competencia");
   const selected = proyectos.find((p) => p.id === selectedId);
   const compareTarget = proyectos.find((p) => p.id === compareId);
 
@@ -80,30 +85,55 @@ export default function VincereHeader() {
         <span className="vin-serif text-[22px] tracking-tight">VINCERE</span>
         <span className="vin-faint text-[11px] uppercase tracking-[0.14em]">Intelligence Platform</span>
         <SyncIndicator />
+        {/* Estar dentro de una referencia tiene que verse: su data suele ser
+            pública o parcial, y confundirla con la del artista propio es el
+            peor error que se puede cometer leyendo estos paneles. */}
+        {selected?.tipo === "competencia" && (
+          <span
+            className="rounded-full border px-2 py-0.5 text-[10.5px]"
+            style={{ color: "var(--vin-muted)", borderColor: "var(--vin-border-strong)" }}
+            title="Este proyecto es una referencia de mercado, no un artista que dirijas. Su data suele ser pública o parcial."
+          >
+            Referencia de mercado
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        {propios.length > 0 && (
+        {proyectos.length > 0 && (
           <select
             className="vin-select"
             value={selectedId}
             onChange={(e) => selectProyecto(e.target.value)}
             aria-label="Proyecto"
           >
-            {propios.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
+            {propios.length > 0 && (
+              <optgroup label="Tus proyectos">
+                {propios.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {referencias.length > 0 && (
+              <optgroup label="Referencias de mercado">
+                {referencias.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         )}
 
         <button
           onClick={() => setGestionAbierta(true)}
-          className={propios.length === 0 ? "vin-btn-primary" : "vin-btn-ghost"}
+          className={proyectos.length === 0 ? "vin-btn-primary" : "vin-btn-ghost"}
           title="Crear, renombrar, vaciar o eliminar proyectos"
         >
-          {propios.length === 0 ? "Crear proyecto" : "Proyectos"}
+          {proyectos.length === 0 ? "Crear proyecto" : "Proyectos"}
         </button>
 
         <button
