@@ -63,7 +63,7 @@ export const GUIA_PRIMEROS_PASOS: ManualBloque = {
     },
     {
       termino: "4. Genera tu primera lectura",
-      texto: "En esa misma sección, «Generar lectura VINCERE». Ahí ves si la interpretación suena a tu criterio o hay que presionarla.",
+      texto: "En esa misma sección, «Generar lectura VINCERE». Ahí ves si la interpretación suena a tu criterio o hay que presionarla. Cuando tengas varios motores cargados, «Correr los N motores con data» en Resumen los lee todos en fila.",
     },
     {
       termino: "5. Presiónala con una pregunta",
@@ -95,6 +95,9 @@ export const GUIA_CICLO: ManualPaso[] = [
     titulo: "Generar la lectura VINCERE de cada sección",
     descripcion: "El botón que convierte data en criterio. Es el corazón de la plataforma.",
     detalle: [
+      "La vía rápida: en Resumen · Momentum, «Correr los N motores con data». Los lee en fila y salta los vacíos diciendo qué les falta. Es lo que conviene apretar después de cargar data.",
+      "Los motores vacíos NO se corren a propósito. Uno sin data no falla — devuelve una lectura educada sobre el nombre y el género del artista, que se ve igual de bien que una buena y no lo es. Y después entra al informe como si fuera análisis.",
+      "Si un motor falla (se cayó la conexión, faltó la API key), los demás siguen. Al final se ve cuál falló y por qué.",
       "En cada sección: «Generar lectura VINCERE». Devuelve qué significa, por qué pasa, qué riesgo crece y qué decisión conviene — con nivel de evidencia en cada afirmación.",
       "Si cambias la data, vuelve a generarla. La lectura no se actualiza sola.",
       "En canciones, «Analizar canción con VINCERE» hace la lectura profunda de la letra cruzada con sus métricas.",
@@ -143,6 +146,7 @@ export const GUIA_TAREAS: ManualTarea[] = [
       "«Leer y extraer». La IA devuelve qué entendió, repartido por motor.",
       "Revisa cada bloque y desmarca el que no sirva. Lo que no pudo leer aparece listado aparte.",
       "«Aplicar». La data entra a sus secciones, las alertas quedan guardadas y se archiva una foto de los indicadores para el histórico.",
+      "Ahí mismo aparece «Correr los motores →». Cargar sin interpretar deja la data muerta: ese es el paso que la convierte en criterio.",
     ],
   },
   {

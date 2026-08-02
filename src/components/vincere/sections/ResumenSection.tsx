@@ -8,6 +8,7 @@ import SectionShell from "../SectionShell";
 import StreamsChart from "../StreamsChart";
 import AlertasPanel from "../AlertasPanel";
 import EvolucionPanel from "../EvolucionPanel";
+import MotoresRunner from "../MotoresRunner";
 import { Panel, PanelLabel, StatCard } from "../primitives";
 
 const SCENARIO_DEFS = [
@@ -46,6 +47,8 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
       aiTitle="Lectura VINCERE — Momentum"
     >
       <AlertasPanel proyecto={proyecto} compacto />
+
+      <MotoresRunner proyecto={proyecto} />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard value={formatStreams(r.streamsMes)} label={`Streams/mes · ${signed(r.streamsCambioPct)}`} />
