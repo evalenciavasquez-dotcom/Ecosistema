@@ -3,25 +3,18 @@
 import { useVincereStore } from "@/lib/vincere/store";
 import { VincereSeccion, VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 
-const CORE_SECTIONS: VincereSeccion[] = [
-  "ingesta",
-  "investigacion",
-  "resumen",
-  "diagnostico",
-  "marca",
-  "song",
-  "ar",
-  "audiencia",
-  "calor",
-  "touring",
-  "management",
-  "kpis",
-  "monetizacion",
-  "predicciones",
-  "oportunidad",
-  "pitch",
-  "triage",
-  "stress",
+// La navegación sigue el recorrido del método, no una lista de funciones. El
+// orden es el argumento: primero entra la data, después se lee dónde está el
+// artista, después la obra y el público, después el negocio, y solo al final se
+// decide y se sale afuera. Una lista plana de dieciocho motores obliga a cada
+// persona a inventarse ese orden en la cabeza.
+const GRUPOS: { titulo: string; secciones: VincereSeccion[] }[] = [
+  { titulo: "Entra la data", secciones: ["ingesta", "investigacion"] },
+  { titulo: "Dónde está hoy", secciones: ["resumen", "diagnostico", "marca"] },
+  { titulo: "La obra y el público", secciones: ["song", "ar", "audiencia", "calor", "touring"] },
+  { titulo: "El negocio", secciones: ["monetizacion", "oportunidad", "kpis"] },
+  { titulo: "Decidir y salir afuera", secciones: ["management", "stress", "pitch", "triage"] },
+  { titulo: "El marcador", secciones: ["predicciones"] },
 ];
 
 // Secciones P1 del PRD — se activan una a una en fases posteriores.
@@ -33,6 +26,36 @@ const PROXIMAMENTE = [
   "Playbook",
 ];
 
+function Item({
+  label,
+  activo,
+  onClick,
+  sufijo,
+  style,
+}: {
+  label: string;
+  activo: boolean;
+  onClick: () => void;
+  sufijo?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2 text-left text-[13.5px] transition-colors"
+      style={{
+        borderLeft: activo ? "2px solid var(--vin-accent)" : "2px solid transparent",
+        background: activo ? "rgba(224,72,58,0.12)" : "transparent",
+        color: activo ? "var(--vin-text)" : "var(--vin-muted)",
+        ...style,
+      }}
+    >
+      {label}
+      {sufijo && <span className="vin-faint ml-1.5">{sufijo}</span>}
+    </button>
+  );
+}
+
 export default function VincereNav() {
   const seccion = useVincereStore((s) => s.seccion);
   const compareOn = useVincereStore((s) => s.compareOn);
@@ -42,73 +65,57 @@ export default function VincereNav() {
   const toggleCompare = useVincereStore((s) => s.toggleCompare);
 
   const compareTarget = proyectos.find((p) => p.id === compareId);
+  const activa = (key: VincereSeccion) => !compareOn && seccion === key;
 
   return (
     <nav
-      className="flex shrink-0 gap-1 overflow-x-auto px-3 py-3 md:w-[246px] md:flex-col md:gap-0 md:overflow-y-auto md:py-6"
+      className="flex shrink-0 gap-1 overflow-x-auto px-3 py-3 md:w-[252px] md:flex-col md:gap-0 md:overflow-y-auto md:py-6"
       style={{ borderColor: "var(--vin-border)" }}
     >
-      <div className="vin-label hidden px-3 pb-2.5 md:block">Motores activos</div>
+      {/* En móvil la nav es una fila que hace scroll, así que el grupo no debe
+          crear caja (contents). En escritorio sí, y en columna: con
+          display:block los botones fluirían en línea. */}
+      {GRUPOS.map((g, i) => (
+        <div key={g.titulo} className="contents md:flex md:flex-col">
+          <div className={`vin-label hidden px-3 pb-2 md:block ${i === 0 ? "" : "pt-5"}`}>{g.titulo}</div>
+          {g.secciones.map((key) => (
+            <Item
+              key={key}
+              label={VINCERE_SECCION_LABEL[key]}
+              activo={activa(key)}
+              onClick={() => setSeccion(key)}
+            />
+          ))}
+        </div>
+      ))}
 
-      {CORE_SECTIONS.map((key) => {
-        const active = !compareOn && seccion === key;
-        return (
-          <button
-            key={key}
-            onClick={() => setSeccion(key)}
-            className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors"
-            style={{
-              borderLeft: active ? "2px solid var(--vin-accent)" : "2px solid transparent",
-              background: active ? "rgba(224,72,58,0.12)" : "transparent",
-              color: active ? "var(--vin-text)" : "var(--vin-muted)",
-            }}
-          >
-            {VINCERE_SECCION_LABEL[key]}
-          </button>
-        );
-      })}
-
-      {compareTarget && (
-        <button
-          onClick={toggleCompare}
-          className="mt-0 shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors md:mt-2.5"
-          style={{
-            borderLeft: compareOn ? "2px solid var(--vin-accent)" : "2px solid transparent",
-            background: compareOn ? "rgba(224,72,58,0.12)" : "transparent",
-            color: compareOn ? "var(--vin-text)" : "var(--vin-muted)",
-          }}
-        >
-          Comparación
-        </button>
-      )}
-
-      {/* El informe no es un motor más: es lo que la plataforma emite al final
-          de trabajar el proyecto, por eso va separado y marcado. */}
-      <button
-        onClick={() => setSeccion("informe")}
-        className="mt-0 shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors md:mt-3"
-        style={{
-          borderLeft: !compareOn && seccion === "informe" ? "2px solid var(--vin-accent)" : "2px solid transparent",
-          background: !compareOn && seccion === "informe" ? "rgba(224,72,58,0.12)" : "transparent",
-          color: !compareOn && seccion === "informe" ? "var(--vin-text)" : "var(--vin-muted)",
-          borderTop: "1px solid var(--vin-border)",
-          paddingTop: "14px",
-        }}
+      {/* Fuera de los grupos: no son motores de análisis. Comparación cruza dos
+          proyectos, el informe es lo que se emite, y la documentación se
+          consulta. */}
+      <div
+        className="mt-0 md:mt-5 md:border-t md:pt-4"
+        style={{ borderColor: "var(--vin-border)" }}
       >
-        {VINCERE_SECCION_LABEL.informe} ↓
-      </button>
-
-      <button
-        onClick={() => setSeccion("manual")}
-        className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors"
-        style={{
-          borderLeft: !compareOn && seccion === "manual" ? "2px solid var(--vin-accent)" : "2px solid transparent",
-          background: !compareOn && seccion === "manual" ? "rgba(224,72,58,0.12)" : "transparent",
-          color: !compareOn && seccion === "manual" ? "var(--vin-text)" : "var(--vin-muted)",
-        }}
-      >
-        {VINCERE_SECCION_LABEL.manual}
-      </button>
+        {compareTarget && (
+          <Item
+            label="Comparación"
+            activo={compareOn}
+            onClick={toggleCompare}
+            sufijo={`· ${compareTarget.nombre}`}
+          />
+        )}
+        <Item
+          label={VINCERE_SECCION_LABEL.informe}
+          activo={activa("informe")}
+          onClick={() => setSeccion("informe")}
+          sufijo="↓"
+        />
+        <Item
+          label={VINCERE_SECCION_LABEL.manual}
+          activo={activa("manual")}
+          onClick={() => setSeccion("manual")}
+        />
+      </div>
 
       <div
         className="vin-label mt-4 hidden px-3 pb-2.5 pt-4 md:block"
