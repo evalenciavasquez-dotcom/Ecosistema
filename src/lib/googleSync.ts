@@ -49,26 +49,47 @@ function decodeBase64Url(data: string): string {
   return Buffer.from(normalized, "base64").toString("utf-8");
 }
 
-function extractBody(payload?: gmail_v1.Schema$MessagePart | null): string {
-  if (!payload) return "";
-  if (payload.mimeType === "text/plain" && payload.body?.data) {
-    return decodeBase64Url(payload.body.data);
-  }
+// Busca en todo el árbol de partes (recursivo) la primera con el mimeType
+// pedido — así una parte text/plain que esté más "abajo" o en una rama
+// distinta no queda tapada por una text/html que aparezca antes en el
+// recorrido superficial.
+function findPartBody(payload: gmail_v1.Schema$MessagePart | undefined | null, mimeType: string): string | null {
+  if (!payload) return null;
+  if (payload.mimeType === mimeType && payload.body?.data) return decodeBase64Url(payload.body.data);
   if (payload.parts) {
     for (const part of payload.parts) {
-      if (part.mimeType === "text/plain" && part.body?.data) return decodeBase64Url(part.body.data);
-    }
-    for (const part of payload.parts) {
-      const nested = extractBody(part);
-      if (nested) return nested;
+      const found = findPartBody(part, mimeType);
+      if (found) return found;
     }
   }
-  if (payload.mimeType === "text/html" && payload.body?.data) {
-    return decodeBase64Url(payload.body.data)
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
+  return null;
+}
+
+// Limpia el HTML de un correo para texto plano: además de quitar etiquetas,
+// descarta el contenido de <style>/<script>/comentarios (si no, el CSS/JS
+// del correo queda como texto suelto en la Bandeja) y decodifica las
+// entidades más comunes.
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractBody(payload?: gmail_v1.Schema$MessagePart | null): string {
+  const plain = findPartBody(payload, "text/plain");
+  if (plain && plain.trim()) return plain.trim();
+  const html = findPartBody(payload, "text/html");
+  if (html) return stripHtml(html);
   return "";
 }
 
