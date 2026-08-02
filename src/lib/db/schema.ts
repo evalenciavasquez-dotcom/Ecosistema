@@ -309,6 +309,20 @@ export const vincereEstado = pgTable("vincere_estado", {
   actualizadoEn: text("actualizado_en").notNull(),
 });
 
+// El Cuartel de mis Decisiones. Tabla propia y aparte a propósito: el
+// contenido personal (relaciones, familia, salud) no comparte tabla ni
+// consulta con proyectos de negocio ni con VINCERE. Igual que en VINCERE, el
+// escenario se guarda entero como documento — siempre se lee y se escribe
+// completo, con sus rutas adentro.
+export const cuartelEscenarios = pgTable("cuartel_escenarios", {
+  id: text("id").primaryKey(),
+  nombre: text("nombre").notNull(),
+  categoria: text("categoria").notNull(),
+  estado: text("estado").notNull(),
+  actualizadoEn: text("actualizado_en").notNull(),
+  doc: jsonb("doc").$type<Record<string, unknown>>().notNull(),
+});
+
 export const TABLES = {
   tiempo,
   metasFinancieras,

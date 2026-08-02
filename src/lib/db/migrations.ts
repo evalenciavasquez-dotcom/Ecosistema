@@ -108,6 +108,24 @@ export async function ensureVincereSchema() {
   vincereSchemaEnsured = true;
 }
 
+// Tabla del Cuartel. Se crea bajo demanda, como las de VINCERE: una base ya
+// desplegada no necesita ningún paso manual para empezar a guardar escenarios.
+let cuartelSchemaEnsured = false;
+export async function ensureCuartelSchema() {
+  if (cuartelSchemaEnsured) return;
+  await getDb().execute(
+    sql.raw(`CREATE TABLE IF NOT EXISTS cuartel_escenarios (
+      id text PRIMARY KEY,
+      nombre text NOT NULL,
+      categoria text NOT NULL,
+      estado text NOT NULL,
+      actualizado_en text NOT NULL,
+      doc jsonb NOT NULL
+    )`)
+  );
+  cuartelSchemaEnsured = true;
+}
+
 let cierresMensualesEnsured = false;
 export async function ensureCierresMensualesTable() {
   if (cierresMensualesEnsured) return;
