@@ -196,14 +196,24 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
-    tarea: "Presentar el artista a un DSP o a una disquera",
+    tarea: "Presentar el artista a un DSP, una disquera o una marca",
     pasos: [
-      "Pitch y Presentación → elige el destino. Son tres documentos distintos: un editor de DSP lee cientos por semana y descarta el largo; una disquera espera una tesis de negocio; una marca compra audiencia, no artista.",
+      "Pitch y Presentación → elige el destino. Son documentos distintos: un editor de DSP lee cientos por semana y descarta el largo; una disquera espera una tesis de negocio; una marca compra audiencia, no artista.",
       "Escribe qué quieres conseguir, concreto. «Una oportunidad» no es un pedido y produce un pitch igual de vago.",
       "«Generar pitch». Sale texto final, listo para mandar — no un borrador con huecos para completar.",
       "Si es DSP, el bloque «Para pegar en Spotify for Artists» trae el texto con su contador de 500 caracteres y un botón de copiar.",
       "Si es sello o marca, revisa «Puentes que ya tienes»: cruza el destinatario con tus Personas del C.C.O. y te dice a quién conoces adentro.",
       "No borres el bloque de riesgo antes de mandarlo. Es lo que hace que te crean el resto: todos llegan con números buenos, y quien nombra su punto débil es el único que no suena a vendedor.",
+    ],
+  },
+  {
+    tarea: "Venderle una fecha a un empresario de plaza",
+    pasos: [
+      "Pitch y Presentación → destino «Empresario / Promotor de plaza». Es el único que va por ciudad: al que pone la sala no le importa la audiencia nacional del artista, le importa la suya.",
+      "Elige la plaza. Las ciudades salen ordenadas por calor, así que arriba está donde hay más demanda que reforzar — que es para lo que sirve el mapa de calor.",
+      "El documento cruza el calor de esa ciudad con la taquilla de los shows que ya hiciste ahí. Si nunca tocaste en esa plaza, lo dice en vez de inventarlo: un promotor con oficio pregunta.",
+      "Mira el aforo sugerido antes que nada. Es conservador a propósito: quedarse corto se arregla subiendo de sala, pasarse deja media sala vacía y ese empresario no vuelve a llamar.",
+      "El pedido sale como ventana de fecha, tamaño de sala y estructura de trato (garantía, puerta o mixto), en rangos. Ninguna cifra de garantía se da como precio de mercado, porque no lo es.",
     ],
   },
   {
@@ -552,8 +562,8 @@ export const SISTEMA_MOTORES: ManualMotor[] = [
   },
   {
     motor: "Pitch y Presentación",
-    cuandoUsarlo: "Cuando hay que presentar el artista afuera: pitchear un tema a los editores de un DSP, proponer un acuerdo a un sello, o buscar una marca.",
-    queCargar: "Nada nuevo: usa lo cargado. Escribe qué quieres conseguir con ese pitch — un pedido vago produce un documento vago. Para sello o marca, tener Personas cargadas en el C.C.O. permite que señale qué contactos tienes de puente.",
+    cuandoUsarlo: "Cuando hay que presentar el artista afuera: pitchear un tema a los editores de un DSP, proponer un acuerdo a un sello, buscar una marca, o venderle una fecha a un empresario de plaza.",
+    queCargar: "Nada nuevo: usa lo cargado. Escribe qué quieres conseguir con ese pitch — un pedido vago produce un documento vago. Para sello o marca, tener Personas cargadas en el C.C.O. permite que señale qué contactos tienes de puente. Para promotor hay que elegir la ciudad: el pitch se arma con el calor de esa plaza y la taquilla de los shows que ya se hicieron ahí, no con la data nacional.",
   },
   {
     motor: "Oportunidad de Negocio",

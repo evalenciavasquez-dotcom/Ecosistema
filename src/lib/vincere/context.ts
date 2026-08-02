@@ -1,5 +1,6 @@
 import {
   calcularMarcador,
+  temperaturaDe,
   VincereAudioAnalisis,
   VincereLetraMetrica,
   VincereProyecto,
@@ -201,10 +202,72 @@ export interface ContactoPuente {
   ultimoContacto: string;
 }
 
+// Todo lo que se sabe de UNA ciudad, junto. Sin esto, el pitch a un promotor
+// tendría que buscar la plaza entre la data nacional y terminaría citando
+// números del país entero — que es exactamente lo que un empresario detecta y
+// castiga. El aforo máximo probado y la conversión se calculan acá: son
+// aritmética, no interpretación.
+function contextoDePlaza(p: VincereProyecto, ciudad: string) {
+  const clave = ciudad.trim().toLocaleLowerCase("es");
+  const zona = p.zonasCalor.find((z) => z.ciudad.trim().toLocaleLowerCase("es") === clave);
+  const showsAqui = (p.shows ?? []).filter((s) => s.ciudad.trim().toLocaleLowerCase("es") === clave);
+
+  const conTaquilla = showsAqui.filter((s) => s.asistencia != null && s.aforo > 0);
+  const mejorAsistencia = conTaquilla.length
+    ? Math.max(...conTaquilla.map((s) => s.asistencia as number))
+    : null;
+
+  const plazaEvaluada = (p.touringDiagnostico?.plazas ?? []).find(
+    (pl) => pl.ciudad.trim().toLocaleLowerCase("es") === clave
+  );
+
+  return {
+    ciudad,
+    calor: zona
+      ? { valor: zona.calor, temperatura: temperaturaDe(zona.calor), escala: "0-100, relativo a las demás plazas del artista" }
+      : "esta ciudad no está entre las zonas de calor cargadas: no hay medida de demanda local",
+    showsPrevios: showsAqui.length
+      ? showsAqui.map((s) => ({
+          fecha: s.fecha,
+          sala: s.sala,
+          aforo: s.aforo,
+          asistencia: s.asistencia,
+          conversionPct:
+            s.asistencia != null && s.aforo > 0 ? Math.round((s.asistencia / s.aforo) * 100) : null,
+          ...(s.asistencia == null
+            ? { avisoDeTaquilla: "el empresario no reportó cuánta gente entró: este show no prueba convocatoria" }
+            : {}),
+          ...(s.nota.trim() ? { nota: s.nota.trim() } : {}),
+        }))
+      : "nunca se ha tocado en esta ciudad: no hay prueba de taquilla y el pitch tiene que decirlo",
+    mejorAsistenciaProbada:
+      mejorAsistencia != null
+        ? {
+            personas: mejorAsistencia,
+            nota: "Es el techo demostrado en esta plaza. Proponer una sala muy por encima de esta cifra es apostar, y hay que decirlo como apuesta.",
+          }
+        : "no hay ninguna asistencia reportada en esta ciudad: cualquier aforo que propongas es una estimación, no un dato",
+    ...(plazaEvaluada
+      ? {
+          lecturaDeTouring: {
+            veredicto: plazaEvaluada.veredicto,
+            tamanoSala: plazaEvaluada.tamanoSala,
+            lectura: plazaEvaluada.lectura,
+          },
+        }
+      : {}),
+  };
+}
+
 // Contexto del Pitch. Lo arma el cliente porque necesita cruzar el proyecto de
 // VINCERE con los contactos del C.C.O., que viven en otro store.
-export function buildPitchContext(p: VincereProyecto, contactos: ContactoPuente[]): unknown {
+export function buildPitchContext(
+  p: VincereProyecto,
+  contactos: ContactoPuente[],
+  plaza?: string | null
+): unknown {
   return {
+    ...(plaza?.trim() ? { laPlaza: contextoDePlaza(p, plaza.trim()) } : {}),
     artista: p.nombre,
     genero: p.genero,
     fase: p.fase,

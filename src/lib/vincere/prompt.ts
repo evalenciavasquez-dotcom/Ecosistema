@@ -161,6 +161,24 @@ Lo central es la audiencia: quién es, dónde está, qué tan comprometida, y po
 Propón una activación concreta, no "una colaboración". Y di qué recibe la marca en términos que su equipo pueda defender internamente.
 
 Si el artista declaró un antipatrón —lo que no es— revísalo contra esta marca: una asociación que lo contradice arruina las dos partes.`,
+
+  promotor: `DESTINO: EMPRESARIO / PROMOTOR DE PLAZA.
+
+Del otro lado hay alguien que va a poner la sala, la producción y su propio dinero en una fecha concreta. No le estás presentando un artista: le estás proponiendo un negocio de una noche en SU ciudad.
+
+Por eso este pitch es el más estrecho de los cuatro. La audiencia nacional del artista no le sirve de nada — a él le importa cuánta gente de ESTA plaza paga una entrada. Todo número que uses tiene que ser local o quedar explícitamente marcado como nacional; mezclarlos es la forma más rápida de perder credibilidad con alguien que hace esta cuenta todas las semanas.
+
+Lo que decide la conversación, en este orden:
+1. **La demanda en la plaza.** Escucha local, calor de la zona, crecimiento reciente. Es la razón de por qué esta ciudad y no otra.
+2. **La prueba de taquilla.** Si hay shows anteriores con conversión, ese es el dato más fuerte que existe: demuestra que la audiencia paga, no solo que escucha. Si no hay, **dilo** — un promotor con oficio va a preguntar, y que no tengas taquilla previa es un caso más débil, no una razón para inventar. Muchas veces el empresario ni siquiera reportó cuánta gente entró; si el contexto lo dice, dilo tal cual en vez de suponer.
+3. **El aforo realista.** Este es el número que decide si la fecha sale bien o quema la ciudad para el próximo año. Una sala de 600 con 310 adentro se ve peor que una de 300 llena, y ese promotor no vuelve a llamar. Sé conservador a propósito: es mejor quedarse corto y tener que subir de sala que al revés.
+4. **Qué trae el artista.** Qué se activa desde nuestro lado — comunicación, la base local, contenido, la ventana de lanzamiento si hay una.
+
+El pedido es una fecha, un tamaño de sala y una estructura de trato (garantía, puerta, o mixto). Si no sabes lo suficiente para proponer una estructura, propón el rango y di de qué depende — nunca des una cifra de garantía como si fuera precio de mercado.
+
+En 'destinatarioSugerido' describe el PERFIL de promotor que encaja en esa plaza (qué tamaño de sala programa, qué tipo de cartel). Nunca inventes nombres de empresarios, salas ni festivales que no estén en el contexto.
+
+El riesgo que declaramos aquí casi siempre es el mismo y hay que decirlo igual: si la escucha de la plaza todavía no se probó en taquilla, esto es una apuesta sobre una señal digital. Nombrarlo y proponer una sala más chica es lo que convierte una apuesta en una propuesta seria.`,
 };
 
 export const VINCERE_PITCH_SYSTEM_PROMPT = `Eres el motor de Pitch de VINCERE, el sistema de dirección estratégica musical de Eduardo Valencia. Escribes el documento con el que Eduardo presenta un artista a un tercero.
@@ -188,6 +206,7 @@ export function buildPitchUserPrompt(input: {
   artista: unknown;
   destino: string;
   objetivo?: string;
+  plaza?: string | null;
 }): string {
   const guia = PITCH_POR_DESTINO[input.destino] ?? PITCH_POR_DESTINO.disquera;
   const partes = [
@@ -198,6 +217,12 @@ export function buildPitchUserPrompt(input: {
     "CONTEXTO DEL ARTISTA:",
     JSON.stringify(input.artista, null, 2),
   ];
+  if (input.destino === "promotor" && input.plaza?.trim()) {
+    partes.push(
+      "",
+      `LA PLAZA: este pitch es para vender una fecha en ${input.plaza.trim()}. El contexto trae un bloque 'laPlaza' con lo que se sabe de esa ciudad — el calor, los shows previos ahí y su taquilla. Esa es la data que manda. Si un número es nacional y no de la plaza, márcalo como nacional.`
+    );
+  }
   if (input.objetivo?.trim()) {
     partes.push("", `LO QUE EDUARDO QUIERE CONSEGUIR CON ESTE PITCH: "${input.objetivo.trim()}"`);
   }
