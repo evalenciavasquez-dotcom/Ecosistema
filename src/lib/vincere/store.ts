@@ -47,8 +47,36 @@ import {
   VincereZonaCalor,
 } from "./types";
 
+// Se dispara cuando el navegador se queda sin espacio. Lo escucha la interfaz
+// para avisar: sin esto, guardar falla y la app sigue viéndose normal — se
+// edita todo, no se guarda nada, y al recargar el trabajo del día no está.
+export const EVENTO_SIN_ESPACIO = "vincere:sin-espacio";
+
 function getPersistStorage(): Storage {
-  if (typeof window !== "undefined") return window.localStorage;
+  if (typeof window !== "undefined") {
+    const ls = window.localStorage;
+    return {
+      ...ls,
+      getItem: (k: string) => ls.getItem(k),
+      removeItem: (k: string) => ls.removeItem(k),
+      key: (i: number) => ls.key(i),
+      get length() {
+        return ls.length;
+      },
+      clear: () => ls.clear(),
+      setItem: (k: string, v: string) => {
+        try {
+          ls.setItem(k, v);
+        } catch (err) {
+          // El error de cuota no se debe tragar en silencio, pero tampoco
+          // puede tumbar la app: la data sigue en memoria y la sesión se
+          // puede terminar y exportar. Se avisa y se sigue.
+          window.dispatchEvent(new CustomEvent(EVENTO_SIN_ESPACIO));
+          console.error("VINCERE: el navegador no pudo guardar (¿sin espacio?)", err);
+        }
+      },
+    } as Storage;
+  }
   return {
     getItem: () => null,
     setItem: () => {},
