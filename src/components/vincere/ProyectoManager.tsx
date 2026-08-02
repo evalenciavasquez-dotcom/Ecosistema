@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
 import { VincereFase, VincereProyectoTipo } from "@/lib/vincere/types";
+import EspacioPanel from "./EspacioPanel";
 
 const FASES: VincereFase[] = ["Emergente", "Emergente → Consolidación", "Consolidación", "Establecido"];
 
@@ -161,57 +162,62 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                     {p.tipo === "propio" ? "Propio" : "Referencia"}
                   </span>
 
-                  {confirmarBorrado === p.id ? (
-                    <span className="flex items-center gap-2 vin-t-xs">
-                      <button
-                        onClick={() => eliminar(p.id, p.nombre)}
-                        className="hover:underline"
-                        style={{ color: "var(--vin-accent)" }}
-                      >
-                        Confirmar
-                      </button>
-                      <button onClick={() => setConfirmarBorrado(null)} className="vin-faint hover:underline">
-                        Cancelar
-                      </button>
-                    </span>
-                  ) : confirmarVaciado === p.id ? (
-                    <span className="flex items-center gap-2 vin-t-xs">
-                      <button
-                        onClick={() => vaciar(p.id, p.nombre)}
-                        className="hover:underline"
-                        style={{ color: "#e0a83a" }}
-                      >
-                        Vaciar
-                      </button>
-                      <button onClick={() => setConfirmarVaciado(null)} className="vin-faint hover:underline">
-                        Cancelar
-                      </button>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2.5">
-                      <button
-                        onClick={() => {
-                          setConfirmarBorrado(null);
-                          setConfirmarVaciado(p.id);
-                        }}
-                        className="vin-faint px-1 vin-t-xs hover:underline"
-                        title="Borrar la data pero conservar el proyecto"
-                      >
-                        Empezar de 0
-                      </button>
-                      <button
-                        onClick={() => {
-                          setConfirmarVaciado(null);
-                          setConfirmarBorrado(p.id);
-                        }}
-                        className="vin-faint px-1 vin-t-xs hover:underline"
-                        title="Eliminar el proyecto entero"
-                      >
-                        Eliminar
-                      </button>
-                    </span>
-                  )}
                 </div>
+
+                {/* Las acciones destructivas van en su propia línea y con
+                    nombre completo. Antes eran texto gris de 11px al final de
+                    una fila con un input, un select y una insignia: existían
+                    pero no se encontraban. */}
+                {confirmarBorrado === p.id ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button onClick={() => eliminar(p.id, p.nombre)} className="vin-btn-primary !py-1.5 vin-t-sm">
+                      Sí, borrar {p.nombre}
+                    </button>
+                    <button onClick={() => setConfirmarBorrado(null)} className="vin-faint vin-t-sm hover:underline">
+                      Cancelar
+                    </button>
+                  </div>
+                ) : confirmarVaciado === p.id ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => vaciar(p.id, p.nombre)}
+                      className="vin-btn-ghost !py-1.5 vin-t-sm"
+                      style={{ color: "var(--vin-warn)", borderColor: "var(--vin-warn)" }}
+                    >
+                      Sí, vaciar la data
+                    </button>
+                    <button onClick={() => setConfirmarVaciado(null)} className="vin-faint vin-t-sm hover:underline">
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex flex-wrap items-center gap-4">
+                    <button
+                      onClick={() => {
+                        setConfirmarBorrado(null);
+                        setConfirmarVaciado(p.id);
+                      }}
+                      className="vin-muted vin-t-sm hover:underline"
+                      style={{ textUnderlineOffset: "3px" }}
+                    >
+                      Vaciar su data
+                    </button>
+                    <span className="vin-faint vin-t-sm">·</span>
+                    <button
+                      onClick={() => {
+                        setConfirmarVaciado(null);
+                        setConfirmarBorrado(p.id);
+                      }}
+                      className="vin-t-sm hover:underline"
+                      style={{ color: "var(--vin-risk)", textUnderlineOffset: "3px" }}
+                    >
+                      Borrar este proyecto
+                    </button>
+                    <span className="vin-faint vin-t-sm">
+                      Vaciar conserva el proyecto; borrar se lo lleva entero.
+                    </span>
+                  </div>
+                )}
                 {confirmarVaciado === p.id && (
                   <p className="mt-2 vin-t-xs leading-relaxed" style={{ color: "#e0a83a" }}>
                     Se borra la data de {p.nombre} —cifras, canciones, shows, lecturas, informes e histórico— pero el
@@ -232,6 +238,11 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
               </p>
             )}
           </div>
+        </section>
+
+        {/* El espacio se mide aquí porque es donde se decide qué borrar. */}
+        <section className="mt-6" style={{ borderTop: "1px solid var(--vin-border)", paddingTop: "1.25rem" }}>
+          <EspacioPanel />
         </section>
 
         {/* Salir de los datos de ejemplo es lo primero que hay que poder hacer

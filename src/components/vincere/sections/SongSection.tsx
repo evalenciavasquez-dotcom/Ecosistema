@@ -15,6 +15,7 @@ import { formatStreams } from "@/lib/vincere/format";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import { AudioPanel, MetricaPanel, NotasProduccionPanel } from "../AudioPanel";
+import SongGuia from "../SongGuia";
 import EvidenceTag from "../EvidenceTag";
 
 const POTENCIAL_COLOR: Record<VincerePotencialCancion, string> = {
@@ -92,8 +93,10 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
           : "Genera la lectura para interpretar qué canción es el motor del momentum y cuál está subestimada."
       }
     >
+      <SongGuia cancion={selected} />
+
       <div className="flex justify-end">
-        <button className="vin-faint vin-t-xs hover:underline" onClick={() => setAdding((v) => !v)}>
+        <button className="vin-faint vin-t-sm hover:underline" onClick={() => setAdding((v) => !v)}>
           {adding ? "Cancelar" : "+ Agregar canción"}
         </button>
       </div>
