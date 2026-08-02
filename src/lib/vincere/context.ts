@@ -12,6 +12,7 @@ import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
+import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
 // curva de energía completa: son 64 números que la IA no puede leer mejor que
@@ -643,6 +644,38 @@ function bloqueDePlazas(p: VincereProyecto) {
   };
 }
 
+
+// Cuánto cuesta pautar en los países donde el artista tiene plazas. Se entrega
+// para que una hoja de ruta pueda dimensionar presupuesto sin inventar cifras,
+// y va con la advertencia pegada: son referencias públicas, no cotizaciones.
+function bloqueDeCostos(p: VincereProyecto) {
+  const paises = [...new Set((p.zonasCalor ?? []).map((z) => z.pais?.trim()).filter(Boolean))] as string[];
+  const objetivo = paises.length ? paises : [null];
+  return {
+    costosDePauta: {
+      moneda: "USD",
+      advertencia: ADVERTENCIA_COSTOS,
+      comoUsarlo:
+        "Da siempre un RANGO, nunca una cifra exacta, y di de qué depende. Si el país no tiene dato propio se usa el global y hay que decirlo. Nunca presentes esto como una cotización.",
+      porPais: objetivo.map((pais) => ({
+        pais: pais ?? "sin país declarado — se usa la referencia global",
+        // Ordenadas de más barata a más cara por impresión. La diferencia entre
+        // regiones es mucho mayor que entre plataformas, y eso decide por dónde
+        // entra un lanzamiento con presupuesto chico.
+        plataformas: plataformasPorCosto(pais).map((r) => ({
+          plataforma: PLATAFORMA_LABEL[r.plataforma],
+          cpmUsd: `${r.cpmBajoUsd} a ${r.cpmAltoUsd}`,
+          regionDelDato: r.region,
+          ...(r.minimoUsd ? { minimoDeCampanaUsd: r.minimoUsd } : {}),
+          fuente: r.fuente,
+          consultadoEn: r.consultadoEn,
+          ...(r.nota ? { nota: r.nota } : {}),
+        })),
+      })),
+    },
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -663,6 +696,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         serieStreamsMiles: p.resumen.serie,
         ...bloqueFanRate(p),
     ...bloqueDePlazas(p),
+    ...bloqueDeCostos(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
         ...conExterno("general"),
       };
@@ -714,6 +748,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         ...base,
         zonasCalor: p.zonasCalor,
         ...bloqueDePlazas(p),
+        ...bloqueDeCostos(p),
         // Si ya se tocó en alguna de estas ciudades, el calor deja de leerse
         // solo: se puede contrastar contra quién fue de verdad.
         ...(showsConConversion(p) ? { showsPrevios: showsConConversion(p) } : {}),
@@ -796,6 +831,7 @@ export function buildInformeContext(p: VincereProyecto): unknown {
     },
     ...bloqueFanRate(p),
     ...bloqueDePlazas(p),
+    ...bloqueDeCostos(p),
     diagnostico: p.diagnostico,
     marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca en la plataforma",
     diagnosticoDeMarca: p.marcaDiagnostico
