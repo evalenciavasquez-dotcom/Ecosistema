@@ -425,18 +425,25 @@ export interface VincereMarcaDiagnostico {
 // al que le creen el resto. Eso no vende al artista — posiciona a quien
 // presenta.
 
-export type VincerePitchDestino = "dsp" | "disquera" | "marca";
+// El cuarto destino es el que cierra el circuito con Zonas de Calor. El calor
+// no dice dónde tocar: dice dónde hay demanda que se puede reforzar. Y la
+// forma de reforzarla es venderle una fecha a quien pone la sala y el riesgo.
+// Es el único pitch que va por ciudad, porque un empresario de Medellín no
+// compra la audiencia nacional del artista — compra la suya.
+export type VincerePitchDestino = "dsp" | "disquera" | "marca" | "promotor";
 
 export const VINCERE_PITCH_DESTINO_LABEL: Record<VincerePitchDestino, string> = {
   dsp: "DSP / Editorial",
   disquera: "Disquera / Sello",
   marca: "Marca / Sponsor",
+  promotor: "Empresario / Promotor de plaza",
 };
 
 export const VINCERE_PITCH_DESTINO_DESC: Record<VincerePitchDestino, string> = {
   dsp: "Para pitchear un tema a los editores de Spotify, Apple o Deezer. Corto y concreto: leen cientos por semana.",
   disquera: "Propuesta de negocio a un sello. Abre con una tesis de mercado, no con la biografía.",
   marca: "Para un sponsor o una marca. No se vende al artista: se vende la audiencia y el encaje.",
+  promotor: "Para venderle una fecha a quien pone la sala y arriesga su plata. Va por ciudad: solo le importa cuánta gente de ESA plaza paga entrada.",
 };
 
 export interface VincerePitchBloque {
@@ -456,6 +463,9 @@ export interface VincereEvidenciaPitch {
 export interface VincerePitch {
   id: string;
   destino: VincerePitchDestino;
+  // Solo promotor: la ciudad de la fecha que se está vendiendo. Sale de las
+  // zonas de calor, que es donde se ve dónde hay demanda para reforzar.
+  plaza: string | null;
   objetivo: string; // Lo que se pide, escrito por Eduardo antes de generar.
   titular: string; // La primera frase. Lo único que se garantiza que van a leer.
   apertura: string; // Tesis de mercado (disquera/marca) o el porqué de ahora (DSP).
@@ -472,7 +482,12 @@ export interface VincerePitch {
   // Solo DSP: el campo literal que se pega en Spotify for Artists.
   pitchCorto: string | null;
   etiquetas: string[];
-  // Solo disquera/marca: a quién y por qué.
+  // Solo promotor: el aforo que esta plaza aguanta hoy. Es el único número que
+  // decide si la fecha sale bien o quema la ciudad — una sala de 600 con 310
+  // adentro se ve peor que una de 300 llena, y el empresario no vuelve.
+  aforoSugerido: number | null;
+  porQueEseAforo: string | null;
+  // Solo disquera/marca/promotor: a quién y por qué.
   destinatarioSugerido: string | null;
   porQueEseDestinatario: string | null;
   // Contactos propios que aparecieron como puente hacia ese destinatario.

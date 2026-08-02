@@ -355,6 +355,7 @@ export async function fetchPitch(input: {
   artista: unknown;
   destino: VincerePitchDestino;
   objetivo?: string;
+  plaza?: string | null;
 }): Promise<Omit<VincerePitch, "id">> {
   const res = await fetch("/api/vincere/pitch", {
     method: "POST",
@@ -373,8 +374,18 @@ export async function fetchPitch(input: {
   // que lo que se muestra sea siempre pegable tal cual.
   const corto = typeof r.pitchCorto === "string" && r.pitchCorto.trim() ? r.pitchCorto.trim() : null;
 
+  const esPromotor = input.destino === "promotor";
+  // Un aforo tiene que ser un entero positivo y creíble. Un cero o un número
+  // absurdo en un documento que se manda a un empresario es peor que no dar
+  // ninguno: se prefiere dejarlo vacío y que Eduardo lo ponga.
+  const aforo =
+    typeof r.aforoSugerido === "number" && Number.isFinite(r.aforoSugerido) && r.aforoSugerido > 0
+      ? Math.round(r.aforoSugerido)
+      : null;
+
   return {
     destino: input.destino,
+    plaza: esPromotor ? (input.plaza?.trim() || null) : null,
     objetivo: input.objetivo?.trim() ?? "",
     titular: r.titular ?? "",
     apertura: r.apertura ?? "",
@@ -396,6 +407,8 @@ export async function fetchPitch(input: {
     queNoDecir: textos(r.queNoDecir),
     pitchCorto: input.destino === "dsp" && corto ? corto.slice(0, 500) : null,
     etiquetas: input.destino === "dsp" ? textos(r.etiquetas) : [],
+    aforoSugerido: esPromotor ? aforo : null,
+    porQueEseAforo: esPromotor ? (r.porQueEseAforo ?? null) : null,
     destinatarioSugerido: input.destino === "dsp" ? null : (r.destinatarioSugerido ?? null),
     porQueEseDestinatario: input.destino === "dsp" ? null : (r.porQueEseDestinatario ?? null),
     contactosRelevantes: textos(r.contactosRelevantes),

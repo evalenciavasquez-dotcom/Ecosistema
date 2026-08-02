@@ -583,7 +583,7 @@ export const pitchResponseSchema = z.object({
     )
     .min(2)
     .max(6)
-    .describe("El cuerpo. Los bloques cambian según el destino: un DSP quiere el tema, el momento y el apoyo detrás; una disquera quiere mercado, tracción, plan y economía; una marca quiere audiencia, encaje y activación. Elige los que correspondan a ESTE destino, no una plantilla fija"),
+    .describe("El cuerpo. Los bloques cambian según el destino: un DSP quiere el tema, el momento y el apoyo detrás; una disquera quiere mercado, tracción, plan y economía; una marca quiere audiencia, encaje y activación; un promotor quiere la demanda en SU ciudad, la prueba de taquilla, el aforo realista y qué activa el artista para llenar. Elige los que correspondan a ESTE destino, no una plantilla fija"),
   evidencia: z
     .array(
       z.object({
@@ -602,7 +602,7 @@ export const pitchResponseSchema = z.object({
     .describe("Por qué, sabiendo ese riesgo, esto sigue valiendo la pena. Es la otra mitad del movimiento: nombrar el riesgo sin sostener la tesis es solo pesimismo"),
   elPedido: z
     .string()
-    .describe("Qué se pide exactamente y en una frase. Un pitch sin pedido concreto es una charla agradable que no lleva a nada. Para DSP: la consideración editorial para tal playlist o momento. Para disquera: la estructura y el alcance. Para marca: la activación"),
+    .describe("Qué se pide exactamente y en una frase. Un pitch sin pedido concreto es una charla agradable que no lleva a nada. Para DSP: la consideración editorial para tal playlist o momento. Para disquera: la estructura y el alcance. Para marca: la activación. Para promotor: una ventana de fecha, un tamaño de sala y una estructura de trato (garantía, puerta o mixto) — en rangos y diciendo de qué dependen, nunca una cifra de garantía presentada como precio de mercado"),
   queDamosACambio: z.string().describe("Qué recibe la otra parte, concreto"),
   queNoDecir: z
     .array(z.string())
@@ -616,10 +616,19 @@ export const pitchResponseSchema = z.object({
     .array(z.string())
     .max(10)
     .describe("Solo para dsp: géneros, moods y descriptores que ayudan a ubicar el tema en playlists. Vacío en otros destinos"),
+  aforoSugerido: z
+    .number()
+    .int()
+    .nullable()
+    .describe("SOLO si el destino es promotor: cuántas personas de aforo aguanta esta plaza HOY. Sé conservador a propósito — una sala de 600 con 310 adentro se ve peor que una de 300 llena, y ese empresario no vuelve a llamar. Si el contexto trae 'mejorAsistenciaProbada', no propongas muy por encima de esa cifra sin decir que es una apuesta. Si no hay ninguna taquilla previa en la ciudad, igual da un número, pero que quede claro en 'porQueEseAforo' que es estimación. null en cualquier otro destino"),
+  porQueEseAforo: z
+    .string()
+    .nullable()
+    .describe("Solo promotor: de dónde sale ese aforo — qué taquilla previa, qué calor de plaza, qué comparación. Si es estimación sin taquilla previa, dilo aquí con esas palabras. null en otros destinos"),
   destinatarioSugerido: z
     .string()
     .nullable()
-    .describe("Solo para disquera o marca: a qué tipo de sello o marca conviene llevar esto, descrito por su perfil. Si el contexto trae contactos propios que encajan, puedes nombrar la empresa que aparece ahí. NUNCA inventes nombres de sellos o marcas que no estén en el contexto"),
+    .describe("Solo para disquera, marca o promotor: a qué tipo de sello, marca o empresario conviene llevar esto, descrito por su perfil (para promotor: qué tamaño de sala programa y qué tipo de cartel arma). Si el contexto trae contactos propios que encajan, puedes nombrar la empresa que aparece ahí. NUNCA inventes nombres de sellos, marcas, salas, festivales ni empresarios que no estén en el contexto"),
   porQueEseDestinatario: z.string().nullable().describe("Por qué ese perfil y no otro. null si el destino es dsp"),
   contactosRelevantes: z
     .array(z.string())

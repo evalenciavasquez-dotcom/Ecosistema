@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import {
+  temperaturaDe,
   VincerePitch,
   VincerePitchDestino,
   VincereProyecto,
   VINCERE_PITCH_DESTINO_DESC,
   VINCERE_PITCH_DESTINO_LABEL,
+  VINCERE_TEMPERATURA_COLOR,
+  VINCERE_TEMPERATURA_LABEL,
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import { useAppStore } from "@/lib/store";
@@ -17,12 +20,13 @@ import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
-const DESTINOS: VincerePitchDestino[] = ["dsp", "disquera", "marca"];
+const DESTINOS: VincerePitchDestino[] = ["dsp", "disquera", "marca", "promotor"];
 
 const OBJETIVO_PLACEHOLDER: Record<VincerePitchDestino, string> = {
   dsp: "Ej. «considerar Otra Vida para playlists de pop urbano en el lanzamiento del 12 de septiembre»",
   disquera: "Ej. «un deal de distribución con adelanto para el próximo EP», «label services sin ceder máster»",
   marca: "Ej. «activación con una marca de bebidas para la gira de otoño»",
+  promotor: "Ej. «una fecha en noviembre en sala mediana, garantía más puerta»",
 };
 
 export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }) {
@@ -34,6 +38,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
   const personas = useAppStore((s) => s.personas);
 
   const [destino, setDestino] = useState<VincerePitchDestino>("disquera");
+  const [plaza, setPlaza] = useState("");
   const [objetivo, setObjetivo] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +47,14 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
   const pitches = proyecto.pitches ?? [];
   const activo = pitches.find((x) => x.id === abierto) ?? pitches[0] ?? null;
 
+  // Las plazas se ofrecen ordenadas por calor: la primera de la lista es
+  // literalmente donde hay más demanda que reforzar, que es para lo que sirve
+  // el mapa de calor.
+  const plazasPorCalor = [...proyecto.zonasCalor].sort((a, b) => b.calor - a.calor);
+  const faltaPlaza = destino === "promotor" && !plaza.trim();
+
   async function generar() {
-    if (cargando) return;
+    if (cargando || faltaPlaza) return;
     setCargando(true);
     setError(null);
     try {
@@ -55,16 +66,22 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
         influencia: p.nivelInfluencia,
         ultimoContacto: p.ultimoContacto,
       }));
+      const laPlaza = destino === "promotor" ? plaza.trim() : null;
       const r = await fetchPitch({
-        artista: buildPitchContext(proyecto, contactos),
+        artista: buildPitchContext(proyecto, contactos, laPlaza),
         destino,
         objetivo,
+        plaza: laPlaza,
       });
       const conId: VincerePitch = { ...r, id: genId("pitch") };
       addPitch(proyecto.id, conId);
       setAbierto(conId.id);
       setObjetivo("");
-      showToast(`Pitch generado para ${VINCERE_PITCH_DESTINO_LABEL[destino]}`);
+      showToast(
+        laPlaza
+          ? `Pitch generado para un promotor de ${laPlaza}`
+          : `Pitch generado para ${VINCERE_PITCH_DESTINO_LABEL[destino]}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo generar el pitch");
     } finally {
@@ -78,12 +95,12 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
       seccion="pitch"
       eyebrow="Pitch y Presentación"
       title="Cómo se presenta este artista"
-      subtitle="Tres destinos, tres documentos distintos. Y una decisión que los separa de cualquier otro pitch: declaramos nuestro propio riesgo y el nivel de evidencia de cada dato — en una sala donde todos llevan números buenos, es lo único que hace que te crean el resto."
+      subtitle="Cuatro destinos, cuatro documentos distintos. Y una decisión que los separa de cualquier otro pitch: declaramos nuestro propio riesgo y el nivel de evidencia de cada dato — en una sala donde todos llevan números buenos, es lo único que hace que te crean el resto."
       aiTitle="Lectura VINCERE — Pitch"
     >
       <Panel>
         <PanelLabel>A quién se lo presentamos</PanelLabel>
-        <div className="mb-3 grid gap-2 md:grid-cols-3">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {DESTINOS.map((d) => (
             <button
               key={d}
@@ -105,6 +122,54 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
           ))}
         </div>
 
+        {destino === "promotor" && (
+          <div className="mb-3">
+            <PanelLabel>En qué plaza</PanelLabel>
+            <p className="vin-faint mb-2 text-[11.5px] leading-relaxed">
+              Ordenadas por calor: arriba está donde hay más demanda que reforzar. Un empresario no compra la audiencia
+              nacional del artista — compra la suya.
+            </p>
+            {plazasPorCalor.length > 0 ? (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {plazasPorCalor.map((z) => {
+                  const t = temperaturaDe(z.calor);
+                  const sel = plaza.trim().toLocaleLowerCase("es") === z.ciudad.toLocaleLowerCase("es");
+                  return (
+                    <button
+                      key={z.id}
+                      onClick={() => setPlaza(z.ciudad)}
+                      className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition-colors"
+                      style={{
+                        border: `1px solid ${sel ? VINCERE_TEMPERATURA_COLOR[t] : "var(--vin-border)"}`,
+                        color: sel ? "var(--vin-text)" : "var(--vin-muted)",
+                        background: sel ? `${VINCERE_TEMPERATURA_COLOR[t]}1f` : "transparent",
+                      }}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: VINCERE_TEMPERATURA_COLOR[t] }} />
+                      {z.ciudad}
+                      <span className="vin-faint tabular-nums">{z.calor}</span>
+                      <span className="vin-faint" style={{ color: VINCERE_TEMPERATURA_COLOR[t] }}>
+                        {VINCERE_TEMPERATURA_LABEL[t]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="vin-faint mb-2 text-[11.5px] leading-relaxed">
+                No hay zonas de calor cargadas. Puedes escribir la ciudad igual, pero el pitch va a ir sin medida de
+                demanda local y lo va a decir.
+              </p>
+            )}
+            <input
+              value={plaza}
+              onChange={(e) => setPlaza(e.target.value)}
+              placeholder="Ciudad de la fecha"
+              className="vin-input"
+            />
+          </div>
+        )}
+
         <PanelLabel>Qué quieres conseguir</PanelLabel>
         <input
           value={objetivo}
@@ -122,9 +187,12 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
         )}
 
         <div className="flex flex-wrap items-center gap-3">
-          <button onClick={generar} disabled={cargando} className="vin-btn-primary">
+          <button onClick={generar} disabled={cargando || faltaPlaza} className="vin-btn-primary">
             {cargando ? "Escribiendo el pitch…" : "Generar pitch"}
           </button>
+          {faltaPlaza && !cargando && (
+            <span className="vin-faint text-xs">Elige la ciudad: sin plaza saldría el pitch genérico que esto evita.</span>
+          )}
           {cargando && <span className="vin-faint text-xs">Sale como texto final, listo para mandar.</span>}
         </div>
         {error && (
@@ -147,7 +215,8 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
                 border: `1px solid ${activo?.id === x.id ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
               }}
             >
-              {VINCERE_PITCH_DESTINO_LABEL[x.destino]} · {x.generadoEn.slice(0, 10)}
+              {VINCERE_PITCH_DESTINO_LABEL[x.destino]}
+              {x.plaza ? ` · ${x.plaza}` : ""} · {x.generadoEn.slice(0, 10)}
             </button>
           ))}
         </div>
@@ -180,7 +249,10 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
     <article className="vin-print-area space-y-5">
       <div className="vin-card p-6">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <div className="vin-eyebrow">{VINCERE_PITCH_DESTINO_LABEL[pitch.destino]}</div>
+          <div className="vin-eyebrow">
+            {VINCERE_PITCH_DESTINO_LABEL[pitch.destino]}
+            {pitch.plaza && ` · ${pitch.plaza}`}
+          </div>
           <div className="flex shrink-0 items-center gap-3">
             <EvidenceTag nivel={pitch.nivelGlobal} />
             <button onClick={onEliminar} className="vin-faint vin-no-print px-1 text-xs hover:underline" title="Eliminar">
@@ -234,6 +306,31 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
             ))}
           </div>
         </Panel>
+      )}
+
+      {/* Solo promotor. Va destacado porque de todo el documento es el único
+          número que puede quemar la plaza para el próximo año: una sala de 600
+          con 310 adentro se ve peor que una de 300 llena. */}
+      {pitch.aforoSugerido != null && (
+        <div
+          className="rounded-sm p-5"
+          style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.3)" }}
+        >
+          <PanelLabel>
+            <span style={{ color: "#e0a83a" }}>Aforo que aguanta esta plaza hoy</span>
+          </PanelLabel>
+          <p className="vin-serif mb-2 text-3xl tabular-nums leading-none">
+            {pitch.aforoSugerido.toLocaleString("es-CO")}
+            <span className="vin-faint ml-2 align-middle text-[13px]">personas</span>
+          </p>
+          {pitch.porQueEseAforo && (
+            <p className="text-[14px] leading-relaxed">{pitch.porQueEseAforo}</p>
+          )}
+          <p className="vin-faint mt-2.5 text-[11.5px] leading-relaxed">
+            Es deliberadamente conservador. Quedarse corto se arregla subiendo de sala; pasarse deja media sala vacía y
+            un empresario que no vuelve a llamar.
+          </p>
+        </div>
       )}
 
       {pitch.bloques.map((b, i) => (

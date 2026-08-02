@@ -4,7 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { pitchResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_PITCH_SYSTEM_PROMPT, buildPitchUserPrompt } from "@/lib/vincere/prompt";
 
-const DESTINOS = ["dsp", "disquera", "marca"] as const;
+const DESTINOS = ["dsp", "disquera", "marca", "promotor"] as const;
 
 export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -13,12 +13,17 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
-  const { artista, destino, objetivo } = body ?? {};
+  const { artista, destino, objetivo, plaza } = body ?? {};
   if (!artista) {
     return NextResponse.json({ error: "No llegó el contexto del artista" }, { status: 400 });
   }
   if (!(DESTINOS as readonly string[]).includes(destino)) {
     return NextResponse.json({ error: "Destino de pitch no válido" }, { status: 400 });
+  }
+  // Un pitch a un promotor sin plaza sería el pitch genérico que este destino
+  // existe para no escribir.
+  if (destino === "promotor" && typeof plaza !== "string") {
+    return NextResponse.json({ error: "Un pitch a promotor necesita la ciudad de la fecha" }, { status: 400 });
   }
 
   const client = new Anthropic({ apiKey });
@@ -32,7 +37,7 @@ export async function POST(request: Request) {
       thinking: { type: "adaptive" },
       output_config: { format: zodOutputFormat(pitchResponseSchema) },
       system: VINCERE_PITCH_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildPitchUserPrompt({ artista, destino, objetivo }) }],
+      messages: [{ role: "user", content: buildPitchUserPrompt({ artista, destino, objetivo, plaza }) }],
     });
 
     if (response.stop_reason === "refusal") {
