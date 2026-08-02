@@ -51,7 +51,7 @@ export const GUIA_PRIMEROS_PASOS: ManualBloque = {
   puntos: [
     {
       termino: "1. Crea tu proyecto",
-      texto: "Botón «+ Proyecto» arriba. Nombre del artista, género y fase de carrera. Elige «Proyecto propio» si lo diriges tú.",
+      texto: "Botón «Proyectos» arriba. Nombre del artista, género y fase de carrera. Elige «Proyecto propio» si lo diriges tú. En ese mismo panel, abajo, está «Borrar todos los proyectos» para sacar los de ejemplo cuando tengas data real.",
     },
     {
       termino: "2. Si no tienes data todavía, investiga",
@@ -150,9 +150,28 @@ export const GUIA_TAREAS: ManualTarea[] = [
     ],
   },
   {
+    tarea: "Sacar los datos de ejemplo y arrancar con los tuyos",
+    pasos: [
+      "SETTE y LUNA REBEL vienen cargados para que veas la plataforma funcionando. No son reales.",
+      "Botón «Proyectos» en la barra superior → abajo del todo, «Borrar todos los proyectos».",
+      "Borra los proyectos con toda su data, el triage y las comparaciones. Si tienes base conectada, también allá. No se puede deshacer.",
+      "Si quieres guardar algo antes: C.C.O. → Configuración → «Exportar todos los datos».",
+      "Después queda la pantalla vacía con un botón para crear el primero real.",
+    ],
+  },
+  {
+    tarea: "Volver un proyecto a cero sin perderlo",
+    pasos: [
+      "«Proyectos» → «Empezar de 0» en la fila de ese proyecto.",
+      "Borra su data —cifras, canciones, shows, lecturas, informes e histórico— pero conserva el nombre, el género, la fase y la moneda.",
+      "Sirve cuando cargaste data mala o de prueba y quieres rehacerla sin recrear el proyecto: el proyecto no cambia de identidad.",
+      "Distinto de «Eliminar», que se lleva el proyecto entero.",
+    ],
+  },
+  {
     tarea: "Crear un proyecto nuevo",
     pasos: [
-      "Botón «+ Proyecto» en la barra superior.",
+      "Botón «Proyectos» en la barra superior.",
       "Escribe nombre y género, elige la fase de carrera.",
       "Tipo «Proyecto propio» si lo diriges; «Referencia de mercado» si es competencia para comparar.",
       "Crear proyecto. Queda seleccionado y listo para cargarle data.",
@@ -295,7 +314,7 @@ export const GUIA_TAREAS: ManualTarea[] = [
   {
     tarea: "Comparar con la competencia",
     pasos: [
-      "Crea el artista de referencia con «+ Proyecto», tipo «Referencia de mercado».",
+      "Crea el artista de referencia con «Proyectos», tipo «Referencia de mercado».",
       "Cárgale al menos sus números de Resumen · Momentum.",
       "Pulsa «Comparar con …» en la barra superior.",
       "Genera la lectura comparativa: la IA ajusta por fase de carrera y marca la data de referencia con nivel más bajo.",

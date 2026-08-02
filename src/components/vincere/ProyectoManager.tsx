@@ -15,6 +15,8 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
   const addProyecto = useVincereStore((s) => s.addProyecto);
   const updateProyectoMeta = useVincereStore((s) => s.updateProyectoMeta);
   const deleteProyecto = useVincereStore((s) => s.deleteProyecto);
+  const vaciarProyecto = useVincereStore((s) => s.vaciarProyecto);
+  const empezarDeCero = useVincereStore((s) => s.empezarDeCero);
   const setCompareProyectoId = useVincereStore((s) => s.setCompareProyectoId);
   const showToast = useVincereStore((s) => s.showToast);
 
@@ -25,6 +27,8 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
     tipo: "propio",
   });
   const [confirmarBorrado, setConfirmarBorrado] = useState<string | null>(null);
+  const [confirmarVaciado, setConfirmarVaciado] = useState<string | null>(null);
+  const [confirmarTodo, setConfirmarTodo] = useState(false);
 
   function crear() {
     const nombre = form.nombre.trim();
@@ -41,6 +45,18 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
     deleteProyecto(id);
     setConfirmarBorrado(null);
     showToast(`Proyecto "${nombre}" eliminado`);
+  }
+
+  function vaciar(id: string, nombre: string) {
+    vaciarProyecto(id);
+    setConfirmarVaciado(null);
+    showToast(`"${nombre}" quedó en cero. El proyecto sigue; la data no.`);
+  }
+
+  function borrarTodo() {
+    empezarDeCero();
+    setConfirmarTodo(false);
+    showToast("Todo borrado. Crea tu primer proyecto.");
   }
 
   return (
@@ -158,17 +174,50 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                         Cancelar
                       </button>
                     </span>
+                  ) : confirmarVaciado === p.id ? (
+                    <span className="flex items-center gap-2 text-xs">
+                      <button
+                        onClick={() => vaciar(p.id, p.nombre)}
+                        className="hover:underline"
+                        style={{ color: "#e0a83a" }}
+                      >
+                        Vaciar
+                      </button>
+                      <button onClick={() => setConfirmarVaciado(null)} className="vin-faint hover:underline">
+                        Cancelar
+                      </button>
+                    </span>
                   ) : (
-                    <button
-                      onClick={() => setConfirmarBorrado(p.id)}
-                      className="vin-faint px-1.5 text-xs hover:underline"
-                      title="Eliminar proyecto"
-                      disabled={proyectos.length === 1}
-                    >
-                      Eliminar
-                    </button>
+                    <span className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => {
+                          setConfirmarBorrado(null);
+                          setConfirmarVaciado(p.id);
+                        }}
+                        className="vin-faint px-1 text-xs hover:underline"
+                        title="Borrar la data pero conservar el proyecto"
+                      >
+                        Empezar de 0
+                      </button>
+                      <button
+                        onClick={() => {
+                          setConfirmarVaciado(null);
+                          setConfirmarBorrado(p.id);
+                        }}
+                        className="vin-faint px-1 text-xs hover:underline"
+                        title="Eliminar el proyecto entero"
+                      >
+                        Eliminar
+                      </button>
+                    </span>
                   )}
                 </div>
+                {confirmarVaciado === p.id && (
+                  <p className="mt-2 text-xs leading-relaxed" style={{ color: "#e0a83a" }}>
+                    Se borra la data de {p.nombre} —cifras, canciones, shows, lecturas, informes e histórico— pero el
+                    proyecto se conserva con su nombre, género y fase. No se puede deshacer.
+                  </p>
+                )}
                 {confirmarBorrado === p.id && (
                   <p className="mt-2 text-xs" style={{ color: "var(--vin-accent)" }}>
                     Se borra toda la data de {p.nombre}: canciones, lecturas de IA e informe. No se puede deshacer.
@@ -177,8 +226,55 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                 {p.id === selectedId && <div className="vin-faint mt-1.5 text-[11px]">Proyecto abierto ahora</div>}
               </div>
             ))}
+            {proyectos.length === 0 && (
+              <p className="vin-muted text-[13px] leading-relaxed">
+                No hay ningún proyecto. Crea el primero arriba.
+              </p>
+            )}
           </div>
         </section>
+
+        {/* Salir de los datos de ejemplo es lo primero que hay que poder hacer
+            con data real en la mano. Va al final y con confirmación escrita
+            porque borra todo, incluido lo que esté en la base. */}
+        {proyectos.length > 0 && (
+          <section className="mt-6" style={{ borderTop: "1px solid var(--vin-border)", paddingTop: "1.25rem" }}>
+            <div className="vin-label mb-2">Empezar de cero</div>
+            {confirmarTodo ? (
+              <div
+                className="rounded-sm p-4"
+                style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.3)" }}
+              >
+                <p className="mb-3 text-[13px] leading-relaxed">
+                  Se borran los {proyectos.length} proyectos con toda su data, los casos de triage y las
+                  comparaciones. Si tienes base de datos conectada, también se borra allá. No se puede deshacer.
+                </p>
+                <p className="vin-faint mb-3 text-[11.5px] leading-relaxed">
+                  Si quieres guardar algo antes, sal de VINCERE y usa C.C.O. → Configuración → «Exportar todos los
+                  datos».
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button onClick={borrarTodo} className="vin-btn-primary !py-1.5 !text-xs">
+                    Sí, borrar todo
+                  </button>
+                  <button onClick={() => setConfirmarTodo(false)} className="vin-faint text-xs hover:underline">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="vin-muted mb-2.5 text-[13px] leading-relaxed">
+                  SETTE y LUNA REBEL vienen cargados como ejemplo para que veas la plataforma funcionando. Cuando
+                  tengas data real, esto los saca a todos de una.
+                </p>
+                <button onClick={() => setConfirmarTodo(true)} className="vin-btn-ghost !py-1.5 !text-xs">
+                  Borrar todos los proyectos
+                </button>
+              </>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

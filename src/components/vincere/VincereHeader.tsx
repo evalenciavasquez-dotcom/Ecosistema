@@ -83,21 +83,27 @@ export default function VincereHeader() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <select
-          className="vin-select"
-          value={selectedId}
-          onChange={(e) => selectProyecto(e.target.value)}
-          aria-label="Proyecto"
-        >
-          {propios.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nombre}
-            </option>
-          ))}
-        </select>
+        {propios.length > 0 && (
+          <select
+            className="vin-select"
+            value={selectedId}
+            onChange={(e) => selectProyecto(e.target.value)}
+            aria-label="Proyecto"
+          >
+            {propios.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre}
+              </option>
+            ))}
+          </select>
+        )}
 
-        <button onClick={() => setGestionAbierta(true)} className="vin-btn-ghost" title="Crear, renombrar o eliminar proyectos">
-          + Proyecto
+        <button
+          onClick={() => setGestionAbierta(true)}
+          className={propios.length === 0 ? "vin-btn-primary" : "vin-btn-ghost"}
+          title="Crear, renombrar, vaciar o eliminar proyectos"
+        >
+          {propios.length === 0 ? "Crear proyecto" : "Proyectos"}
         </button>
 
         <button

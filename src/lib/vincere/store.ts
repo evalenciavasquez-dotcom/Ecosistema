@@ -95,6 +95,8 @@ interface VincereState {
     patch: Partial<Pick<VincereProyecto, "nombre" | "genero" | "fase" | "tipo" | "moneda">>
   ) => void;
   deleteProyecto: (id: string) => void;
+  vaciarProyecto: (id: string) => void;
+  empezarDeCero: () => void;
 
   updateResumen: (proyectoId: string, patch: Partial<VincereResumen>) => void;
   updateDiagnostico: (proyectoId: string, patch: Partial<VincereDiagnostico>) => void;
@@ -222,6 +224,38 @@ function mapProyecto(
   return proyectos.map((p) => (p.id === id ? fn(p) : p));
 }
 
+// El molde de un proyecto sin nada cargado. Es la única definición de "vacío"
+// que existe: la usan tanto crear un proyecto nuevo como vaciar uno, para que
+// las dos cosas produzcan exactamente el mismo estado.
+function proyectoEnBlanco(identidad: {
+  id: string;
+  nombre: string;
+  genero: string;
+  fase: VincereFase;
+  tipo: VincereProyectoTipo;
+}): VincereProyecto {
+  return {
+    ...identidad,
+    creadoEn: new Date().toISOString().slice(0, 10),
+    resumen: {
+      streamsMes: 0,
+      streamsCambioPct: 0,
+      seguidores: 0,
+      seguidoresCambioPct: 0,
+      momentumIndex: 0,
+      serie: [],
+    },
+    diagnostico: { faseActual: "", fortalezaNucleo: "", riesgoPrincipal: "", prioridad: "" },
+    canciones: [],
+    audiencia: { edad: [], plataformas: [], paises: [] },
+    zonasCalor: [],
+    decisiones: [],
+    kpis: [],
+    insights: {},
+    qaLog: {},
+  };
+}
+
 function marcaVacia(): VincereMarca {
   return {
     posicionamiento: "",
@@ -268,33 +302,56 @@ export const useVincereStore = create<VincereState>()(
 
       addProyecto: (input) => {
         const id = genId("vin");
-        const nuevo: VincereProyecto = {
+        const nuevo = proyectoEnBlanco({
           id,
           nombre: input.nombre,
           genero: input.genero,
           fase: input.fase,
           tipo: input.tipo,
-          creadoEn: new Date().toISOString().slice(0, 10),
-          resumen: {
-            streamsMes: 0,
-            streamsCambioPct: 0,
-            seguidores: 0,
-            seguidoresCambioPct: 0,
-            momentumIndex: 0,
-            serie: [],
-          },
-          diagnostico: { faseActual: "", fortalezaNucleo: "", riesgoPrincipal: "", prioridad: "" },
-          canciones: [],
-          audiencia: { edad: [], plataformas: [], paises: [] },
-          zonasCalor: [],
-          decisiones: [],
-          kpis: [],
-          insights: {},
-          qaLog: {},
-        };
+        });
         set((s) => ({ proyectos: [...s.proyectos, nuevo], selectedProyectoId: id, compareOn: false }));
         return id;
       },
+
+      // Deja el proyecto como recién creado pero conserva su identidad: nombre,
+      // género, fase, tipo, moneda y fecha de creación. Es distinto de
+      // eliminarlo y volver a crearlo — así el proyecto no cambia de id y lo
+      // que apunte a él sigue apuntando.
+      //
+      // Se construye desde el molde en blanco en vez de listar qué borrar: si
+      // mañana el proyecto gana un campo nuevo, se limpia solo. Listar campos
+      // es cómo se termina con data vieja sobreviviendo a un "empezar de cero".
+      vaciarProyecto: (id) =>
+        set((s) => ({
+          proyectos: s.proyectos.map((p) =>
+            p.id === id
+              ? {
+                  ...proyectoEnBlanco({
+                    id: p.id,
+                    nombre: p.nombre,
+                    genero: p.genero,
+                    fase: p.fase,
+                    tipo: p.tipo,
+                  }),
+                  ...(p.moneda ? { moneda: p.moneda } : {}),
+                  creadoEn: p.creadoEn,
+                }
+              : p
+          ),
+        })),
+
+      // Borra todo: proyectos, triage y comparaciones. La sincronización lo
+      // propaga a la base porque observa qué proyectos desaparecieron.
+      empezarDeCero: () =>
+        set({
+          proyectos: [],
+          triageCasos: [],
+          comparaciones: {},
+          selectedProyectoId: "",
+          compareProyectoId: null,
+          compareOn: false,
+          seccion: "resumen",
+        }),
 
       updateProyectoMeta: (id, patch) =>
         set((s) => ({ proyectos: mapProyecto(s.proyectos, id, (p) => ({ ...p, ...patch })) })),
