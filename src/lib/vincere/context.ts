@@ -13,6 +13,7 @@ import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
+import { compararFirma, referenciasSugeridas } from "./firma";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
 // curva de energía completa: son 64 números que la IA no puede leer mejor que
@@ -676,6 +677,44 @@ function bloqueDeCostos(p: VincereProyecto) {
   };
 }
 
+
+// La firma de cada canción con audio contra las que más han sonado. Va
+// calculada: comparar once medidas entre cuatro canciones es justo el tipo de
+// cuenta que un modelo hace mal y con total seguridad.
+function bloqueDeFirmas(p: VincereProyecto) {
+  const conAudio = p.canciones.filter((c) => c.audio);
+  if (conAudio.length < 3) return {};
+  const firmas = conAudio
+    .map((c) => {
+      const refs = referenciasSugeridas(p.canciones, c.id, 3);
+      if (refs.length < 2) return null;
+      const f = compararFirma(c, refs);
+      if (!f.dimensiones.length) return null;
+      return {
+        cancion: f.candidata,
+        comparadaContra: f.referencias,
+        seSaleEn: f.fueraDeRango.map((d) => ({
+          medida: d.label,
+          valor: d.candidata,
+          rangoDeLasQueFuncionan: `${d.refMin} a ${d.refMax}`,
+          diferencia: `${d.distancia} ${d.direccion === "porDebajo" ? "por debajo" : "por encima"}`,
+          queSignifica: d.queSignifica,
+        })),
+        enLinea: f.dimensiones.filter((d) => d.direccion === "dentro").map((d) => d.label),
+      };
+    })
+    .filter(Boolean);
+  if (!firmas.length) return {};
+  return {
+    firmaSonora: {
+      advertencia:
+        "Parecerse a lo que funcionó NO lo causa. Esto ubica cada canción frente al historial del propio artista con medidas de la señal; no predice resultados y la muestra es diminuta. Úsalo para señalar en qué se aparta una canción, nunca para afirmar que va a funcionar o fracasar.",
+      referenciaUsada: "Las canciones del propio artista con más streams, no un promedio de género.",
+      canciones: firmas,
+    },
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -739,6 +778,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
             ? { observacionExterna: { texto: c.notasProduccion.trim(), origen: "servicio externo o productor, NO medido por la plataforma" } }
             : {}),
         })),
+        ...bloqueDeFirmas(p),
         ...conExterno("catalogo"),
       };
     case "audiencia":
