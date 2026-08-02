@@ -870,6 +870,7 @@ export const useVincereStore = create<VincereState>()(
               etiqueta,
               streamsMes: p.resumen.streamsMes,
               seguidores: p.resumen.seguidores,
+              ...(p.resumen.oyentesMes ? { oyentesMes: p.resumen.oyentesMes } : {}),
               momentumIndex: p.resumen.momentumIndex,
               cancionesTotal: p.canciones.length,
               creadoEn: new Date().toISOString(),

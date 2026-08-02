@@ -16,6 +16,7 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
       streamsMes: 2430000,
       streamsCambioPct: 18,
       seguidores: 186000,
+      oyentesMes: 940000,
       seguidoresCambioPct: 6,
       momentumIndex: 62,
       serie: [
@@ -93,6 +94,30 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
         { label: "Otros", pct: 8 },
       ],
     },
+    historial: [
+      {
+        id: "snap-1",
+        fecha: "2026-02-01",
+        etiqueta: "Carga de Spotify for Artists",
+        streamsMes: 1180000,
+        seguidores: 141000,
+        oyentesMes: 520000,
+        momentumIndex: 48,
+        cancionesTotal: 5,
+        creadoEn: "2026-02-01T10:00:00.000Z",
+      },
+      {
+        id: "snap-2",
+        fecha: "2026-05-01",
+        etiqueta: "Carga de Spotify for Artists",
+        streamsMes: 1860000,
+        seguidores: 167000,
+        oyentesMes: 760000,
+        momentumIndex: 56,
+        cancionesTotal: 5,
+        creadoEn: "2026-05-01T10:00:00.000Z",
+      },
+    ],
     zonasCalor: [
       { id: "city-1", ciudad: "Bogotá", calor: 92 },
       { id: "city-2", ciudad: "Medellín", calor: 78 },
@@ -323,6 +348,7 @@ export const SEED_VINCERE_PROYECTOS: VincereProyecto[] = [
     creadoEn: "2026-07-10",
     resumen: {
       streamsMes: 1800000,
+      oyentesMes: 1120000,
       streamsCambioPct: 4,
       seguidores: 240000,
       seguidoresCambioPct: 2,

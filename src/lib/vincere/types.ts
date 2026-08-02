@@ -91,6 +91,11 @@ export interface VincereResumen {
   streamsCambioPct: number;
   seguidores: number;
   seguidoresCambioPct: number;
+  // Oyentes mensuales únicos. Distinto de streams: streams son reproducciones,
+  // oyentes son personas. Es el denominador del fan rate, y sin él esa métrica
+  // no se puede calcular — dividir seguidores entre streams da un número que se
+  // ve bien y no significa nada. Opcional por compatibilidad con lo ya guardado.
+  oyentesMes?: number;
   momentumIndex: number;
   serie: VincereStreamMes[];
 }
@@ -1005,6 +1010,10 @@ export interface VincereSnapshot {
   etiqueta: string; // De dónde vino esta foto.
   streamsMes: number;
   seguidores: number;
+  // Se guarda para poder calcular después el fan rate marginal: de los oyentes
+  // ganados entre dos fotos, cuántos se volvieron seguidores. Sin el dato
+  // histórico esa lectura no existe, y es la que distingue crecimiento de pico.
+  oyentesMes?: number;
   momentumIndex: number;
   cancionesTotal: number;
   creadoEn: string;

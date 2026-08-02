@@ -10,6 +10,7 @@ import {
 import { describirTextura } from "./audio";
 import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
+import { calcularFanRate } from "./fanrate";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
 // curva de energía completa: son 64 números que la IA no puede leer mejor que
@@ -583,6 +584,37 @@ export function buildTouringContext(p: VincereProyecto): unknown {
   };
 }
 
+
+// El fan rate va al contexto ya calculado. Es una división, y el modelo la
+// falla lo justo para arruinar la lectura — igual que el resto de la
+// aritmética de esta plataforma.
+function bloqueFanRate(p: VincereProyecto) {
+  const f = calcularFanRate(p);
+  if (!f.actual) return { fanRate: f.falta };
+  return {
+    fanRate: {
+      acumuladoPct: f.actual.pct,
+      seguidores: f.actual.seguidores,
+      oyentesMensuales: f.actual.oyentes,
+      nota: "Qué proporción de quien escucha terminó siguiendo. Arrastra toda la historia del artista.",
+      ...(f.marginal && !f.marginal.audienciaBajo
+        ? {
+            deLaAudienciaNuevaPct: f.marginal.pct,
+            oyentesGanados: f.marginal.oyentesGanados,
+            seguidoresGanados: f.marginal.seguidoresGanados,
+            desde: f.marginal.desde,
+            notaMarginal:
+              "De los oyentes ganados desde esa fecha, cuántos se volvieron seguidores. Es el que dice si lo que se está haciendo AHORA atrae gente que se queda. Un marginal muy por debajo del acumulado es tráfico prestado: playlist editorial o pauta mal apuntada.",
+          }
+        : {}),
+      ...(f.marginal?.audienciaBajo
+        ? { avisoMarginal: "Los oyentes bajaron respecto a la primera foto: el marginal no se puede leer como conversión." }
+        : {}),
+      ...(f.falta ? { loQueFalta: f.falta } : {}),
+    },
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -601,6 +633,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         seguidoresCambioPct: p.resumen.seguidoresCambioPct,
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
+        ...bloqueFanRate(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
         ...conExterno("general"),
       };
@@ -731,6 +764,7 @@ export function buildInformeContext(p: VincereProyecto): unknown {
       momentumIndex: p.resumen.momentumIndex,
       serieStreamsMiles: sinData(p.resumen.serie),
     },
+    ...bloqueFanRate(p),
     diagnostico: p.diagnostico,
     marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca en la plataforma",
     diagnosticoDeMarca: p.marcaDiagnostico

@@ -100,6 +100,12 @@ export const ingestResponseSchema = z.object({
           streamsCambioPct: z.number().nullable().describe("Variación porcentual de streams; negativa si cayó"),
           seguidores: z.number().nullable(),
           seguidoresCambioPct: z.number().nullable(),
+          oyentesMes: z
+            .number()
+            .nullable()
+            .describe(
+              "Oyentes mensuales ÚNICOS. En Spotify for Artists aparece como 'oyentes mensuales' o 'monthly listeners'. NO es lo mismo que streams: si el material solo trae reproducciones, esto va en null. Confundirlos arruina el fan rate"
+            ),
           momentumIndex: z.number().nullable().describe("Solo si la fuente lo trae explícito; nunca lo calcules tú"),
           serie: z
             .array(z.object({ mes: z.string().describe("Mes abreviado, ej. 'Jul'"), valor: z.number().describe("Streams en MILES") }))
