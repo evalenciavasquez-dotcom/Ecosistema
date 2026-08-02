@@ -11,6 +11,7 @@ import { describirTextura } from "./audio";
 import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
+import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
 // curva de energía completa: son 64 números que la IA no puede leer mejor que
@@ -615,6 +616,33 @@ function bloqueFanRate(p: VincereProyecto) {
   };
 }
 
+
+// El mapa de plazas va resuelto al contexto. La regla de dónde rinde la pauta
+// es determinista a propósito: si la decidiera el modelo, cambiaría entre
+// corridas y dejaría de ser algo que se puede defender en una mesa.
+function bloqueDePlazas(p: VincereProyecto) {
+  const m = mapaDePlazas(p);
+  if (!m.plazas.length) return { mapaDePlazas: m.titular };
+  return {
+    mapaDePlazas: {
+      titular: m.titular,
+      regla:
+        "Calculado por el sistema, no por ti: una plaza CALIENTE ya encontró al artista y pautar ahí compra audiencia que ya se tenía; donde el presupuesto rinde es en la plaza MEDIA (hay señal y hay techo); una FRÍA en un país que ya tiene calientes es expansión con respaldo. Respeta esta clasificación — no propongas invertir en las marcadas como sostener o esperar.",
+      plazas: m.plazas.map((z) => ({
+        ciudad: z.ciudad,
+        pais: z.pais,
+        calor: z.calor,
+        accion: z.accion,
+        porQue: z.razon,
+        queSignifica: ACCION_QUE_HACER[z.accion],
+        ...(z.prioridadPauta != null ? { prioridadDePauta: z.prioridadPauta } : {}),
+        ...(z.mejorConversionPct != null ? { mejorTaquillaPct: z.mejorConversionPct } : {}),
+      })),
+      ...(m.avisos.length ? { limitacionesDeLaData: m.avisos } : {}),
+    },
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -634,6 +662,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
         ...bloqueFanRate(p),
+    ...bloqueDePlazas(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
         ...conExterno("general"),
       };
@@ -684,6 +713,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
       return {
         ...base,
         zonasCalor: p.zonasCalor,
+        ...bloqueDePlazas(p),
         // Si ya se tocó en alguna de estas ciudades, el calor deja de leerse
         // solo: se puede contrastar contra quién fue de verdad.
         ...(showsConConversion(p) ? { showsPrevios: showsConConversion(p) } : {}),
@@ -765,6 +795,7 @@ export function buildInformeContext(p: VincereProyecto): unknown {
       serieStreamsMiles: sinData(p.resumen.serie),
     },
     ...bloqueFanRate(p),
+    ...bloqueDePlazas(p),
     diagnostico: p.diagnostico,
     marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca en la plataforma",
     diagnosticoDeMarca: p.marcaDiagnostico

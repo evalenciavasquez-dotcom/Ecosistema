@@ -215,6 +215,10 @@ export interface VincereZonaCalor {
   id: string;
   ciudad: string;
   calor: number; // 0-100
+  // El país permite leer expansión: una ciudad fría en un país donde ya hay
+  // plazas calientes es candidata natural a abrir, y una fría y aislada no.
+  // Opcional: sin él la plaza se evalúa sola, y el sistema lo dice.
+  pais?: string;
 }
 
 // Temperatura de una plaza. El calor no es una decisión de dónde tocar: es
