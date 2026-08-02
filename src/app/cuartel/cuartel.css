@@ -1,24 +1,38 @@
-/* Sistema visual propio del Cuartel. Mismo esqueleto que VINCERE —barra
-   superior y sidebar de motores— pero identidad distinta a propósito: ámbar en
-   vez de coral, para que en ningún momento se confunda una pantalla de trabajo
-   con una de vida personal. Todo vive bajo .cuartel-scope. */
+/* Sistema visual del Cuartel — sigue el prototipo: fondo cálido casi negro,
+   acento ámbar, Fraunces para títulos, Work Sans para cuerpo, IBM Plex Mono
+   para datos y etiquetas. Identidad propia frente al coral de VINCERE, para
+   que en ningún momento se confunda una pantalla de trabajo con una de vida
+   personal. Todo vive bajo .cuartel-scope. */
 
 .cuartel-scope {
-  --cua-bg: #0b0a09;
-  --cua-surface: #14120f;
-  --cua-surface-2: #1c1915;
-  --cua-border: rgba(255, 255, 255, 0.08);
-  --cua-border-strong: rgba(255, 255, 255, 0.14);
-  --cua-text: #f2ede4;
-  --cua-muted: #a09889;
-  --cua-faint: #6e675c;
-  --cua-dim: #4f4a42;
-  --cua-accent: #d99a2b;
-  --cua-accent-soft: rgba(217, 154, 43, 0.12);
+  --cua-bg: #17140f;
+  --cua-surface: #1e1b14;
+  --cua-surface-2: #241f18;
+  --cua-sidebar: #1c1912;
+  --cua-active: #2a2419;
+  --cua-border: #2f2a1f;
+  --cua-border-soft: #2a2619;
+  --cua-border-strong: #3a352b;
+  --cua-input-bg: #17140f;
+  --cua-input-border: #322d22;
+  --cua-text: #ece7dc;
+  --cua-text-2: #c9c3b3;
+  --cua-muted: #a39c8c;
+  --cua-faint: #726b5c;
+  --cua-accent: #d7a13c;
+  --cua-accent-light: #e8bc63;
+
+  --cua-rojo: #b5473f;
+  --cua-amarillo: #c99a3a;
+  --cua-verde: #6f9b74;
 
   background: var(--cua-bg);
   color: var(--cua-text);
   font-family: var(--font-work-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.cuartel-scope ::selection {
+  background: #d7a13c55;
 }
 
 .cuartel-scope ::-webkit-scrollbar {
@@ -39,23 +53,9 @@
 }
 
 .cua-card {
+  background: var(--cua-surface);
   border: 1px solid var(--cua-border);
-  background: var(--cua-surface);
-  border-radius: 4px;
-}
-
-.cua-accent-card {
-  border: 1px solid rgba(217, 154, 43, 0.28);
-  background: var(--cua-surface);
-  border-radius: 4px;
-}
-
-.cua-eyebrow {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cua-accent);
+  border-radius: 3px;
 }
 
 .cua-label {
@@ -74,80 +74,89 @@
 }
 
 .cua-input,
-.cua-textarea {
-  background: var(--cua-surface-2);
-  border: 1px solid var(--cua-border-strong);
-  border-radius: 3px;
-  color: var(--cua-text);
-  font-size: 14px;
-  padding: 10px 12px;
-  outline: none;
+.cua-textarea,
+.cua-select {
   width: 100%;
-  font-family: inherit;
+  box-sizing: border-box;
+  background: var(--cua-input-bg);
+  border: 1px solid var(--cua-input-border);
+  color: var(--cua-text);
+  border-radius: 2px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: var(--font-work-sans), sans-serif;
+  outline: none;
+}
+.cua-textarea {
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
 }
 .cua-input::placeholder,
 .cua-textarea::placeholder {
   color: var(--cua-faint);
 }
 .cua-input:focus,
-.cua-textarea:focus {
-  border-color: rgba(217, 154, 43, 0.55);
+.cua-textarea:focus,
+.cua-select:focus {
+  outline: 1px solid var(--cua-accent);
 }
-.cua-textarea {
-  line-height: 1.55;
-  resize: vertical;
-  min-height: 84px;
+.cua-select option {
+  background: var(--cua-input-bg);
+  color: var(--cua-text);
 }
 
+/* Los botones del prototipo son mono, en versalitas: ámbar sólido para la
+   acción principal, contorno para todo lo demás. */
 .cua-btn-primary {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #17140f;
   background: var(--cua-accent);
-  color: #17130a;
   border: none;
-  border-radius: 3px;
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: 2px;
+  padding: 9px 16px;
   cursor: pointer;
 }
 .cua-btn-primary:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
 
 .cua-btn-ghost {
-  background: transparent;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--cua-muted);
+  background: transparent;
   border: 1px solid var(--cua-border-strong);
-  border-radius: 3px;
+  border-radius: 2px;
   padding: 9px 16px;
-  font-size: 13px;
   cursor: pointer;
 }
 .cua-btn-ghost:hover:not(:disabled) {
   color: var(--cua-text);
 }
 .cua-btn-ghost:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
 
-.cua-select {
+/* La tensión real se lee como cita, no como campo: es la frase que sostiene
+   todo el escenario. */
+.cua-quote {
   background: var(--cua-surface-2);
-  border: 1px solid var(--cua-border-strong);
-  border-radius: 3px;
-  color: var(--cua-text);
-  font-size: 13px;
-  padding: 9px 12px;
-  outline: none;
-  font-family: inherit;
-}
-.cua-select option {
-  background: var(--cua-surface-2);
-  color: var(--cua-text);
+  border-left: 2px solid var(--cua-accent);
+  border-radius: 2px;
+  padding: 12px 16px;
 }
 
-/* Una ruta descartada por el candado no se borra ni se esconde: se muestra
-   apagada y tachada en su etiqueta. Ver qué quedó afuera es parte del método. */
+/* Una ruta descartada por el candado no se borra ni se esconde: se apaga.
+   Ver qué quedó afuera es parte del método. */
 .cua-descartada {
   opacity: 0.55;
+  border-color: #3a2c26;
 }

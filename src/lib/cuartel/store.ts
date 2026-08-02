@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { genId } from "../id";
 import {
+  CUARTEL_METRICAS,
   CUARTEL_RUTAS_BASE,
   CuartelCerteza,
   CuartelCierre,
@@ -225,13 +226,13 @@ export const useCuartelStore = create<CuartelState>()(
                     ])
                   ) as CuartelRuta["sombreros"]
                 : r.sombreros,
+              // Se recorre la lista de métricas en vez de nombrarlas una a una:
+              // así, si cambian las cuatro, esto no se queda pisando claves
+              // que ya no existen.
               semaforo: analisis.semaforo
-                ? {
-                    desgaste: r.semaforo.desgaste ?? analisis.semaforo.desgaste,
-                    patron: r.semaforo.patron ?? analisis.semaforo.patron,
-                    costoOportunidad: r.semaforo.costoOportunidad ?? analisis.semaforo.costoOportunidad,
-                    dependencia: r.semaforo.dependencia ?? analisis.semaforo.dependencia,
-                  }
+                ? (Object.fromEntries(
+                    CUARTEL_METRICAS.map((m) => [m, r.semaforo[m] ?? analisis.semaforo![m] ?? null])
+                  ) as CuartelRuta["semaforo"])
                 : r.semaforo,
               legal: analisis.legal && r.legal.nivel === "no-aplica" && !r.legal.nota ? analisis.legal : r.legal,
               certezaRiesgos: analisis.certezaRiesgos ?? r.certezaRiesgos,

@@ -68,6 +68,14 @@ export const CUARTEL_ESTADO_LABEL: Record<CuartelEstado, string> = {
 
 export const CUARTEL_ESTADO_ORDEN: CuartelEstado[] = ["activo", "analisis", "decidido", "seguimiento", "cerrado"];
 
+export const CUARTEL_ESTADO_COLOR: Record<CuartelEstado, string> = {
+  activo: "#6f9b74",
+  analisis: "#c99a3a",
+  decidido: "#5b7fa6",
+  seguimiento: "#8a8560",
+  cerrado: "#726b5c",
+};
+
 // ─────────────────────────────── Rutas ───────────────────────────────
 
 export type CuartelRutaTipo = "cortar" | "sostener" | "rediseñar" | "otra";
@@ -77,6 +85,13 @@ export const CUARTEL_RUTA_LABEL: Record<CuartelRutaTipo, string> = {
   sostener: "Sostener",
   rediseñar: "Rediseñar",
   otra: "Otra ruta",
+};
+
+export const CUARTEL_RUTA_COLOR: Record<CuartelRutaTipo, string> = {
+  cortar: "#b5473f",
+  sostener: "#c99a3a",
+  rediseñar: "#6f9b74",
+  otra: "#a39c8c",
 };
 
 export const CUARTEL_RUTA_DESCRIPCION: Record<CuartelRutaTipo, string> = {
@@ -99,34 +114,36 @@ export const CUARTEL_SOMBREROS: CuartelSombrero[] = [
   "meta",
 ];
 
-export const CUARTEL_SOMBRERO_META: Record<CuartelSombrero, { icono: string; label: string; pregunta: string }> = {
+// El swatch reemplaza al emoji del sombrero: mismo código de color, pero legible
+// dentro de una tarjeta de ruta en modo comparativa.
+export const CUARTEL_SOMBRERO_META: Record<CuartelSombrero, { swatch: string; label: string; pregunta: string }> = {
   hechos: {
-    icono: "🤍",
+    swatch: "#d8d3c8",
     label: "Hechos",
     pregunta: "Qué se sabe con certeza vs. qué se está asumiendo.",
   },
   emocion: {
-    icono: "❤️",
+    swatch: "#b5615a",
     label: "Emoción",
     pregunta: "Qué se siente con esta ruta, sin racionalizar ni justificar.",
   },
   riesgos: {
-    icono: "🖤",
+    swatch: "#8a8560",
     label: "Riesgos",
     pregunta: "Qué puede salir mal, qué patrón propio se repite acá.",
   },
   beneficio: {
-    icono: "💛",
+    swatch: "#c9a227",
     label: "Beneficio real",
     pregunta: "Qué se gana de verdad, no lo que se cree ganar.",
   },
   alternativas: {
-    icono: "💚",
+    swatch: "#6f9b74",
     label: "Alternativas",
     pregunta: "Variantes de esta misma ruta que no se habían considerado.",
   },
   meta: {
-    icono: "💙",
+    swatch: "#6a89ab",
     label: "Meta / Alineación",
     pregunta: "Si acerca o aleja del objetivo de vida real.",
   },
@@ -156,27 +173,32 @@ export const CUARTEL_LUZ_COLOR: Record<CuartelLuz, string> = {
   rojo: "#e0483a",
 };
 
-export type CuartelMetrica = "desgaste" | "patron" | "costoOportunidad" | "dependencia";
+export type CuartelMetrica = "patron" | "costoEmocional" | "costoOportunidad" | "reversibilidad";
 
-export const CUARTEL_METRICAS: CuartelMetrica[] = ["desgaste", "patron", "costoOportunidad", "dependencia"];
+export const CUARTEL_METRICAS: CuartelMetrica[] = [
+  "patron",
+  "costoEmocional",
+  "costoOportunidad",
+  "reversibilidad",
+];
 
 export const CUARTEL_METRICA_META: Record<
   CuartelMetrica,
   { label: string; pregunta: string; rojo: string; amarillo: string; verde: string }
 > = {
-  desgaste: {
-    label: "Desgaste",
-    pregunta: "¿Cuánta energía emocional consume esta ruta sostenida en el tiempo?",
-    rojo: "Consume más de lo que devuelve, y ya se nota en otras áreas de la vida.",
-    amarillo: "Cuesta, pero todavía es sostenible sin daño visible.",
-    verde: "No desgasta, o el desgaste tiene fecha de vencimiento clara.",
-  },
   patron: {
-    label: "Repetición de patrón",
+    label: "Patrón repetido",
     pregunta: "¿Esto se parece a algo que Eduardo ya vivió y que terminó mal?",
     rojo: "Es el mismo patrón ya identificado, con los mismos ingredientes.",
     amarillo: "Se parece, pero hay una diferencia concreta — no una sensación.",
     verde: "No hay patrón previo que aplique acá.",
+  },
+  costoEmocional: {
+    label: "Costo emocional",
+    pregunta: "¿Cuánta energía consume esta ruta sostenida en el tiempo?",
+    rojo: "Consume más de lo que devuelve, y ya se nota en otras áreas de la vida.",
+    amarillo: "Cuesta, pero todavía es sostenible sin daño visible.",
+    verde: "No desgasta, o el desgaste tiene fecha de vencimiento clara.",
   },
   costoOportunidad: {
     label: "Costo de oportunidad",
@@ -185,19 +207,19 @@ export const CUARTEL_METRICA_META: Record<
     amarillo: "Ocupa espacio, pero no bloquea nada nombrado todavía.",
     verde: "No cierra ninguna puerta relevante.",
   },
-  dependencia: {
-    label: "Dependencia del otro",
-    pregunta: "¿Cuánto de que esto funcione depende de que la otra parte cambie?",
-    rojo: "Solo funciona si el otro cambia — y no hay evidencia de que vaya a cambiar.",
-    amarillo: "Depende en parte del otro, con algo de margen propio.",
-    verde: "Depende sobre todo de decisiones que Eduardo controla.",
+  reversibilidad: {
+    label: "Reversibilidad",
+    pregunta: "Si esta ruta sale mal, ¿se puede volver atrás?",
+    rojo: "No tiene vuelta: lo que se rompe acá no se recompone.",
+    amarillo: "Se puede corregir, pero con costo real de por medio.",
+    verde: "Se puede deshacer sin daño permanente.",
   },
 };
 
 export type CuartelSemaforo = Record<CuartelMetrica, CuartelLuz | null>;
 
 export function semaforoVacio(): CuartelSemaforo {
-  return { desgaste: null, patron: null, costoOportunidad: null, dependencia: null };
+  return { patron: null, costoEmocional: null, costoOportunidad: null, reversibilidad: null };
 }
 
 // ─────────────────────────── Capa legal / fiscal ───────────────────────────
