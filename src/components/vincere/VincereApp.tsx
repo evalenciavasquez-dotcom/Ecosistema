@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
+import ProyectoManager from "./ProyectoManager";
 import VincereHeader from "./VincereHeader";
 import VincereNav from "./VincereNav";
 import ResumenSection from "./sections/ResumenSection";
@@ -48,7 +50,7 @@ export default function VincereApp() {
         <main className="min-w-0 flex-1 overflow-y-auto px-5 py-8 md:px-14 md:py-11">
           <div className="mx-auto max-w-4xl">
             {!proyecto ? (
-              <p className="vin-muted text-sm">No hay proyecto seleccionado. Crea uno para empezar.</p>
+              <SinProyectos />
             ) : compareOn && compareTarget ? (
               <ComparacionSection a={proyecto} b={compareTarget} />
             ) : (
@@ -66,6 +68,26 @@ export default function VincereApp() {
           {toast}
         </div>
       )}
+    </div>
+  );
+}
+
+// Estado vacío real: se llega acá después de borrar todo, que es justo cuando
+// hay data nueva en la mano. Tiene que decir qué sigue, no solo que no hay nada.
+function SinProyectos() {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <div className="py-6">
+      <div className="vin-eyebrow mb-2.5">VINCERE</div>
+      <h2 className="vin-serif mb-3 text-2xl leading-snug">No hay ningún proyecto</h2>
+      <p className="vin-muted mb-5 max-w-xl text-[14.5px] leading-relaxed">
+        Crea el primero con el nombre del artista, su género y en qué fase está. Después, en «Cargar data», sueltas
+        una captura o un archivo y se reparte solo a los motores que corresponda.
+      </p>
+      <button onClick={() => setAbierto(true)} className="vin-btn-primary">
+        Crear proyecto
+      </button>
+      {abierto && <ProyectoManager onClose={() => setAbierto(false)} />}
     </div>
   );
 }
