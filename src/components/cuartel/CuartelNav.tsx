@@ -2,55 +2,88 @@
 
 import { useCuartelStore } from "@/lib/cuartel/store";
 import { CUARTEL_SECCION_LABEL, CuartelSeccion } from "@/lib/cuartel/types";
+import { useCuartelSync } from "./CuartelHydration";
 
 const SECCIONES: CuartelSeccion[] = ["inicio", "escenarios", "historial", "metodo"];
 
-// Fuera de alcance v1 (PRD §13). Se listan para que quede claro que no están
-// olvidadas: están decididas como "todavía no".
-const PROXIMAMENTE = ["Captura por WhatsApp / voz", "Recordatorios de fecha límite", "Acceso de terceros"];
+// Honestidad de estado (PRD §14): dice dónde quedó la data de verdad. Un
+// guardado que no ocurrió nunca se muestra como si hubiera ocurrido.
+const SYNC_TEXTO: Record<string, { label: string; color: string; title: string }> = {
+  sincronizado: {
+    label: "Guardado en la base",
+    color: "var(--cua-verde)",
+    title: "Los escenarios se guardan en tablas propias del Cuartel, separadas del resto",
+  },
+  local: {
+    label: "Solo este dispositivo",
+    color: "var(--cua-amarillo)",
+    title: "Sin base de datos configurada: los escenarios viven en el navegador de este dispositivo",
+  },
+  error: {
+    label: "Sin guardar",
+    color: "var(--cua-rojo)",
+    title: "No se pudo guardar en la base. La copia del navegador sigue intacta y se reintenta al próximo cambio",
+  },
+  desconocido: { label: "Conectando…", color: "var(--cua-faint)", title: "Comprobando dónde se guarda la data" },
+};
 
 export default function CuartelNav() {
   const seccion = useCuartelStore((s) => s.seccion);
+  const escenarioAbiertoId = useCuartelStore((s) => s.escenarioAbiertoId);
   const setSeccion = useCuartelStore((s) => s.setSeccion);
+  const estadoSync = useCuartelSync();
+  const sync = SYNC_TEXTO[estadoSync] ?? SYNC_TEXTO.desconocido;
 
   return (
-    <nav
-      className="flex shrink-0 gap-1 overflow-x-auto px-3 py-3 md:w-[230px] md:flex-col md:gap-0 md:overflow-y-auto md:py-6"
-      style={{ borderColor: "var(--cua-border)" }}
+    <div
+      className="flex shrink-0 flex-col py-4 md:h-screen md:w-[224px] md:py-[22px]"
+      style={{ background: "var(--cua-sidebar)", borderRight: "1px solid var(--cua-border)" }}
     >
-      <div className="cua-label hidden px-3 pb-2.5 md:block">Pantallas</div>
+      <div
+        className="hidden px-5 pb-5 md:block"
+        style={{ borderBottom: "1px solid var(--cua-border)" }}
+      >
+        <div className="cua-mono text-[10.5px] uppercase tracking-[0.14em]" style={{ color: "var(--cua-muted)" }}>
+          Cuartel
+        </div>
+        <div className="cua-serif mt-1 text-[19px] font-semibold leading-[1.25]">de mis Decisiones</div>
+      </div>
 
-      {SECCIONES.map((key) => {
-        const active = seccion === key;
-        return (
-          <button
-            key={key}
-            onClick={() => setSeccion(key)}
-            className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2.5 text-left text-[13.5px] transition-colors"
-            style={{
-              borderLeft: active ? "2px solid var(--cua-accent)" : "2px solid transparent",
-              background: active ? "var(--cua-accent-soft)" : "transparent",
-              color: active ? "var(--cua-text)" : "var(--cua-muted)",
-            }}
-          >
-            {CUARTEL_SECCION_LABEL[key]}
-          </button>
-        );
-      })}
+      <nav className="flex gap-1 overflow-x-auto px-3 md:mt-3.5 md:flex-col md:gap-0 md:px-0">
+        {SECCIONES.map((key) => {
+          const activa = seccion === key || (key === "escenarios" && !!escenarioAbiertoId);
+          return (
+            <button
+              key={key}
+              onClick={() => setSeccion(key)}
+              className="shrink-0 whitespace-nowrap px-3 py-2.5 text-left text-[14px] md:px-5"
+              style={{
+                color: activa ? "var(--cua-text)" : "var(--cua-muted)",
+                background: activa ? "var(--cua-active)" : "transparent",
+                borderLeft: `2px solid ${activa ? "var(--cua-accent)" : "transparent"}`,
+              }}
+            >
+              {CUARTEL_SECCION_LABEL[key]}
+            </button>
+          );
+        })}
+      </nav>
 
       <div
-        className="cua-label mt-4 hidden px-3 pb-2.5 pt-4 md:block"
+        className="mt-auto hidden px-5 pt-4 md:block"
         style={{ borderTop: "1px solid var(--cua-border)" }}
       >
-        Fuera de alcance v1
+        <div className="cua-mono flex items-center gap-1.5 text-[10.5px]" style={{ color: sync.color }} title={sync.title}>
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: sync.color }} />
+          {sync.label}
+        </div>
+        <div className="cua-mono mt-1.5 text-[10.5px] tracking-[0.04em]" style={{ color: "var(--cua-faint)" }}>
+          Sistema privado · 1 usuario
+        </div>
+        <div className="cua-mono mt-1.5 text-[10.5px] leading-relaxed" style={{ color: "var(--cua-faint)" }}>
+          Ningún escenario se decide sin ver las 3 rutas completas.
+        </div>
       </div>
-      <div className="hidden md:block">
-        {PROXIMAMENTE.map((label) => (
-          <div key={label} className="px-3 py-1.5 text-[12.5px]" style={{ color: "var(--cua-dim)" }}>
-            {label}
-          </div>
-        ))}
-      </div>
-    </nav>
+    </div>
   );
 }

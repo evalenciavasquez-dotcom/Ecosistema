@@ -2,71 +2,46 @@
 
 import Link from "next/link";
 import { useCuartelStore } from "@/lib/cuartel/store";
-import { useCuartelSync } from "./CuartelHydration";
+import { CUARTEL_SECCION_LABEL } from "@/lib/cuartel/types";
 
-// Honestidad de estado (PRD §14): el indicador dice dónde quedó la data de
-// verdad. "Guardado" solo aparece cuando la escritura ocurrió; si falló, lo
-// dice — nunca se muestra un guardado que no pasó.
-const SYNC_TEXTO: Record<string, { label: string; color: string; title: string }> = {
-  sincronizado: {
-    label: "Guardado",
-    color: "#5cc98e",
-    title: "Los escenarios se están guardando en la base, en tablas propias del Cuartel",
-  },
-  local: {
-    label: "Solo este dispositivo",
-    color: "#e0a83a",
-    title: "Sin base de datos configurada: los escenarios viven en el navegador de este dispositivo",
-  },
-  error: {
-    label: "Sin guardar",
-    color: "#e0483a",
-    title: "No se pudo guardar en la base. La copia del navegador sigue intacta y se reintenta al próximo cambio",
-  },
-  desconocido: { label: "Conectando…", color: "#6e675c", title: "Comprobando dónde se guarda la data" },
-};
-
-function SyncIndicator() {
-  const estado = useCuartelSync();
-  const info = SYNC_TEXTO[estado] ?? SYNC_TEXTO.desconocido;
-  return (
-    <span className="cua-mono flex items-center gap-1.5 text-[11px]" style={{ color: info.color }} title={info.title}>
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: info.color }} />
-      {info.label}
-    </span>
-  );
-}
-
-export default function CuartelHeader() {
+export default function CuartelHeader({ onNuevoEscenario }: { onNuevoEscenario: () => void }) {
+  const seccion = useCuartelStore((s) => s.seccion);
   const escenarios = useCuartelStore((s) => s.escenarios);
-  const activos = escenarios.filter((e) => e.estado === "activo" || e.estado === "analisis").length;
+  const abiertoId = useCuartelStore((s) => s.escenarioAbiertoId);
+  const abrirEscenario = useCuartelStore((s) => s.abrirEscenario);
+
+  const abierto = escenarios.find((e) => e.id === abiertoId);
+  const enDetalle = seccion === "escenarios" && !!abierto;
+  const titulo = enDetalle ? abierto.nombre : CUARTEL_SECCION_LABEL[seccion];
 
   return (
-    <header
-      className="flex flex-wrap items-center gap-x-5 gap-y-2 px-5 py-4 md:px-8"
-      style={{ borderBottom: "1px solid var(--cua-border)", background: "var(--cua-surface)" }}
+    <div
+      className="flex items-center justify-between gap-4 px-5 py-4 md:px-8 md:py-5"
+      style={{ borderBottom: "1px solid var(--cua-border-soft)" }}
     >
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="text-lg">
-          🪖
-        </span>
-        <div>
-          <div className="cua-serif text-[17px] leading-none">El Cuartel de mis Decisiones</div>
-          <div className="cua-faint cua-mono mt-1.5 text-[10.5px] uppercase tracking-[0.12em]">
-            Ningún escenario se decide sin ver las 3 rutas completas
-          </div>
-        </div>
+      <div className="flex min-w-0 items-baseline gap-3">
+        {enDetalle && (
+          <button
+            className="cua-mono shrink-0 text-[11px] uppercase tracking-[0.05em]"
+            style={{ color: "var(--cua-muted)" }}
+            onClick={() => abrirEscenario(null)}
+          >
+            ←
+          </button>
+        )}
+        <div className="cua-serif truncate text-[22px] font-semibold">{titulo}</div>
       </div>
 
-      <div className="ml-auto flex items-center gap-4">
-        <span className="cua-mono text-[11px]" style={{ color: "var(--cua-muted)" }}>
-          {activos} abierto{activos === 1 ? "" : "s"}
-        </span>
-        <SyncIndicator />
+      <div className="flex shrink-0 items-center gap-4">
+        {seccion === "escenarios" && !enDetalle && (
+          <button className="cua-btn-primary" onClick={onNuevoEscenario}>
+            + Nuevo escenario
+          </button>
+        )}
         <Link href="/" className="cua-mono text-[11px]" style={{ color: "var(--cua-faint)" }}>
-          ← Panel
+          Panel
         </Link>
       </div>
-    </header>
+    </div>
   );
 }

@@ -17,10 +17,10 @@ export const rutaAnalisisSchema = z.object({
     meta: z.string().describe("Si acerca o aleja del objetivo de vida real."),
   }),
   semaforo: z.object({
-    desgaste: luz,
     patron: luz,
+    costoEmocional: luz,
     costoOportunidad: luz,
-    dependencia: luz,
+    reversibilidad: luz,
   }),
   justificacionSemaforo: z
     .string()
