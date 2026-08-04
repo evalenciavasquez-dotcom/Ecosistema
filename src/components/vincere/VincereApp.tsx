@@ -19,6 +19,7 @@ import AudienciaSection from "./sections/AudienciaSection";
 import CalorSection from "./sections/CalorSection";
 import ManagementSection from "./sections/ManagementSection";
 import KpisSection from "./sections/KpisSection";
+import LanzamientoSection from "./sections/LanzamientoSection";
 import TriageSection from "./sections/TriageSection";
 import IngestaSection from "./sections/IngestaSection";
 import InvestigacionSection from "./sections/InvestigacionSection";
@@ -128,6 +129,8 @@ function SectionRouter({
       return <ManagementSection proyecto={proyecto} />;
     case "kpis":
       return <KpisSection proyecto={proyecto} />;
+    case "lanzamiento":
+      return <LanzamientoSection proyecto={proyecto} />;
     case "triage":
       return <TriageSection />;
     case "ingesta":

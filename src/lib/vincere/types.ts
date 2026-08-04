@@ -17,6 +17,7 @@ export type VincereSeccion =
   | "diagnostico"
   | "marca"
   | "song"
+  | "lanzamiento"
   | "ar"
   | "touring"
   | "oportunidad"
@@ -39,6 +40,7 @@ export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
   diagnostico: "Diagnóstico Maestro",
   marca: "Marca",
   song: "Song Intelligence",
+  lanzamiento: "Lanzamiento",
   ar: "A&R y Colaboraciones",
   touring: "Shows y Touring",
   oportunidad: "Oportunidad de Negocio",
@@ -1172,6 +1174,7 @@ export interface VincereProyecto {
   historial?: VincereSnapshot[];
   stressTests?: VincereStressTest[];
   investigaciones?: VincereInvestigacion[];
+  lanzamientos?: VincereLanzamiento[];
   creadoEn: string;
 }
 
@@ -1226,4 +1229,57 @@ export interface VincereTriageCaso {
 export interface VincereComparacion {
   insights: VincereInsight[];
   qaLog: VincereQAEntry[];
+}
+
+// ---------------------------------------------------------------------------
+// Lanzamiento
+// ---------------------------------------------------------------------------
+
+// Un lanzamiento declarado: qué canción sale, cuándo, con cuánta plata, por
+// dónde entra y —lo que casi nadie escribe antes de gastar— qué se está
+// buscando exactamente.
+//
+// La pieza que cierra el circuito es 'cierre'. Un plan sin fecha de corte y sin
+// un número contra el cual medirse no se puede evaluar nunca, y eso es
+// justamente lo que permite que una campaña mala se cuente como buena después.
+// Aquí el objetivo se escribe ANTES, con el valor de partida congelado, y
+// después solo se puede llenar qué pasó.
+export interface VincereObjetivoLanzamiento {
+  // Qué se mide. Se escribe en palabras porque tiene que quedar claro sin
+  // interpretación: "oyentes mensuales en Barranquilla", no "crecimiento".
+  metrica: string;
+  // El valor el día que arranca. Congelarlo es lo que hace posible el juicio:
+  // sin punto de partida, cualquier resultado se puede contar como logro.
+  valorInicial: number;
+  valorMeta: number;
+  fechaCorte: string;
+  // De dónde salió el número de la meta. Si salió de la cadena del motor, se
+  // dice; si Eduardo lo puso a mano, también.
+  deDonde: string;
+}
+
+export interface VincereCierreLanzamiento {
+  valorLogrado: number;
+  cumplio: boolean;
+  // Por qué pasó lo que pasó. Es la parte que convierte una campaña en
+  // aprendizaje en vez de en anécdota.
+  porQue: string;
+  // Qué se hace distinto la próxima vez. Sin esto, el cierre es un lamento.
+  queCambiar: string;
+  cerradoEn: string;
+}
+
+export interface VincereLanzamiento {
+  id: string;
+  cancionId: string | null;
+  nombreCancion: string;
+  fechaSalida: string;
+  presupuestoUsd: number;
+  // La ruta que se decidió ejecutar, del plan que calculó el motor.
+  rutaElegidaId: string | null;
+  rutaElegidaLabel: string | null;
+  objetivo: VincereObjetivoLanzamiento | null;
+  cierre: VincereCierreLanzamiento | null;
+  notas: string;
+  creadoEn: string;
 }

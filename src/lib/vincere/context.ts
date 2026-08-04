@@ -5,6 +5,7 @@ import {
   VincereLetraMetrica,
   VincereProyecto,
   VincereSeccion,
+  VincereLanzamiento,
   VINCERE_SECCION_LABEL,
 } from "./types";
 import { describirTextura } from "./audio";
@@ -14,6 +15,7 @@ import { calcularFanRate } from "./fanrate";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
 import { compararFirma, referenciasSugeridas } from "./firma";
+import { planDeLanzamiento } from "./lanzamiento";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
 // curva de energía completa: son 64 números que la IA no puede leer mejor que
@@ -646,6 +648,68 @@ function bloqueDePlazas(p: VincereProyecto) {
 }
 
 
+// La hoja de ruta calculada. Se entrega YA CALCULADA para que el modelo la
+// interprete y no la recalcule: la aritmética del presupuesto es determinista y
+// tiene que dar igual siempre. Lo que sí es trabajo de la IA es lo que Eduardo
+// pidió — narrar los escenarios ("si entra por YouTube pasa esto, si por
+// Spotify pasa esto") y decir qué se está arriesgando en cada uno.
+function bloqueDeLanzamiento(p: VincereProyecto) {
+  const abiertos = (p.lanzamientos ?? []).filter((l) => !l.cierre);
+  const cerrados = (p.lanzamientos ?? []).filter((l) => l.cierre);
+  const activo = abiertos[0] ?? null;
+  if (!activo) {
+    return {
+      lanzamiento:
+        "No hay ningún lanzamiento declarado. Sin canción, fecha y presupuesto no hay hoja de ruta que leer: dilo y no inventes un plan.",
+      ...(cerrados.length ? { lanzamientosCerrados: cerrados.map(resumirCierre) } : {}),
+    };
+  }
+
+  const plan = planDeLanzamiento(p, activo.presupuestoUsd);
+  return {
+    lanzamiento: {
+      cancion: activo.nombreCancion,
+      sale: activo.fechaSalida,
+      presupuestoUsd: activo.presupuestoUsd,
+      rutaElegida: activo.rutaElegidaLabel ?? "todavía sin elegir",
+      objetivo: activo.objetivo ?? "todavía sin fijar",
+      titular: plan.titular,
+      rutas: plan.rutas.map((r) => ({
+        ruta: `${r.canalLabel} · ${r.plaza}`,
+        plazaEs: r.accionDePlaza,
+        oyentesNuevos: `${r.oyentesBajo}–${r.oyentesAlto}`,
+        seguidoresNuevos:
+          r.seguidoresBajo != null ? `${r.seguidoresBajo}–${r.seguidoresAlto}` : "no calculable sin fan rate",
+        costoPorOyenteUsd: `${r.costoPorOyenteBajoUsd}–${r.costoPorOyenteAltoUsd}`,
+        nivelMasDebil: r.nivelMasDebil,
+        brecha: r.brecha,
+        riesgos: r.riesgos,
+        ...(r.noEjecutable ? { noEjecutable: r.noEjecutable } : {}),
+      })),
+      dondeNoSePauta: plan.descartadas.map((d) => `${d.ciudad}: ${d.porQue}`),
+      paraCalibrar: plan.paraCalibrar,
+      advertencia:
+        "Estos números salen de una cadena determinista con coeficientes públicos: NO los recalcules, no los redondees a una cifra sola y no presentes el borde alto como expectativa. Tu trabajo es narrar los escenarios por canal, decir qué se arriesga en cada uno y qué haría falso al plan. Si alguna ruta tiene nivelMasDebil 1, dilo explícitamente: esa ruta se apoya en un caso suelto, no en un benchmark.",
+    },
+    ...(cerrados.length ? { lanzamientosCerrados: cerrados.map(resumirCierre) } : {}),
+  };
+}
+
+// Los cerrados importan más que los abiertos: son la única evidencia de si este
+// sistema acierta. Un plan sin historial de cierres es una promesa.
+function resumirCierre(l: VincereLanzamiento) {
+  return {
+    cancion: l.nombreCancion,
+    ruta: l.rutaElegidaLabel,
+    presupuestoUsd: l.presupuestoUsd,
+    buscabamos: l.objetivo ? `${l.objetivo.metrica}: de ${l.objetivo.valorInicial} a ${l.objetivo.valorMeta}` : null,
+    logramos: l.cierre?.valorLogrado ?? null,
+    cumplio: l.cierre?.cumplio ?? null,
+    porQue: l.cierre?.porQue ?? null,
+    queCambiar: l.cierre?.queCambiar ?? null,
+  };
+}
+
 // Cuánto cuesta pautar en los países donde el artista tiene plazas. Se entrega
 // para que una hoja de ruta pueda dimensionar presupuesto sin inventar cifras,
 // y va con la advertencia pegada: son referencias públicas, no cotizaciones.
@@ -822,6 +886,15 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
       return { ...base, decisiones: p.decisiones, ...conExterno("general") };
     case "kpis":
       return { ...base, kpis: p.kpis, ...(evolucion ? { historialDeCargas: evolucion } : {}) };
+    case "lanzamiento":
+      return {
+        ...base,
+        ...bloqueDeLanzamiento(p),
+        ...bloqueFanRate(p),
+        ...bloqueDePlazas(p),
+        ...bloqueDeFirmas(p),
+        ...conExterno("plazas"),
+      };
     default:
       return base;
   }
