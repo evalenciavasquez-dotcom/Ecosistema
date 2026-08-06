@@ -5,11 +5,17 @@ import {
   VincereLetraMetrica,
   VincereProyecto,
   VincereSeccion,
+  VincereLanzamiento,
   VINCERE_SECCION_LABEL,
 } from "./types";
 import { describirTextura } from "./audio";
 import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
+import { calcularFanRate } from "./fanrate";
+import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
+import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
+import { compararFirma, referenciasSugeridas } from "./firma";
+import { planDeLanzamiento } from "./lanzamiento";
 
 // Versión compacta de las medidas del audio para el contexto. No se manda la
 // curva de energía completa: son 64 números que la IA no puede leer mejor que
@@ -583,6 +589,196 @@ export function buildTouringContext(p: VincereProyecto): unknown {
   };
 }
 
+
+// El fan rate va al contexto ya calculado. Es una división, y el modelo la
+// falla lo justo para arruinar la lectura — igual que el resto de la
+// aritmética de esta plataforma.
+function bloqueFanRate(p: VincereProyecto) {
+  const f = calcularFanRate(p);
+  if (!f.actual) return { fanRate: f.falta };
+  return {
+    fanRate: {
+      acumuladoPct: f.actual.pct,
+      seguidores: f.actual.seguidores,
+      oyentesMensuales: f.actual.oyentes,
+      nota: "Qué proporción de quien escucha terminó siguiendo. Arrastra toda la historia del artista.",
+      ...(f.marginal && !f.marginal.audienciaBajo
+        ? {
+            deLaAudienciaNuevaPct: f.marginal.pct,
+            oyentesGanados: f.marginal.oyentesGanados,
+            seguidoresGanados: f.marginal.seguidoresGanados,
+            desde: f.marginal.desde,
+            notaMarginal:
+              "De los oyentes ganados desde esa fecha, cuántos se volvieron seguidores. Es el que dice si lo que se está haciendo AHORA atrae gente que se queda. Un marginal muy por debajo del acumulado es tráfico prestado: playlist editorial o pauta mal apuntada.",
+          }
+        : {}),
+      ...(f.marginal?.audienciaBajo
+        ? { avisoMarginal: "Los oyentes bajaron respecto a la primera foto: el marginal no se puede leer como conversión." }
+        : {}),
+      ...(f.falta ? { loQueFalta: f.falta } : {}),
+    },
+  };
+}
+
+
+// El mapa de plazas va resuelto al contexto. La regla de dónde rinde la pauta
+// es determinista a propósito: si la decidiera el modelo, cambiaría entre
+// corridas y dejaría de ser algo que se puede defender en una mesa.
+function bloqueDePlazas(p: VincereProyecto) {
+  const m = mapaDePlazas(p);
+  if (!m.plazas.length) return { mapaDePlazas: m.titular };
+  return {
+    mapaDePlazas: {
+      titular: m.titular,
+      regla:
+        "Calculado por el sistema, no por ti: una plaza CALIENTE ya encontró al artista y pautar ahí compra audiencia que ya se tenía; donde el presupuesto rinde es en la plaza MEDIA (hay señal y hay techo); una FRÍA en un país que ya tiene calientes es expansión con respaldo. Respeta esta clasificación — no propongas invertir en las marcadas como sostener o esperar.",
+      plazas: m.plazas.map((z) => ({
+        ciudad: z.ciudad,
+        pais: z.pais,
+        calor: z.calor,
+        accion: z.accion,
+        porQue: z.razon,
+        queSignifica: ACCION_QUE_HACER[z.accion],
+        ...(z.prioridadPauta != null ? { prioridadDePauta: z.prioridadPauta } : {}),
+        ...(z.mejorConversionPct != null ? { mejorTaquillaPct: z.mejorConversionPct } : {}),
+      })),
+      ...(m.avisos.length ? { limitacionesDeLaData: m.avisos } : {}),
+    },
+  };
+}
+
+
+// La hoja de ruta calculada. Se entrega YA CALCULADA para que el modelo la
+// interprete y no la recalcule: la aritmética del presupuesto es determinista y
+// tiene que dar igual siempre. Lo que sí es trabajo de la IA es lo que Eduardo
+// pidió — narrar los escenarios ("si entra por YouTube pasa esto, si por
+// Spotify pasa esto") y decir qué se está arriesgando en cada uno.
+function bloqueDeLanzamiento(p: VincereProyecto) {
+  const abiertos = (p.lanzamientos ?? []).filter((l) => !l.cierre);
+  const cerrados = (p.lanzamientos ?? []).filter((l) => l.cierre);
+  const activo = abiertos[0] ?? null;
+  if (!activo) {
+    return {
+      lanzamiento:
+        "No hay ningún lanzamiento declarado. Sin canción, fecha y presupuesto no hay hoja de ruta que leer: dilo y no inventes un plan.",
+      ...(cerrados.length ? { lanzamientosCerrados: cerrados.map(resumirCierre) } : {}),
+    };
+  }
+
+  const plan = planDeLanzamiento(p, activo.presupuestoUsd);
+  return {
+    lanzamiento: {
+      cancion: activo.nombreCancion,
+      sale: activo.fechaSalida,
+      presupuestoUsd: activo.presupuestoUsd,
+      rutaElegida: activo.rutaElegidaLabel ?? "todavía sin elegir",
+      objetivo: activo.objetivo ?? "todavía sin fijar",
+      titular: plan.titular,
+      rutas: plan.rutas.map((r) => ({
+        ruta: `${r.canalLabel} · ${r.plaza}`,
+        plazaEs: r.accionDePlaza,
+        oyentesNuevos: `${r.oyentesBajo}–${r.oyentesAlto}`,
+        seguidoresNuevos:
+          r.seguidoresBajo != null ? `${r.seguidoresBajo}–${r.seguidoresAlto}` : "no calculable sin fan rate",
+        costoPorOyenteUsd: `${r.costoPorOyenteBajoUsd}–${r.costoPorOyenteAltoUsd}`,
+        nivelMasDebil: r.nivelMasDebil,
+        brecha: r.brecha,
+        riesgos: r.riesgos,
+        ...(r.noEjecutable ? { noEjecutable: r.noEjecutable } : {}),
+      })),
+      dondeNoSePauta: plan.descartadas.map((d) => `${d.ciudad}: ${d.porQue}`),
+      paraCalibrar: plan.paraCalibrar,
+      advertencia:
+        "Estos números salen de una cadena determinista con coeficientes públicos: NO los recalcules, no los redondees a una cifra sola y no presentes el borde alto como expectativa. Tu trabajo es narrar los escenarios por canal, decir qué se arriesga en cada uno y qué haría falso al plan. Si alguna ruta tiene nivelMasDebil 1, dilo explícitamente: esa ruta se apoya en un caso suelto, no en un benchmark.",
+    },
+    ...(cerrados.length ? { lanzamientosCerrados: cerrados.map(resumirCierre) } : {}),
+  };
+}
+
+// Los cerrados importan más que los abiertos: son la única evidencia de si este
+// sistema acierta. Un plan sin historial de cierres es una promesa.
+function resumirCierre(l: VincereLanzamiento) {
+  return {
+    cancion: l.nombreCancion,
+    ruta: l.rutaElegidaLabel,
+    presupuestoUsd: l.presupuestoUsd,
+    buscabamos: l.objetivo ? `${l.objetivo.metrica}: de ${l.objetivo.valorInicial} a ${l.objetivo.valorMeta}` : null,
+    logramos: l.cierre?.valorLogrado ?? null,
+    cumplio: l.cierre?.cumplio ?? null,
+    porQue: l.cierre?.porQue ?? null,
+    queCambiar: l.cierre?.queCambiar ?? null,
+  };
+}
+
+// Cuánto cuesta pautar en los países donde el artista tiene plazas. Se entrega
+// para que una hoja de ruta pueda dimensionar presupuesto sin inventar cifras,
+// y va con la advertencia pegada: son referencias públicas, no cotizaciones.
+function bloqueDeCostos(p: VincereProyecto) {
+  const paises = [...new Set((p.zonasCalor ?? []).map((z) => z.pais?.trim()).filter(Boolean))] as string[];
+  const objetivo = paises.length ? paises : [null];
+  return {
+    costosDePauta: {
+      moneda: "USD",
+      advertencia: ADVERTENCIA_COSTOS,
+      comoUsarlo:
+        "Da siempre un RANGO, nunca una cifra exacta, y di de qué depende. Si el país no tiene dato propio se usa el global y hay que decirlo. Nunca presentes esto como una cotización.",
+      porPais: objetivo.map((pais) => ({
+        pais: pais ?? "sin país declarado — se usa la referencia global",
+        // Ordenadas de más barata a más cara por impresión. La diferencia entre
+        // regiones es mucho mayor que entre plataformas, y eso decide por dónde
+        // entra un lanzamiento con presupuesto chico.
+        plataformas: plataformasPorCosto(pais).map((r) => ({
+          plataforma: PLATAFORMA_LABEL[r.plataforma],
+          cpmUsd: `${r.cpmBajoUsd} a ${r.cpmAltoUsd}`,
+          regionDelDato: r.region,
+          ...(r.minimoUsd ? { minimoDeCampanaUsd: r.minimoUsd } : {}),
+          fuente: r.fuente,
+          consultadoEn: r.consultadoEn,
+          ...(r.nota ? { nota: r.nota } : {}),
+        })),
+      })),
+    },
+  };
+}
+
+
+// La firma de cada canción con audio contra las que más han sonado. Va
+// calculada: comparar once medidas entre cuatro canciones es justo el tipo de
+// cuenta que un modelo hace mal y con total seguridad.
+function bloqueDeFirmas(p: VincereProyecto) {
+  const conAudio = p.canciones.filter((c) => c.audio);
+  if (conAudio.length < 3) return {};
+  const firmas = conAudio
+    .map((c) => {
+      const refs = referenciasSugeridas(p.canciones, c.id, 3);
+      if (refs.length < 2) return null;
+      const f = compararFirma(c, refs);
+      if (!f.dimensiones.length) return null;
+      return {
+        cancion: f.candidata,
+        comparadaContra: f.referencias,
+        seSaleEn: f.fueraDeRango.map((d) => ({
+          medida: d.label,
+          valor: d.candidata,
+          rangoDeLasQueFuncionan: `${d.refMin} a ${d.refMax}`,
+          diferencia: `${d.distancia} ${d.direccion === "porDebajo" ? "por debajo" : "por encima"}`,
+          queSignifica: d.queSignifica,
+        })),
+        enLinea: f.dimensiones.filter((d) => d.direccion === "dentro").map((d) => d.label),
+      };
+    })
+    .filter(Boolean);
+  if (!firmas.length) return {};
+  return {
+    firmaSonora: {
+      advertencia:
+        "Parecerse a lo que funcionó NO lo causa. Esto ubica cada canción frente al historial del propio artista con medidas de la señal; no predice resultados y la muestra es diminuta. Úsalo para señalar en qué se aparta una canción, nunca para afirmar que va a funcionar o fracasar.",
+      referenciaUsada: "Las canciones del propio artista con más streams, no un promedio de género.",
+      canciones: firmas,
+    },
+  };
+}
+
 export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion): unknown {
   const base = { proyecto: p.nombre, genero: p.genero, fase: p.fase, tipo: p.tipo };
   const evolucion = historialReciente(p);
@@ -601,6 +797,9 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         seguidoresCambioPct: p.resumen.seguidoresCambioPct,
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
+        ...bloqueFanRate(p),
+    ...bloqueDePlazas(p),
+    ...bloqueDeCostos(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
         ...conExterno("general"),
       };
@@ -643,6 +842,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
             ? { observacionExterna: { texto: c.notasProduccion.trim(), origen: "servicio externo o productor, NO medido por la plataforma" } }
             : {}),
         })),
+        ...bloqueDeFirmas(p),
         ...conExterno("catalogo"),
       };
     case "audiencia":
@@ -651,6 +851,8 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
       return {
         ...base,
         zonasCalor: p.zonasCalor,
+        ...bloqueDePlazas(p),
+        ...bloqueDeCostos(p),
         // Si ya se tocó en alguna de estas ciudades, el calor deja de leerse
         // solo: se puede contrastar contra quién fue de verdad.
         ...(showsConConversion(p) ? { showsPrevios: showsConConversion(p) } : {}),
@@ -684,6 +886,15 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
       return { ...base, decisiones: p.decisiones, ...conExterno("general") };
     case "kpis":
       return { ...base, kpis: p.kpis, ...(evolucion ? { historialDeCargas: evolucion } : {}) };
+    case "lanzamiento":
+      return {
+        ...base,
+        ...bloqueDeLanzamiento(p),
+        ...bloqueFanRate(p),
+        ...bloqueDePlazas(p),
+        ...bloqueDeFirmas(p),
+        ...conExterno("plazas"),
+      };
     default:
       return base;
   }
@@ -731,6 +942,9 @@ export function buildInformeContext(p: VincereProyecto): unknown {
       momentumIndex: p.resumen.momentumIndex,
       serieStreamsMiles: sinData(p.resumen.serie),
     },
+    ...bloqueFanRate(p),
+    ...bloqueDePlazas(p),
+    ...bloqueDeCostos(p),
     diagnostico: p.diagnostico,
     marca: marcaDeclarada(p) ?? "el artista no ha declarado su marca en la plataforma",
     diagnosticoDeMarca: p.marcaDiagnostico

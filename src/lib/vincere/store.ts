@@ -30,6 +30,8 @@ import {
   VincerePitch,
   VincerePrediccion,
   VincereVinculo,
+  VincereLanzamiento,
+  VincereCierreLanzamiento,
   VincereVinculoTipo,
   vinculoVacio,
   VincerePuntoContacto,
@@ -154,6 +156,19 @@ interface VincereState {
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
 
   updateVinculo: (proyectoId: string, patch: Partial<VincereVinculo>) => void;
+
+  addLanzamiento: (
+    proyectoId: string,
+    l: Omit<VincereLanzamiento, "id" | "creadoEn" | "cierre">
+  ) => void;
+  updateLanzamiento: (proyectoId: string, lanzamientoId: string, patch: Partial<VincereLanzamiento>) => void;
+  cerrarLanzamiento: (
+    proyectoId: string,
+    lanzamientoId: string,
+    cierre: Omit<VincereCierreLanzamiento, "cerradoEn" | "cumplio">
+  ) => void;
+  reabrirLanzamiento: (proyectoId: string, lanzamientoId: string) => void;
+  deleteLanzamiento: (proyectoId: string, lanzamientoId: string) => void;
 
   addPrediccion: (
     proyectoId: string,
@@ -570,6 +585,70 @@ export const useVincereStore = create<VincereState>()(
           }),
         })),
 
+      addLanzamiento: (proyectoId, l) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            lanzamientos: [
+              { ...l, id: genId("lanz"), cierre: null, creadoEn: new Date().toISOString() },
+              ...(p.lanzamientos ?? []),
+            ],
+          })),
+        })),
+
+      // El objetivo se puede editar mientras el lanzamiento siga abierto. En
+      // cuanto se cierra deja de tocarse: mover la meta después de ver el
+      // resultado es exactamente la trampa que este módulo existe para impedir.
+      updateLanzamiento: (proyectoId, lanzamientoId, patch) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            lanzamientos: (p.lanzamientos ?? []).map((l) =>
+              l.id === lanzamientoId ? (l.cierre ? l : { ...l, ...patch }) : l
+            ),
+          })),
+        })),
+
+      // Cumplió o no lo decide la aritmética contra la meta escrita antes, no
+      // quien llena el formulario. Es la diferencia entre un marcador y un
+      // relato.
+      cerrarLanzamiento: (proyectoId, lanzamientoId, cierre) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            lanzamientos: (p.lanzamientos ?? []).map((l) =>
+              l.id === lanzamientoId
+                ? {
+                    ...l,
+                    cierre: {
+                      ...cierre,
+                      cumplio: l.objetivo ? cierre.valorLogrado >= l.objetivo.valorMeta : false,
+                      cerradoEn: new Date().toISOString(),
+                    },
+                  }
+                : l
+            ),
+          })),
+        })),
+
+      reabrirLanzamiento: (proyectoId, lanzamientoId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            lanzamientos: (p.lanzamientos ?? []).map((l) =>
+              l.id === lanzamientoId ? { ...l, cierre: null } : l
+            ),
+          })),
+        })),
+
+      deleteLanzamiento: (proyectoId, lanzamientoId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            lanzamientos: (p.lanzamientos ?? []).filter((l) => l.id !== lanzamientoId),
+          })),
+        })),
+
       // Ordenadas por vencimiento: lo que hay que cerrar primero va arriba.
       addPrediccion: (proyectoId, p) =>
         set((s) => ({
@@ -870,6 +949,7 @@ export const useVincereStore = create<VincereState>()(
               etiqueta,
               streamsMes: p.resumen.streamsMes,
               seguidores: p.resumen.seguidores,
+              ...(p.resumen.oyentesMes ? { oyentesMes: p.resumen.oyentesMes } : {}),
               momentumIndex: p.resumen.momentumIndex,
               cancionesTotal: p.canciones.length,
               creadoEn: new Date().toISOString(),

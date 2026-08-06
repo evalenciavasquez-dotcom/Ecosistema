@@ -12,6 +12,7 @@ const GRUPOS: { titulo: string; secciones: VincereSeccion[] }[] = [
   { titulo: "Entra la data", secciones: ["ingesta", "investigacion"] },
   { titulo: "Dónde está hoy", secciones: ["resumen", "diagnostico", "marca"] },
   { titulo: "La obra y el público", secciones: ["song", "ar", "audiencia", "calor", "touring"] },
+  { titulo: "Sacar la canción", secciones: ["lanzamiento"] },
   { titulo: "El negocio", secciones: ["monetizacion", "oportunidad", "kpis"] },
   { titulo: "Decidir y salir afuera", secciones: ["management", "stress", "pitch", "triage"] },
   { titulo: "El marcador", secciones: ["predicciones"] },

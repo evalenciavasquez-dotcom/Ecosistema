@@ -1,0 +1,683 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { VincereProyecto, VincereLanzamiento } from "@/lib/vincere/types";
+import { useVincereStore } from "@/lib/vincere/store";
+import {
+  planDeLanzamiento,
+  Ruta,
+  ADVERTENCIA_LANZAMIENTO,
+  NivelSupuesto,
+} from "@/lib/vincere/lanzamiento";
+import { ACCION_LABEL, ACCION_COLOR } from "@/lib/vincere/plazas";
+import SectionShell from "../SectionShell";
+import { Panel } from "../primitives";
+
+// La pantalla que convierte todo lo demás en una decisión.
+//
+// Está armada como cuatro pasos porque el reclamo era concreto: "yo puedo
+// llegar ahí loco un día de afán y no entiendo lo que tengo que hacer". Los
+// pasos no se pueden saltar y cada uno dice qué falta.
+//
+// El paso 3 es el que hace distinto a esto: la meta se escribe ANTES, con el
+// valor de partida congelado. Un plan sin número contra el cual medirse no se
+// puede evaluar nunca, y eso es exactamente lo que permite que una campaña
+// mala se cuente como buena después.
+
+const nf = new Intl.NumberFormat("es-CO");
+const n = (x: number) => nf.format(Math.round(x));
+
+const NIVEL_COLOR: Record<NivelSupuesto, string> = {
+  1: "var(--vin-risk)",
+  2: "var(--vin-warn)",
+  3: "var(--vin-accent)",
+  4: "var(--vin-ok)",
+};
+const NIVEL_TEXTO: Record<NivelSupuesto, string> = {
+  1: "un caso suelto",
+  2: "benchmark público",
+  3: "medido en el sector",
+  4: "medido en este artista",
+};
+
+function Paso({
+  n: numero,
+  titulo,
+  estado,
+  children,
+}: {
+  n: number;
+  titulo: string;
+  estado?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex gap-4">
+      <div className="flex shrink-0 flex-col items-center pt-1">
+        <div
+          className="vin-t-sm flex h-7 w-7 items-center justify-center rounded-full tabular-nums"
+          style={{ border: "1px solid var(--vin-border)", color: "var(--vin-muted)" }}
+        >
+          {numero}
+        </div>
+        <div className="mt-2 w-px flex-1" style={{ background: "var(--vin-border)" }} />
+      </div>
+      <div className="min-w-0 flex-1 pb-8">
+        <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 className="vin-t-lg font-medium">{titulo}</h2>
+          {estado && <span className="vin-faint vin-t-sm">{estado}</span>}
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function TarjetaRuta({
+  r,
+  elegida,
+  onElegir,
+}: {
+  r: Ruta;
+  elegida: boolean;
+  onElegir: () => void;
+}) {
+  const [abierta, setAbierta] = useState(false);
+
+  return (
+    <div
+      className="rounded-[--r-md] p-5"
+      style={{
+        border: elegida ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
+        background: elegida ? "rgba(224,72,58,0.06)" : "var(--vin-surface-2)",
+        opacity: r.noEjecutable ? 0.55 : 1,
+      }}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <div className="vin-t-base font-medium">
+            {r.canalLabel} <span className="vin-faint">·</span> {r.plaza}
+          </div>
+          <div className="vin-faint vin-t-sm mt-0.5">
+            {r.pais ?? "sin país"} · plaza para{" "}
+            <span style={{ color: ACCION_COLOR[r.accionDePlaza] }}>
+              {ACCION_LABEL[r.accionDePlaza].toLocaleLowerCase("es")}
+            </span>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {/* Sin este aviso, dos plazas de países distintos muestran cifras
+              idénticas y parece un error de cálculo. No lo es: es que no hay
+              CPM publicado para ese país y las dos caen al mismo rango global. */}
+          {r.cpm.region === "global" && (
+            <span
+              className="vin-t-xs rounded-full px-2.5 py-1"
+              style={{ border: "1px solid var(--vin-border)", color: "var(--vin-muted)" }}
+              title={`No hay CPM publicado de ${r.pais ?? "este país"} para ${r.canalLabel}.`}
+            >
+              CPM global
+            </span>
+          )}
+          <span
+            className="vin-t-xs rounded-full px-2.5 py-1"
+            style={{ border: `1px solid ${NIVEL_COLOR[r.nivelMasDebil]}55`, color: NIVEL_COLOR[r.nivelMasDebil] }}
+          >
+            nivel {r.nivelMasDebil} · {NIVEL_TEXTO[r.nivelMasDebil]}
+          </span>
+        </div>
+      </div>
+
+      {r.noEjecutable ? (
+        <p className="vin-t-sm mt-4 leading-relaxed" style={{ color: "var(--vin-risk)" }}>
+          {r.noEjecutable}
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <div className="vin-t-xl vin-serif tabular-nums">
+                {n(r.oyentesBajo)}–{n(r.oyentesAlto)}
+              </div>
+              <div className="vin-faint vin-t-sm">oyentes nuevos</div>
+            </div>
+            <div>
+              <div className="vin-t-xl vin-serif tabular-nums">
+                {r.seguidoresBajo != null ? `${n(r.seguidoresBajo)}–${n(r.seguidoresAlto!)}` : "—"}
+              </div>
+              <div className="vin-faint vin-t-sm">
+                {r.seguidoresBajo != null ? "seguidores nuevos" : "sin fan rate no se puede estimar"}
+              </div>
+            </div>
+            <div>
+              <div className="vin-t-xl vin-serif tabular-nums">
+                US${r.costoPorOyenteBajoUsd}–{r.costoPorOyenteAltoUsd}
+              </div>
+              <div className="vin-faint vin-t-sm">por oyente</div>
+            </div>
+          </div>
+
+          <p className="vin-muted vin-t-sm mt-4 leading-relaxed">{r.brecha}</p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <button
+              onClick={onElegir}
+              className={elegida ? "vin-btn-primary" : "vin-btn-ghost"}
+              disabled={elegida}
+            >
+              {elegida ? "Ruta elegida" : "Elegir esta ruta"}
+            </button>
+            <button onClick={() => setAbierta((v) => !v)} className="vin-faint vin-t-sm hover:underline">
+              {abierta ? "ocultar la cuenta" : "ver la cuenta paso a paso"}
+            </button>
+          </div>
+
+          {abierta && (
+            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
+              <p className="vin-faint vin-t-sm mb-4 leading-relaxed">
+                Por qué esta plaza: {r.porQueEsaPlaza}
+              </p>
+              {r.cadena.map((paso, i) => (
+                <div key={i} className="mb-4 last:mb-0">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                    <span className="vin-t-base">
+                      {paso.enCadena ? "" : "· "}
+                      {paso.label}
+                    </span>
+                    <span className="vin-t-base tabular-nums">
+                      {n(paso.bajo)} – {n(paso.alto)}
+                    </span>
+                  </div>
+                  <p className="vin-faint vin-t-sm mt-1 leading-relaxed">{paso.operacion}</p>
+                  {paso.supuesto && (
+                    <p className="vin-t-xs mt-1" style={{ color: NIVEL_COLOR[paso.supuesto.nivel] }}>
+                      nivel {paso.supuesto.nivel} — {paso.supuesto.fuente}
+                      {paso.supuesto.url && (
+                        <>
+                          {" · "}
+                          <a
+                            href={paso.supuesto.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                          >
+                            fuente
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+              ))}
+
+              <p className="vin-muted vin-t-sm mt-4 leading-relaxed">{r.porQueEseNivel}</p>
+
+              {r.riesgos.map((x, i) => (
+                <p key={i} className="vin-t-sm mt-2 leading-relaxed" style={{ color: "var(--vin-warn)" }}>
+                  ⚠ {x}
+                </p>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Cierre({ proyecto, l }: { proyecto: VincereProyecto; l: VincereLanzamiento }) {
+  const cerrarLanzamiento = useVincereStore((s) => s.cerrarLanzamiento);
+  const reabrirLanzamiento = useVincereStore((s) => s.reabrirLanzamiento);
+  const [form, setForm] = useState({ valorLogrado: "", porQue: "", queCambiar: "" });
+
+  if (!l.objetivo) {
+    return (
+      <p className="vin-muted vin-t-base leading-relaxed">
+        Falta fijar el objetivo. Sin una meta escrita antes, no hay contra qué medir el resultado.
+      </p>
+    );
+  }
+
+  if (l.cierre) {
+    const c = l.cierre;
+    const delta = c.valorLogrado - l.objetivo.valorInicial;
+    const meta = l.objetivo.valorMeta - l.objetivo.valorInicial;
+    return (
+      <Panel>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <span
+            className="vin-t-lg font-medium"
+            style={{ color: c.cumplio ? "var(--vin-ok)" : "var(--vin-risk)" }}
+          >
+            {c.cumplio ? "Se cumplió" : "No se cumplió"}
+          </span>
+          <button
+            onClick={() => reabrirLanzamiento(proyecto.id, l.id)}
+            className="vin-faint vin-t-sm hover:underline"
+          >
+            reabrir
+          </button>
+        </div>
+        <p className="vin-t-base mt-3 leading-relaxed">
+          Buscábamos <span className="tabular-nums">{n(l.objetivo.valorMeta)}</span> y llegamos a{" "}
+          <span className="tabular-nums">{n(c.valorLogrado)}</span>. Sobre una partida de{" "}
+          <span className="tabular-nums">{n(l.objetivo.valorInicial)}</span>, eso es{" "}
+          <span className="tabular-nums">{delta >= 0 ? "+" : ""}{n(delta)}</span> de los{" "}
+          <span className="tabular-nums">{n(meta)}</span> que se buscaban
+          {meta > 0 && <> — un {Math.round((delta / meta) * 100)}% de la meta</>}.
+        </p>
+        <div className="mt-4 flex flex-col gap-3">
+          <div>
+            <div className="vin-faint vin-t-sm">Por qué pasó</div>
+            <p className="vin-t-base mt-1 leading-relaxed">{c.porQue}</p>
+          </div>
+          {/* Si quedó vacío se dice, en vez de dejar un rótulo colgando: un
+              cierre sin aprendizaje es la mitad del trabajo y hay que verlo. */}
+          <div>
+            <div className="vin-faint vin-t-sm">Qué se hace distinto</div>
+            {c.queCambiar ? (
+              <p className="vin-t-base mt-1 leading-relaxed">{c.queCambiar}</p>
+            ) : (
+              <p className="vin-faint vin-t-base mt-1 leading-relaxed">
+                No se escribió. Sin esto el cierre queda como anécdota y la próxima campaña arranca igual de ciega.
+              </p>
+            )}
+          </div>
+        </div>
+      </Panel>
+    );
+  }
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const vencido = hoy >= l.objetivo.fechaCorte;
+
+  return (
+    <Panel>
+      <p className="vin-muted vin-t-base leading-relaxed">
+        {vencido
+          ? "Llegó la fecha de corte. Toca decir qué pasó — incluso si no pasó nada."
+          : `El corte es el ${l.objetivo.fechaCorte}. Se puede cerrar antes, pero el número que se escriba es el que queda.`}
+      </p>
+      <div className="mt-4 flex flex-col gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className="vin-faint vin-t-sm">{l.objetivo.metrica} — valor real al corte</span>
+          <input
+            type="number"
+            className="vin-input"
+            value={form.valorLogrado}
+            onChange={(e) => setForm({ ...form, valorLogrado: e.target.value })}
+            placeholder={`partida: ${l.objetivo.valorInicial} · meta: ${l.objetivo.valorMeta}`}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="vin-faint vin-t-sm">Por qué pasó lo que pasó</span>
+          <textarea
+            className="vin-input min-h-[80px]"
+            value={form.porQue}
+            onChange={(e) => setForm({ ...form, porQue: e.target.value })}
+            placeholder="El CTR real, si la creatividad aguantó, si la plaza respondió, qué se rompió."
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="vin-faint vin-t-sm">Qué se hace distinto la próxima</span>
+          <textarea
+            className="vin-input min-h-[60px]"
+            value={form.queCambiar}
+            onChange={(e) => setForm({ ...form, queCambiar: e.target.value })}
+            placeholder="Sin esto, el cierre es un lamento y no un aprendizaje."
+          />
+        </label>
+        <div>
+          <button
+            className="vin-btn-primary"
+            disabled={!form.valorLogrado.trim() || !form.porQue.trim()}
+            onClick={() =>
+              cerrarLanzamiento(proyecto.id, l.id, {
+                valorLogrado: Number(form.valorLogrado) || 0,
+                porQue: form.porQue.trim(),
+                queCambiar: form.queCambiar.trim(),
+              })
+            }
+          >
+            Cerrar el lanzamiento
+          </button>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+export default function LanzamientoSection({ proyecto }: { proyecto: VincereProyecto }) {
+  const addLanzamiento = useVincereStore((s) => s.addLanzamiento);
+  const updateLanzamiento = useVincereStore((s) => s.updateLanzamiento);
+  const deleteLanzamiento = useVincereStore((s) => s.deleteLanzamiento);
+
+  const lanzamientos = proyecto.lanzamientos ?? [];
+  const [activoId, setActivoId] = useState<string | null>(null);
+  const activo = lanzamientos.find((l) => l.id === activoId) ?? lanzamientos[0] ?? null;
+
+  const [decl, setDecl] = useState({
+    cancionId: "",
+    fechaSalida: "",
+    presupuestoUsd: "1500",
+  });
+  const [obj, setObj] = useState({ valorInicial: "", valorMeta: "", fechaCorte: "" });
+
+  const plan = useMemo(
+    () => (activo ? planDeLanzamiento(proyecto, activo.presupuestoUsd) : null),
+    [proyecto, activo]
+  );
+  const rutaElegida = plan?.rutas.find((r) => r.id === activo?.rutaElegidaId) ?? null;
+
+  function declarar() {
+    const c = proyecto.canciones.find((x) => x.id === decl.cancionId);
+    if (!decl.fechaSalida || !c) return;
+    addLanzamiento(proyecto.id, {
+      cancionId: c.id,
+      nombreCancion: c.nombre,
+      fechaSalida: decl.fechaSalida,
+      presupuestoUsd: Number(decl.presupuestoUsd) || 0,
+      rutaElegidaId: null,
+      rutaElegidaLabel: null,
+      objetivo: null,
+      notas: "",
+    });
+    setDecl({ cancionId: "", fechaSalida: "", presupuestoUsd: "1500" });
+  }
+
+  // La meta que propone el sistema sale del borde BAJO de la ruta, no del alto.
+  // Proponer el techo sería armar el fracaso desde el primer día: el borde bajo
+  // es lo que la cadena sostiene aunque todo salga mediocre.
+  const metaSugerida =
+    rutaElegida && obj.valorInicial !== ""
+      ? Number(obj.valorInicial) + rutaElegida.oyentesBajo
+      : null;
+
+  return (
+    <SectionShell
+      proyecto={proyecto}
+      seccion="lanzamiento"
+      eyebrow="Sacar la canción"
+      title="Hoja de ruta"
+      subtitle="De un presupuesto en dólares a una ruta con plaza, canal, expectativa y fecha de corte. Cada número lleva de dónde salió."
+      aiTitle="Lectura VINCERE — Lanzamiento"
+    >
+      {lanzamientos.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {lanzamientos.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => setActivoId(l.id)}
+              className="vin-t-sm rounded-full px-3 py-1.5"
+              style={{
+                border: l.id === activo?.id ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
+                color: l.id === activo?.id ? "var(--vin-text)" : "var(--vin-muted)",
+              }}
+            >
+              {l.nombreCancion} · {l.fechaSalida}
+              {l.cierre && " ✓"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <Paso
+        n={1}
+        titulo="Declarar el lanzamiento"
+        estado={activo ? `${activo.nombreCancion} · sale el ${activo.fechaSalida} · US$${activo.presupuestoUsd}` : "sin declarar"}
+      >
+        {activo ? (
+          <div className="flex flex-wrap items-center gap-4">
+            <p className="vin-muted vin-t-base">
+              Todo lo de abajo se calcula contra estos tres datos.
+            </p>
+            <button
+              onClick={() => deleteLanzamiento(proyecto.id, activo.id)}
+              className="vin-faint vin-t-sm hover:underline"
+            >
+              borrar y empezar otro
+            </button>
+          </div>
+        ) : proyecto.canciones.length === 0 ? (
+          <p className="vin-muted vin-t-base leading-relaxed">
+            No hay canciones cargadas. La hoja de ruta se arma sobre una canción concreta, no sobre el artista en
+            abstracto: entra a Song Intelligence y carga la que va a salir.
+          </p>
+        ) : (
+          <Panel>
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-sm">Qué canción sale</span>
+                <select
+                  className="vin-input"
+                  value={decl.cancionId}
+                  onChange={(e) => setDecl({ ...decl, cancionId: e.target.value })}
+                >
+                  <option value="">Elegir…</option>
+                  {proyecto.canciones.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-sm">Cuándo sale</span>
+                <input
+                  type="date"
+                  className="vin-input"
+                  value={decl.fechaSalida}
+                  onChange={(e) => setDecl({ ...decl, fechaSalida: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-sm">Presupuesto de pauta (USD)</span>
+                <input
+                  type="number"
+                  className="vin-input"
+                  value={decl.presupuestoUsd}
+                  onChange={(e) => setDecl({ ...decl, presupuestoUsd: e.target.value })}
+                />
+              </label>
+            </div>
+            <button className="vin-btn-primary mt-4" onClick={declarar} disabled={!decl.cancionId || !decl.fechaSalida}>
+              Armar la hoja de ruta
+            </button>
+          </Panel>
+        )}
+      </Paso>
+
+      <Paso
+        n={2}
+        titulo="Comparar por dónde entra"
+        estado={plan ? `${plan.rutas.filter((r) => !r.noEjecutable).length} rutas` : "falta el paso 1"}
+      >
+        {!plan ? (
+          <p className="vin-muted vin-t-base">Declara el lanzamiento arriba y las rutas aparecen acá.</p>
+        ) : (
+          <>
+            <p className="vin-t-lg leading-relaxed" style={{ maxWidth: "72ch" }}>
+              {plan.titular}
+            </p>
+
+            {plan.avisos.map((a, i) => (
+              <p key={i} className="vin-t-sm mt-2 leading-relaxed" style={{ color: "var(--vin-warn)" }}>
+                {a}
+              </p>
+            ))}
+
+            <div className="mt-5 flex flex-col gap-3">
+              {plan.rutas.map((r) => (
+                <TarjetaRuta
+                  key={r.id}
+                  r={r}
+                  elegida={r.id === activo?.rutaElegidaId}
+                  onElegir={() =>
+                    activo &&
+                    updateLanzamiento(proyecto.id, activo.id, {
+                      rutaElegidaId: r.id,
+                      rutaElegidaLabel: `${r.canalLabel} · ${r.plaza}`,
+                    })
+                  }
+                />
+              ))}
+            </div>
+
+            {plan.descartadas.length > 0 && (
+              <div className="mt-6">
+                <div className="vin-muted vin-t-sm mb-2 font-medium">
+                  Dónde NO se pauta, y por qué
+                </div>
+                {plan.descartadas.map((d) => (
+                  <p key={d.ciudad} className="vin-faint vin-t-sm mb-1.5 leading-relaxed">
+                    <span className="vin-muted">{d.ciudad}</span> — {d.porQue}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {plan.enCola.length > 0 && (
+              <div className="mt-5">
+                <div className="vin-muted vin-t-sm mb-2 font-medium">
+                  Califican, pero quedaron fuera del corte de este plan
+                </div>
+                {plan.enCola.map((d) => (
+                  <p key={d.ciudad} className="vin-faint vin-t-sm mb-1.5 leading-relaxed">
+                    <span className="vin-muted">
+                      #{d.prioridad} {d.ciudad}
+                    </span>{" "}
+                    — {d.porQue}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {plan.paraCalibrar.length > 0 && (
+              <div className="vin-accent-card mt-6 p-5">
+                <div className="vin-eyebrow mb-2">Lo que haría esto mucho más firme</div>
+                {plan.paraCalibrar.map((x, i) => (
+                  <p key={i} className="vin-t-sm mb-1.5 leading-relaxed">
+                    · {x}
+                  </p>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </Paso>
+
+      <Paso
+        n={3}
+        titulo="Fijar qué estamos buscando"
+        estado={activo?.objetivo ? "objetivo fijado" : rutaElegida ? "falta fijarlo" : "falta elegir ruta"}
+      >
+        {!rutaElegida ? (
+          <p className="vin-muted vin-t-base leading-relaxed">
+            Elige una ruta arriba. La meta se propone desde esa ruta, no al aire.
+          </p>
+        ) : activo?.objetivo ? (
+          <Panel>
+            <p className="vin-t-base leading-relaxed">
+              <span className="vin-muted">{activo.objetivo.metrica}</span>: partimos de{" "}
+              <span className="tabular-nums">{n(activo.objetivo.valorInicial)}</span> y buscamos{" "}
+              <span className="tabular-nums">{n(activo.objetivo.valorMeta)}</span> para el{" "}
+              {activo.objetivo.fechaCorte}.
+            </p>
+            <p className="vin-faint vin-t-sm mt-2 leading-relaxed">{activo.objetivo.deDonde}</p>
+            {!activo.cierre && (
+              <button
+                onClick={() => updateLanzamiento(proyecto.id, activo.id, { objetivo: null })}
+                className="vin-faint vin-t-sm mt-3 hover:underline"
+              >
+                cambiar el objetivo
+              </button>
+            )}
+          </Panel>
+        ) : (
+          <Panel>
+            <p className="vin-muted vin-t-base leading-relaxed">
+              La ruta elegida es {rutaElegida.canalLabel} en {rutaElegida.plaza}. Lo que se va a medir son{" "}
+              <span className="vin-muted">{rutaElegida.senal}</span>
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-sm">Oyentes hoy en {rutaElegida.plaza}</span>
+                <input
+                  type="number"
+                  className="vin-input"
+                  value={obj.valorInicial}
+                  onChange={(e) => setObj({ ...obj, valorInicial: e.target.value })}
+                  placeholder="el número del día antes de arrancar"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-sm">Meta</span>
+                <input
+                  type="number"
+                  className="vin-input"
+                  value={obj.valorMeta || (metaSugerida ?? "")}
+                  onChange={(e) => setObj({ ...obj, valorMeta: e.target.value })}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-sm">Fecha de corte</span>
+                <input
+                  type="date"
+                  className="vin-input"
+                  value={obj.fechaCorte}
+                  onChange={(e) => setObj({ ...obj, fechaCorte: e.target.value })}
+                />
+              </label>
+            </div>
+            {/* La regla se explica siempre, aunque todavía no haya número: si
+                solo apareciera después de escribir la partida, quien llega por
+                primera vez no entiende de dónde va a salir la meta. */}
+            <p className="vin-faint vin-t-sm mt-3 leading-relaxed">
+              {metaSugerida != null ? (
+                <>
+                  El sistema propone <span className="tabular-nums">{n(metaSugerida)}</span>: la partida más el borde
+                  BAJO de la ruta ({n(rutaElegida.oyentesBajo)} oyentes), no el alto.
+                </>
+              ) : (
+                <>
+                  Al escribir la partida, el sistema propone la meta sumándole el borde BAJO de la ruta (
+                  {n(rutaElegida.oyentesBajo)} oyentes), no el alto.
+                </>
+              )}{" "}
+              Proponer el techo sería armar el fracaso desde el primer día.
+            </p>
+            <button
+              className="vin-btn-primary mt-4"
+              disabled={!obj.valorInicial || !obj.fechaCorte || !activo}
+              onClick={() =>
+                activo &&
+                updateLanzamiento(proyecto.id, activo.id, {
+                  objetivo: {
+                    metrica: `Oyentes mensuales en ${rutaElegida.plaza}`,
+                    valorInicial: Number(obj.valorInicial) || 0,
+                    valorMeta: Number(obj.valorMeta || metaSugerida) || 0,
+                    fechaCorte: obj.fechaCorte,
+                    deDonde: `Borde bajo de la ruta ${rutaElegida.canalLabel} · ${rutaElegida.plaza} con US$${rutaElegida.presupuestoUsd}. La ruta se apoya en un supuesto de nivel ${rutaElegida.nivelMasDebil}, así que la meta hereda esa firmeza.`,
+                  },
+                })
+              }
+            >
+              Fijar el objetivo
+            </button>
+          </Panel>
+        )}
+      </Paso>
+
+      <Paso n={4} titulo="Cerrar el ciclo" estado={activo?.cierre ? "cerrado" : "abierto"}>
+        {activo ? (
+          <Cierre proyecto={proyecto} l={activo} />
+        ) : (
+          <p className="vin-muted vin-t-base">Sin lanzamiento declarado no hay nada que cerrar.</p>
+        )}
+      </Paso>
+
+      <p className="vin-faint vin-t-sm leading-relaxed" style={{ maxWidth: "76ch" }}>
+        {ADVERTENCIA_LANZAMIENTO}
+      </p>
+    </SectionShell>
+  );
+}

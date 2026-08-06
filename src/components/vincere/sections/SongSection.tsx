@@ -16,6 +16,7 @@ import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import { AudioPanel, MetricaPanel, NotasProduccionPanel } from "../AudioPanel";
 import SongGuia from "../SongGuia";
+import FirmaPanel from "../FirmaPanel";
 import EvidenceTag from "../EvidenceTag";
 
 const POTENCIAL_COLOR: Record<VincerePotencialCancion, string> = {
@@ -329,6 +330,8 @@ function SongDetail({
       )}
 
       <AudioPanel audio={song.audio ?? null} onAnalizado={onAudio} onQuitar={() => onAudio(null)} />
+
+      <FirmaPanel cancion={song} catalogo={proyecto.canciones} />
 
       <NotasProduccionPanel
         key={song.id}

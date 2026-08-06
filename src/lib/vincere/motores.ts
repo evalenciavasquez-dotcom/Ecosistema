@@ -28,6 +28,7 @@ const ORDEN: VincereSeccion[] = [
   "resumen",
   "diagnostico",
   "song",
+  "lanzamiento",
   "audiencia",
   "calor",
   "touring",
@@ -39,6 +40,26 @@ const ORDEN: VincereSeccion[] = [
 
 function estado(p: VincereProyecto, seccion: VincereSeccion): Omit<MotorEstado, "seccion" | "label"> {
   switch (seccion) {
+    // El lanzamiento no depende de que haya data cargada sino de que alguien
+    // haya declarado qué sale y cuándo. Es el único motor que espera una
+    // decisión, no un archivo.
+    case "lanzamiento": {
+      const abiertos = (p.lanzamientos ?? []).filter((l) => !l.cierre);
+      if (!abiertos.length) {
+        return {
+          listo: false,
+          razon: "no hay lanzamiento declarado — se declara en Lanzamiento: canción, fecha y presupuesto",
+        };
+      }
+      const l = abiertos[0];
+      if (!p.zonasCalor.length) {
+        return { listo: false, razon: "faltan zonas de calor: sin ellas no hay dónde repartir el presupuesto" };
+      }
+      return {
+        listo: true,
+        razon: `«${l.nombreCancion}» con US$${l.presupuestoUsd}${l.rutaElegidaLabel ? ` por ${l.rutaElegidaLabel}` : ""}`,
+      };
+    }
     case "resumen": {
       const r = p.resumen;
       if (r.streamsMes > 0 || r.seguidores > 0 || r.serie.length > 0) {

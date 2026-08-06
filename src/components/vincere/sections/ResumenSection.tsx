@@ -9,6 +9,7 @@ import StreamsChart from "../StreamsChart";
 import AlertasPanel from "../AlertasPanel";
 import EvolucionPanel from "../EvolucionPanel";
 import MotoresRunner from "../MotoresRunner";
+import FanRatePanel from "../FanRatePanel";
 import { Panel, PanelLabel, StatCard } from "../primitives";
 
 const SCENARIO_DEFS = [
@@ -90,6 +91,8 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
         </div>
       </div>
 
+      <FanRatePanel proyecto={proyecto} />
+
       {/* Después de las cifras, no antes: primero se ve dónde está el artista,
           después se ofrece interpretarlo. */}
       <MotoresRunner proyecto={proyecto} />
@@ -142,6 +145,11 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
             <NumberInput label="Streams/mes" value={r.streamsMes} onChange={(v) => updateResumen(proyecto.id, { streamsMes: v })} />
             <NumberInput label="Cambio streams %" value={r.streamsCambioPct} onChange={(v) => updateResumen(proyecto.id, { streamsCambioPct: v })} />
             <NumberInput label="Seguidores" value={r.seguidores} onChange={(v) => updateResumen(proyecto.id, { seguidores: v })} />
+            <NumberInput
+              label="Oyentes mensuales"
+              value={r.oyentesMes ?? 0}
+              onChange={(v) => updateResumen(proyecto.id, { oyentesMes: v })}
+            />
             <NumberInput label="Cambio seguidores %" value={r.seguidoresCambioPct} onChange={(v) => updateResumen(proyecto.id, { seguidoresCambioPct: v })} />
             <NumberInput label="Momentum Index" value={r.momentumIndex} onChange={(v) => updateResumen(proyecto.id, { momentumIndex: v })} />
           </div>

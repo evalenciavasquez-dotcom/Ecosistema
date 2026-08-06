@@ -12,6 +12,7 @@ import {
 import { useVincereStore } from "@/lib/vincere/store";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
+import MapaPlazasPanel from "../MapaPlazasPanel";
 
 const TEMPERATURAS: VincereTemperatura[] = ["caliente", "medio", "frio"];
 
@@ -40,6 +41,8 @@ export default function CalorSection({ proyecto }: { proyecto: VincereProyecto }
       subtitle="Las ciudades salen de Spotify for Artists o Chartmetric; la lectura es nuestra. El calor mide escucha activa, no entradas vendidas, y sirve para dos cosas: saber dónde reforzar, y tener con qué convencer a un empresario de la plaza de que ahí hay público esperando."
       aiTitle="Lectura VINCERE — Zonas de Calor"
     >
+      <MapaPlazasPanel proyecto={proyecto} />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2.5">
           {conteo.map(({ t, n }) => (
