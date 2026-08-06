@@ -6,6 +6,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import {
   planDeLanzamiento,
   Ruta,
+  Reparto,
   ADVERTENCIA_LANZAMIENTO,
   NivelSupuesto,
 } from "@/lib/vincere/lanzamiento";
@@ -26,6 +27,11 @@ import { Panel } from "../primitives";
 
 const nf = new Intl.NumberFormat("es-CO");
 const n = (x: number) => nf.format(Math.round(x));
+
+// Identificador reservado: elegir "el reparto" no es elegir una de las rutas,
+// es elegirlas todas repartidas. Se guarda como si fuera una ruta más para no
+// duplicar el estado del lanzamiento.
+const ID_REPARTO = "reparto";
 
 const NIVEL_COLOR: Record<NivelSupuesto, string> = {
   1: "var(--vin-risk)",
@@ -224,6 +230,110 @@ function TarjetaRuta({
   );
 }
 
+// El reparto: qué se hace el lunes.
+//
+// Va ARRIBA de las rutas sueltas, no debajo, porque es la respuesta a la
+// pregunta que de verdad se hace: no "por dónde entra más barato" sino "cómo
+// reparto lo que tengo". Las rutas quedan abajo como el material con el que se
+// discute esa decisión.
+function PanelReparto({
+  r,
+  elegido,
+  onElegir,
+}: {
+  r: Reparto;
+  elegido: boolean;
+  onElegir: () => void;
+}) {
+  if (!r.pedazos.length) {
+    return (
+      <Panel>
+        <div className="vin-eyebrow mb-2">Cómo repartirlo</div>
+        <p className="vin-t-base leading-relaxed">{r.titular}</p>
+        {r.porQueNoMas && <p className="vin-faint vin-t-sm mt-3 leading-relaxed">{r.porQueNoMas}</p>}
+      </Panel>
+    );
+  }
+
+  const maximo = Math.max(...r.pedazos.map((x) => x.montoUsd));
+
+  return (
+    <div
+      className="rounded-[--r-lg] p-6"
+      style={{
+        border: elegido ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
+        background: elegido ? "rgba(224,72,58,0.06)" : "var(--vin-surface-2)",
+      }}
+    >
+      <div className="vin-eyebrow mb-2">Cómo repartirlo</div>
+      <p className="vin-faint vin-t-sm mb-5 leading-relaxed" style={{ maxWidth: "72ch" }}>
+        {r.regla}
+      </p>
+
+      <div className="flex flex-col gap-4">
+        {r.pedazos.map((x) => (
+          <div key={x.rutaId}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span className="vin-t-base font-medium">
+                {x.plaza} <span className="vin-faint">· {x.canalLabel}</span>
+              </span>
+              <span className="vin-t-lg vin-serif tabular-nums">US${n(x.montoUsd)}</span>
+            </div>
+            {/* La barra hace visible de un vistazo que el peso sigue al calor.
+                Un listado de cifras obliga a compararlas de cabeza. */}
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--vin-border)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${(x.montoUsd / maximo) * 100}%`,
+                  background: ACCION_COLOR[x.accionDePlaza],
+                }}
+              />
+            </div>
+            <p className="vin-faint vin-t-sm mt-1.5 leading-relaxed">
+              {x.porQue} Espera {n(x.oyentesBajo)}–{n(x.oyentesAlto)} oyentes
+              {x.seguidoresBajo != null && <> y {n(x.seguidoresBajo)}–{n(x.seguidoresAlto!)} seguidores</>}.
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <span className="vin-muted vin-t-sm">Sumando todo el reparto</span>
+          <span className="vin-t-lg tabular-nums">
+            {n(r.oyentesBajoTotal)}–{n(r.oyentesAltoTotal)} oyentes
+            {r.seguidoresBajoTotal != null && (
+              <span className="vin-faint">
+                {" "}
+                · {n(r.seguidoresBajoTotal)}–{n(r.seguidoresAltoTotal!)} seguidores
+              </span>
+            )}
+          </span>
+        </div>
+        {r.sinRepartirUsd > 0 && (
+          <p className="vin-faint vin-t-sm mt-1">Quedan US${n(r.sinRepartirUsd)} sin asignar por redondeo.</p>
+        )}
+      </div>
+
+      {r.porQueNoMas && (
+        <p className="vin-t-sm mt-4 leading-relaxed" style={{ color: "var(--vin-warn)", maxWidth: "72ch" }}>
+          {r.porQueNoMas}
+        </p>
+      )}
+      {r.avisos.map((a, i) => (
+        <p key={i} className="vin-faint vin-t-sm mt-2 leading-relaxed" style={{ maxWidth: "72ch" }}>
+          {a}
+        </p>
+      ))}
+
+      <button onClick={onElegir} className={`mt-5 ${elegido ? "vin-btn-primary" : "vin-btn-ghost"}`} disabled={elegido}>
+        {elegido ? "Reparto elegido" : "Usar este reparto"}
+      </button>
+    </div>
+  );
+}
+
 function Cierre({ proyecto, l }: { proyecto: VincereProyecto; l: VincereLanzamiento }) {
   const cerrarLanzamiento = useVincereStore((s) => s.cerrarLanzamiento);
   const reabrirLanzamiento = useVincereStore((s) => s.reabrirLanzamiento);
@@ -367,6 +477,31 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
     [proyecto, activo]
   );
   const rutaElegida = plan?.rutas.find((r) => r.id === activo?.rutaElegidaId) ?? null;
+  const usandoReparto = activo?.rutaElegidaId === ID_REPARTO;
+
+  // Lo que se eligió, sea una ruta sola o el reparto completo. El paso 3 no
+  // tiene que saber cuál de las dos es: solo necesita contra qué medir.
+  const eleccion = usandoReparto && plan?.reparto.pedazos.length
+    ? {
+        titulo: `Reparto en ${plan.reparto.pedazos.length} ${plan.reparto.pedazos.length === 1 ? "plaza" : "plazas"}`,
+        oyentesBajo: plan.reparto.oyentesBajoTotal,
+        metrica: "Oyentes mensuales sumando todas las plazas del reparto",
+        senal: `Oyentes mensuales en ${plan.reparto.pedazos
+          .map((x) => x.plaza)
+          .join(", ")} (Spotify for Artists → Audiencia), medidos el día antes de arrancar y 30 días después.`,
+        deDonde: `Suma de los bordes bajos del reparto de US$${activo?.presupuestoUsd} en ${plan.reparto.pedazos
+          .map((x) => `${x.plaza} US$${x.montoUsd}`)
+          .join(", ")}.`,
+      }
+    : rutaElegida
+      ? {
+          titulo: `${rutaElegida.canalLabel} en ${rutaElegida.plaza}`,
+          oyentesBajo: rutaElegida.oyentesBajo,
+          metrica: `Oyentes mensuales en ${rutaElegida.plaza}`,
+          senal: rutaElegida.senal,
+          deDonde: `Borde bajo de la ruta ${rutaElegida.canalLabel} · ${rutaElegida.plaza} con US$${rutaElegida.presupuestoUsd}. La ruta se apoya en un supuesto de nivel ${rutaElegida.nivelMasDebil}, así que la meta hereda esa firmeza.`,
+        }
+      : null;
 
   function declarar() {
     const c = proyecto.canciones.find((x) => x.id === decl.cancionId);
@@ -388,9 +523,7 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
   // Proponer el techo sería armar el fracaso desde el primer día: el borde bajo
   // es lo que la cadena sostiene aunque todo salga mediocre.
   const metaSugerida =
-    rutaElegida && obj.valorInicial !== ""
-      ? Number(obj.valorInicial) + rutaElegida.oyentesBajo
-      : null;
+    eleccion && obj.valorInicial !== "" ? Number(obj.valorInicial) + eleccion.oyentesBajo : null;
 
   return (
     <SectionShell
@@ -505,7 +638,37 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
               </p>
             ))}
 
-            <div className="mt-5 flex flex-col gap-3">
+            <div className="mt-5">
+              <PanelReparto
+                r={plan.reparto}
+                elegido={usandoReparto}
+                onElegir={() =>
+                  activo &&
+                  updateLanzamiento(proyecto.id, activo.id, {
+                    rutaElegidaId: ID_REPARTO,
+                    rutaElegidaLabel: `Reparto en ${plan.reparto.pedazos.length} ${
+                      plan.reparto.pedazos.length === 1 ? "plaza" : "plazas"
+                    }`,
+                  })
+                }
+              />
+            </div>
+
+            {/* Las rutas sueltas quedan debajo del reparto: son el material
+                para discutir la decisión, no la decisión. Cada una asume el
+                presupuesto COMPLETO, que es lo que las hace comparables entre
+                sí — y por eso no se pueden sumar. */}
+            <div className="mt-7">
+              <div className="vin-muted vin-t-sm mb-1 font-medium">
+                O todo por una sola ruta
+              </div>
+              <p className="vin-faint vin-t-sm mb-4 leading-relaxed" style={{ maxWidth: "72ch" }}>
+                Cada una supone el presupuesto entero en esa plaza y ese canal. Sirven para comparar cuál rinde más
+                por dólar; no se suman entre sí.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
               {plan.rutas.map((r) => (
                 <TarjetaRuta
                   key={r.id}
@@ -568,11 +731,12 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
       <Paso
         n={3}
         titulo="Fijar qué estamos buscando"
-        estado={activo?.objetivo ? "objetivo fijado" : rutaElegida ? "falta fijarlo" : "falta elegir ruta"}
+        estado={activo?.objetivo ? "objetivo fijado" : eleccion ? "falta fijarlo" : "falta decidir arriba"}
       >
-        {!rutaElegida ? (
+        {!eleccion ? (
           <p className="vin-muted vin-t-base leading-relaxed">
-            Elige una ruta arriba. La meta se propone desde esa ruta, no al aire.
+            Arriba: o usas el reparto completo, o eliges una sola ruta. La meta se propone desde lo que elijas, no al
+            aire.
           </p>
         ) : activo?.objetivo ? (
           <Panel>
@@ -595,12 +759,12 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
         ) : (
           <Panel>
             <p className="vin-muted vin-t-base leading-relaxed">
-              La ruta elegida es {rutaElegida.canalLabel} en {rutaElegida.plaza}. Lo que se va a medir son{" "}
-              <span className="vin-muted">{rutaElegida.senal}</span>
+              Se va a ejecutar: <span className="vin-t-base" style={{ color: "var(--vin-text)" }}>{eleccion.titulo}</span>. Lo
+              que se mide: {eleccion.senal}
             </p>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <label className="flex flex-col gap-1.5">
-                <span className="vin-faint vin-t-sm">Oyentes hoy en {rutaElegida.plaza}</span>
+                <span className="vin-faint vin-t-sm">{eleccion.metrica} — hoy</span>
                 <input
                   type="number"
                   className="vin-input"
@@ -635,12 +799,12 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
               {metaSugerida != null ? (
                 <>
                   El sistema propone <span className="tabular-nums">{n(metaSugerida)}</span>: la partida más el borde
-                  BAJO de la ruta ({n(rutaElegida.oyentesBajo)} oyentes), no el alto.
+                  BAJO ({n(eleccion.oyentesBajo)} oyentes), no el alto.
                 </>
               ) : (
                 <>
-                  Al escribir la partida, el sistema propone la meta sumándole el borde BAJO de la ruta (
-                  {n(rutaElegida.oyentesBajo)} oyentes), no el alto.
+                  Al escribir la partida, el sistema propone la meta sumándole el borde BAJO (
+                  {n(eleccion.oyentesBajo)} oyentes), no el alto.
                 </>
               )}{" "}
               Proponer el techo sería armar el fracaso desde el primer día.
@@ -652,11 +816,11 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
                 activo &&
                 updateLanzamiento(proyecto.id, activo.id, {
                   objetivo: {
-                    metrica: `Oyentes mensuales en ${rutaElegida.plaza}`,
+                    metrica: eleccion.metrica,
                     valorInicial: Number(obj.valorInicial) || 0,
                     valorMeta: Number(obj.valorMeta || metaSugerida) || 0,
                     fechaCorte: obj.fechaCorte,
-                    deDonde: `Borde bajo de la ruta ${rutaElegida.canalLabel} · ${rutaElegida.plaza} con US$${rutaElegida.presupuestoUsd}. La ruta se apoya en un supuesto de nivel ${rutaElegida.nivelMasDebil}, así que la meta hereda esa firmeza.`,
+                    deDonde: eleccion.deDonde,
                   },
                 })
               }

@@ -686,6 +686,22 @@ function bloqueDeLanzamiento(p: VincereProyecto) {
         riesgos: r.riesgos,
         ...(r.noEjecutable ? { noEjecutable: r.noEjecutable } : {}),
       })),
+      repartoSugerido: plan.reparto.pedazos.length
+        ? {
+            titular: plan.reparto.titular,
+            pedazos: plan.reparto.pedazos.map((x) => ({
+              plaza: x.plaza,
+              canal: x.canalLabel,
+              montoUsd: x.montoUsd,
+              porQue: x.porQue,
+              oyentesEsperados: `${x.oyentesBajo}–${x.oyentesAlto}`,
+            })),
+            sumaOyentes: `${plan.reparto.oyentesBajoTotal}–${plan.reparto.oyentesAltoTotal}`,
+            ...(plan.reparto.porQueNoMas ? { porQueNoMasPlazas: plan.reparto.porQueNoMas } : {}),
+            regla:
+              "El monto de cada plaza sigue a su calor, y una plaza que se está abriendo recibe la mitad de lo que le tocaría porque es una apuesta. Ninguna plaza entra si el presupuesto no alcanza para que su pedazo produzca ~100 clics en el peor escenario: por debajo de eso la campaña gasta y no deja un dato con el que calibrar. NO propongas repartir entre más plazas de las que están acá — se ve como más trabajo y produce resultados de los que no se puede concluir nada.",
+          }
+        : plan.reparto.titular,
       dondeNoSePauta: plan.descartadas.map((d) => `${d.ciudad}: ${d.porQue}`),
       paraCalibrar: plan.paraCalibrar,
       advertencia:
