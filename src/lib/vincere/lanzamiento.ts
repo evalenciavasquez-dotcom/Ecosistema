@@ -831,3 +831,116 @@ export function planDeLanzamiento(
 
 export const ADVERTENCIA_LANZAMIENTO =
   "Esto es una estimación con coeficientes públicos, no una proyección de resultados. Cada escalón lleva su fuente y su nivel, y el conjunto vale lo que valga su eslabón más débil. Sirve para dimensionar y para poder volver en 30 días a preguntar qué falló; no para comprometer una cifra con nadie.";
+
+// ---------------------------------------------------------------------------
+// El calendario: cuándo pasa cada cosa, y cuándo se puede medir
+// ---------------------------------------------------------------------------
+//
+// Una hoja de ruta con una sola fecha no es una hoja de ruta. Pero acá hay que
+// ser claro sobre qué es cada cosa: los intervalos de abajo son CONVENCIÓN de
+// oficio, no data. Se pueden mover y no pretenden ser óptimos.
+//
+// Lo que NO es convención, y es la razón de que este módulo exista: los oyentes
+// mensuales de Spotify son una ventana móvil de 28 días. Medir el efecto de una
+// campaña a los siete días no muestra "poco efecto" — muestra un cuarto del
+// efecto, porque la métrica todavía arrastra tres semanas de antes de la
+// campaña. Es el error de lectura que hace que se apague una campaña que estaba
+// funcionando, y el calendario existe sobre todo para impedirlo.
+
+// Días de la ventana móvil de oyentes mensuales de Spotify.
+const VENTANA_OYENTES = 28;
+
+export interface Hito {
+  fecha: string;
+  titulo: string;
+  queSeHace: string;
+  // Qué se mira ese día. Vacío cuando ese día no se mide nada, que también es
+  // información: evita revisar métricas por ansiedad.
+  queSeMide: string;
+  // Si el día es una convención movible o una consecuencia de cómo funciona la
+  // métrica. La diferencia decide qué se puede negociar con un cliente.
+  esConvencion: boolean;
+  pasado: boolean;
+}
+
+function masDias(fecha: string, dias: number): string {
+  const d = new Date(fecha + "T12:00:00");
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+export function calendarioDeLanzamiento(
+  fechaSalida: string,
+  fechaCorte: string | null,
+  hoy = new Date().toISOString().slice(0, 10)
+): { hitos: Hito[]; aviso: string | null } {
+  const hitos: Hito[] = [
+    {
+      fecha: masDias(fechaSalida, -14),
+      titulo: "Anuncio y pre-save",
+      queSeHace: "Se abre el pre-save y se avisa. Nada de pauta todavía: pautar antes de que exista la canción compra clics que no pueden convertir.",
+      queSeMide: "",
+      esConvencion: true,
+      pasado: masDias(fechaSalida, -14) < hoy,
+    },
+    {
+      fecha: masDias(fechaSalida, -7),
+      titulo: "Contenido, sin pauta",
+      queSeHace: "Piezas orgánicas para probar qué gancho responde. Sirve para escoger la creatividad de la campaña sin pagar por descubrirlo.",
+      queSeMide: "Qué pieza retiene más, en orgánico. Es la que después se pauta.",
+      esConvencion: true,
+      pasado: masDias(fechaSalida, -7) < hoy,
+    },
+    {
+      fecha: fechaSalida,
+      titulo: "Sale la canción",
+      queSeHace: "Salida y arranque de la pauta el mismo día. Acá se congela el número de partida del objetivo.",
+      queSeMide: "El valor de partida: oyentes mensuales del día anterior. Sin ese número congelado no hay nada contra qué medir después.",
+      esConvencion: false,
+      pasado: fechaSalida < hoy,
+    },
+    {
+      fecha: masDias(fechaSalida, 7),
+      titulo: "Primer chequeo — solo de la pauta",
+      queSeHace: "Se revisa que la campaña esté entregando: CPM real, CTR real, si el presupuesto se está gastando.",
+      queSeMide:
+        "SOLO métricas de la plataforma de pauta. NO los oyentes mensuales: a los siete días esa métrica todavía arrastra tres semanas de antes de la campaña y va a mostrar casi nada. Apagar una campaña acá es el error más caro de un lanzamiento.",
+      esConvencion: false,
+      pasado: masDias(fechaSalida, 7) < hoy,
+    },
+    {
+      fecha: masDias(fechaSalida, VENTANA_OYENTES),
+      titulo: "Primera lectura real de audiencia",
+      queSeHace: "Recién acá la ventana móvil de oyentes mensuales está compuesta enteramente por días con la canción afuera.",
+      queSeMide:
+        `Oyentes mensuales por ciudad y seguidores. Es el primer día en que la cifra refleja el lanzamiento y no una mezcla con el mes anterior — la ventana de Spotify son ${VENTANA_OYENTES} días.`,
+      esConvencion: false,
+      pasado: masDias(fechaSalida, VENTANA_OYENTES) < hoy,
+    },
+  ];
+
+  if (fechaCorte) {
+    hitos.push({
+      fecha: fechaCorte,
+      titulo: "Corte del objetivo",
+      queSeHace: "Se cierra el lanzamiento: qué buscábamos, qué logramos, y si no, por qué no.",
+      queSeMide: "El número contra el que se fijó la meta, y los clics reales de la campaña para calibrar el coeficiente que hoy es nivel 1.",
+      esConvencion: false,
+      pasado: fechaCorte < hoy,
+    });
+  }
+
+  hitos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  // El aviso que de verdad importa: un corte antes de que la ventana se limpie
+  // mide una cifra contaminada, y va a parecer que la campaña falló.
+  let aviso: string | null = null;
+  if (fechaCorte) {
+    const limpio = masDias(fechaSalida, VENTANA_OYENTES);
+    if (fechaCorte < limpio) {
+      aviso = `El corte está el ${fechaCorte}, antes del ${limpio}. Los oyentes mensuales son una ventana móvil de ${VENTANA_OYENTES} días: a esa fecha la cifra todavía mezcla días de antes del lanzamiento y va a quedar por debajo de lo real. Mover el corte a partir del ${limpio} no es hacer trampa — es medir lo que se quiso medir.`;
+    }
+  }
+
+  return { hitos, aviso };
+}
