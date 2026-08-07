@@ -46,7 +46,7 @@ import {
 } from "./types";
 import { classifyText } from "./classifier";
 import { genId, pickKeys } from "./id";
-import { computeSplitPersonalProyectos, diasRunwayDeMonto } from "./finanzas";
+import { buscarMovimientoConciliable, computeSplitPersonalProyectos, diasRunwayDeMonto } from "./finanzas";
 import { buildAnalysisContext } from "./selectors";
 import { dbMutate, fetchServerState } from "./db/sync";
 
@@ -501,22 +501,41 @@ export const useAppStore = create<AppState>()(
             });
             resultadoLabel = "Convertido en decisión";
             break;
-          case "economia":
-            get().addMovimiento({
-              tipo: tipoMovimiento ?? "ingreso",
-              monto: monto ?? 0,
-              moneda: moneda ?? "USD",
-              fecha: new Date().toISOString().slice(0, 10),
-              proyectoId,
-              descripcion: item.texto,
-              estado: "sin_conciliar",
-              fuente: "Bandeja de entrada",
-              cuenta: cuenta ?? "Sin clasificar",
-            });
-            resultadoLabel = monto
-              ? "Registrado como movimiento económico"
-              : "Registrado como movimiento económico — sin monto detectado, revísalo en Economía";
+          case "economia": {
+            const tipoFinal = tipoMovimiento ?? "ingreso";
+            const montoFinal = monto ?? 0;
+            const monedaFinal = moneda ?? "USD";
+            const fechaFinal = new Date().toISOString().slice(0, 10);
+            const candidato = buscarMovimientoConciliable(
+              { tipo: tipoFinal, moneda: monedaFinal, monto: montoFinal, fecha: fechaFinal },
+              get().movimientos
+            );
+            if (candidato) {
+              get().updateMovimiento(candidato.id, {
+                estado: "confirmado",
+                monto: montoFinal,
+                fecha: fechaFinal,
+                fuente: `${candidato.fuente} · conciliado con Bandeja de entrada`,
+              });
+              resultadoLabel = `Conciliado con movimiento existente: "${candidato.descripcion}"`;
+            } else {
+              get().addMovimiento({
+                tipo: tipoFinal,
+                monto: montoFinal,
+                moneda: monedaFinal,
+                fecha: fechaFinal,
+                proyectoId,
+                descripcion: item.texto,
+                estado: "sin_conciliar",
+                fuente: "Bandeja de entrada",
+                cuenta: cuenta ?? "Sin clasificar",
+              });
+              resultadoLabel = monto
+                ? "Registrado como movimiento económico"
+                : "Registrado como movimiento económico — sin monto detectado, revísalo en Economía";
+            }
             break;
+          }
           case "evidencia":
             get().addEvidencia({
               tipo: "correo",

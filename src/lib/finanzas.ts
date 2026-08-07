@@ -1,4 +1,4 @@
-import { MetaFinanciera, MovimientoEconomico } from "./types";
+import { MetaFinanciera, MovimientoEconomico, MovimientoTipo } from "./types";
 
 function sumByMoneda(movs: MovimientoEconomico[]): Record<string, number> {
   const out: Record<string, number> = {};
@@ -254,4 +254,36 @@ export function computeProgresoMetas(
       diasRestantes: m.fechaObjetivo ? diasEntre(m.fechaObjetivo, hoyISO) : null,
     };
   });
+}
+
+// Busca, entre los movimientos existentes, uno que probablemente sea el
+// mismo hecho económico que el que se está por registrar — mismo tipo y
+// moneda, monto parecido (tolera diferencias pequeñas, típicas de cuando el
+// monto se anotó a mano o la IA lo estimó al leer un correo) y fecha
+// cercana. Solo compite contra movimientos que todavía no están
+// "confirmado", porque ese ya se dio por bueno. Sirve para que un gasto
+// anotado a mano y la confirmación real del banco por el mismo gasto no
+// queden como dos movimientos separados.
+export function buscarMovimientoConciliable(
+  candidato: { tipo: MovimientoTipo; moneda: string; monto: number; fecha: string },
+  existentes: MovimientoEconomico[]
+): MovimientoEconomico | null {
+  if (!(candidato.monto > 0)) return null;
+  const fechaCandidato = new Date(candidato.fecha).getTime();
+  let mejor: MovimientoEconomico | null = null;
+  let mejorDelta = Infinity;
+  for (const m of existentes) {
+    if (m.tipo !== candidato.tipo || m.moneda !== candidato.moneda) continue;
+    if (m.estado === "confirmado") continue;
+    if (!(m.monto > 0)) continue;
+    const tolerancia = Math.max(1, m.monto * 0.03);
+    if (Math.abs(m.monto - candidato.monto) > tolerancia) continue;
+    const diffDias = Math.abs(new Date(m.fecha).getTime() - fechaCandidato) / 86400000;
+    if (diffDias > 5) continue;
+    if (diffDias < mejorDelta) {
+      mejorDelta = diffDias;
+      mejor = m;
+    }
+  }
+  return mejor;
 }
