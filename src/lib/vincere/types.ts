@@ -540,16 +540,45 @@ export const VINCERE_ESTADO_PREDICCION_COLOR: Record<VincereEstadoPrediccion, st
   "no-verificable": "#6b645c",
 };
 
+// Quién emitió la predicción, y por lo tanto QUIÉN puso el nivel de evidencia.
+//
+// Sin esta distinción el marcador no puede auditar al sistema. Durante un
+// tiempo la tabla de calibración decía «el nivel lo asigna el mismo modelo que
+// hace la afirmación», y era falso: el nivel lo escribía Eduardo en el
+// formulario. Esa tabla estaba auditando su criterio, no el del sistema —un
+// hueco de diseño, no un bug— y mezclarlo todo en un solo marcador hacía
+// imposible notarlo.
+export type VincereOrigenPrediccion = "eduardo" | "ia" | "motor";
+
+export const VINCERE_ORIGEN_LABEL: Record<VincereOrigenPrediccion, string> = {
+  eduardo: "Escrita a mano",
+  ia: "De una lectura de IA",
+  motor: "De un motor de cálculo",
+};
+
+// Qué audita cada origen cuando se mide su calibración. Es la frase que hace
+// honesta a la tabla.
+export const VINCERE_ORIGEN_AUDITA: Record<VincereOrigenPrediccion, string> = {
+  eduardo:
+    "Mide tu propio criterio: vos escribiste la afirmación y vos le pusiste el nivel. Útil para saber si te sobra o te falta confianza, pero no dice nada del sistema.",
+  ia: "Mide al modelo: el nivel lo puso él mismo al emitir la lectura. Acá sí es un examen autocorregido, y por eso vale la pena vigilarlo.",
+  motor:
+    "Mide los coeficientes: el nivel es el del eslabón más débil de la cadena que produjo el número. Si estas fallan, el problema está en los supuestos públicos, no en el criterio de nadie.",
+};
+
 export interface VincerePrediccion {
   id: string;
   motor: VincereSeccion | null; // De qué lectura salió, si salió de una.
+  // Opcional por compatibilidad: lo guardado antes de que esto existiera se lee
+  // como "eduardo", que es lo que efectivamente era.
+  origen?: VincereOrigenPrediccion;
   afirmacion: string;
   // Sin esto no es una predicción, es una opinión con fecha. Se exige al
   // crearla: qué habría que observar para decir que falló.
   comoSeVerifica: string;
   venceEn: string; // YYYY-MM-DD
-  // El nivel que el sistema se auto-asignó al emitirla. Es lo que permite
-  // auditar después si esos niveles significan algo.
+  // El nivel con el que se emitió. QUIÉN lo puso depende de 'origen', y esa
+  // diferencia es la que hace que el marcador signifique algo.
   nivelAlEmitir: VincereNivel;
   estado: VincereEstadoPrediccion;
   queOcurrio: string | null;
@@ -564,6 +593,18 @@ export interface CalibracionNivel {
   pct: number | null;
 }
 
+// La calibración de UN origen. Separarlas es lo que convierte el marcador en
+// una auditoría del sistema en vez de en una encuesta sobre Eduardo.
+export interface CalibracionPorOrigen {
+  origen: VincereOrigenPrediccion;
+  cerradas: number;
+  niveles: CalibracionNivel[];
+  // Sí, no, o null cuando todavía no hay casos suficientes para decir nada.
+  nivelesSirven: boolean | null;
+  // Por qué no se puede concluir todavía, cuando no se puede.
+  porQueNoSePuedeConcluir: string | null;
+}
+
 export interface MarcadorPredicciones {
   abiertas: number;
   vencidas: number; // Abiertas cuyo plazo ya pasó: son las que hay que cerrar.
@@ -576,6 +617,7 @@ export interface MarcadorPredicciones {
   // ensuciarían el número, y un marcador que se infla a sí mismo no sirve.
   pctAcierto: number | null;
   calibracion: CalibracionNivel[];
+  porOrigen: CalibracionPorOrigen[];
   // ¿Los niveles altos aciertan más que los bajos? Es la pregunta que audita
   // el diferencial del sistema. null mientras no haya datos suficientes.
   nivelesSirven: boolean | null;
@@ -604,18 +646,25 @@ export function calcularMarcador(preds: VincerePrediccion[]): MarcadorPrediccion
     };
   });
 
-  // Se compara el bloque alto (3-4) contra el bajo (1-2). Hace falta un mínimo
-  // de casos en ambos: con dos predicciones no se concluye nada.
-  const alto = calibracion.filter((c) => c.nivel >= 3).reduce(
-    (a, c) => ({ n: a.n + c.cerradas, ok: a.ok + c.acertadas }),
-    { n: 0, ok: 0 }
-  );
-  const bajo = calibracion.filter((c) => c.nivel <= 2).reduce(
-    (a, c) => ({ n: a.n + c.cerradas, ok: a.ok + c.acertadas }),
-    { n: 0, ok: 0 }
-  );
-  const nivelesSirven =
-    alto.n >= 3 && bajo.n >= 3 ? alto.ok / alto.n > bajo.ok / bajo.n : null;
+  const nivelesSirven = comparaBloques(calibracion).sirven;
+
+  // La misma cuenta, separada por quién emitió cada predicción. Un solo número
+  // mezclando las tres fuentes no puede responder «¿el sistema calibra bien?»,
+  // porque la respuesta queda contaminada por el criterio de quien escribe a
+  // mano — que es la mayoría de las predicciones al principio.
+  const ORIGENES: VincereOrigenPrediccion[] = ["eduardo", "ia", "motor"];
+  const porOrigen: CalibracionPorOrigen[] = ORIGENES.map((origen) => {
+    const suyas = cerradas.filter((p) => origenDe(p) === origen);
+    const niveles = nivelesDe(suyas);
+    const cmp = comparaBloques(niveles);
+    return {
+      origen,
+      cerradas: suyas.length,
+      niveles,
+      nivelesSirven: cmp.sirven,
+      porQueNoSePuedeConcluir: cmp.porQue,
+    };
+  });
 
   return {
     abiertas: abiertas.length,
@@ -627,8 +676,53 @@ export function calcularMarcador(preds: VincerePrediccion[]): MarcadorPrediccion
     noVerificables: cerradas.filter((p) => p.estado === "no-verificable").length,
     pctAcierto: decisivas > 0 ? Math.round((acertadas / decisivas) * 100) : null,
     calibracion,
+    porOrigen,
     nivelesSirven,
   };
+}
+
+// Lo guardado antes de que existiera 'origen' era, sin excepción, escrito a
+// mano: ese es el valor correcto por defecto, no una suposición cómoda.
+export function origenDe(p: VincerePrediccion): VincereOrigenPrediccion {
+  return p.origen ?? "eduardo";
+}
+
+function nivelesDe(preds: VincerePrediccion[]): CalibracionNivel[] {
+  return ([1, 2, 3, 4] as VincereNivel[]).map((nivel) => {
+    const delNivel = preds.filter(
+      (p) => p.nivelAlEmitir === nivel && (p.estado === "acertada" || p.estado === "fallada")
+    );
+    const ok = delNivel.filter((p) => p.estado === "acertada").length;
+    return {
+      nivel,
+      cerradas: delNivel.length,
+      acertadas: ok,
+      pct: delNivel.length > 0 ? Math.round((ok / delNivel.length) * 100) : null,
+    };
+  });
+}
+
+// Se compara el bloque alto (3-4) contra el bajo (1-2). Hace falta un mínimo de
+// casos EN AMBOS: con dos predicciones no se concluye nada, y decir que sí se
+// puede sería exactamente el tipo de falsa precisión que este módulo audita.
+const MINIMO_POR_BLOQUE = 3;
+
+function comparaBloques(niveles: CalibracionNivel[]): { sirven: boolean | null; porQue: string | null } {
+  const suma = (f: (c: CalibracionNivel) => boolean) =>
+    niveles.filter(f).reduce((a, c) => ({ n: a.n + c.cerradas, ok: a.ok + c.acertadas }), { n: 0, ok: 0 });
+  const alto = suma((c) => c.nivel >= 3);
+  const bajo = suma((c) => c.nivel <= 2);
+
+  if (alto.n < MINIMO_POR_BLOQUE || bajo.n < MINIMO_POR_BLOQUE) {
+    const faltan: string[] = [];
+    if (alto.n < MINIMO_POR_BLOQUE) faltan.push(`${MINIMO_POR_BLOQUE - alto.n} de nivel alto (3-4)`);
+    if (bajo.n < MINIMO_POR_BLOQUE) faltan.push(`${MINIMO_POR_BLOQUE - bajo.n} de nivel bajo (1-2)`);
+    return {
+      sirven: null,
+      porQue: `Faltan ${faltan.join(" y ")} ya cerradas. Con menos no se puede comparar sin inventar.`,
+    };
+  }
+  return { sirven: alto.ok / alto.n > bajo.ok / bajo.n, porQue: null };
 }
 
 // --- Monetización ---

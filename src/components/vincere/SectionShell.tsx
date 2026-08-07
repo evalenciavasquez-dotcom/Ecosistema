@@ -37,7 +37,14 @@ export default function SectionShell({
       <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
       <div className="space-y-5">
         {children}
-        <AIInsights title={aiTitle} insights={insights} onGenerate={generate} emptyHint={emptyHint} />
+        <AIInsights
+          title={aiTitle}
+          insights={insights}
+          onGenerate={generate}
+          emptyHint={emptyHint}
+          proyectoId={proyecto.id}
+          seccion={seccion}
+        />
         <QuestionBox log={qaLog} onAsk={ask} />
       </div>
     </div>
