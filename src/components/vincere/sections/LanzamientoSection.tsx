@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { VincereProyecto, VincereLanzamiento } from "@/lib/vincere/types";
+import { VincereProyecto, VincereLanzamiento, VincereNivel } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import {
   planDeLanzamiento,
@@ -458,6 +458,7 @@ function Cierre({ proyecto, l }: { proyecto: VincereProyecto; l: VincereLanzamie
 
 export default function LanzamientoSection({ proyecto }: { proyecto: VincereProyecto }) {
   const addLanzamiento = useVincereStore((s) => s.addLanzamiento);
+  const addPrediccion = useVincereStore((s) => s.addPrediccion);
   const updateLanzamiento = useVincereStore((s) => s.updateLanzamiento);
   const deleteLanzamiento = useVincereStore((s) => s.deleteLanzamiento);
 
@@ -492,6 +493,14 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
         deDonde: `Suma de los bordes bajos del reparto de US$${activo?.presupuestoUsd} en ${plan.reparto.pedazos
           .map((x) => `${x.plaza} US$${x.montoUsd}`)
           .join(", ")}.`,
+        // El nivel de la meta es el del eslabón más flojo de todas las rutas
+        // del reparto: la campaña entera no puede ser más firme que su pedazo
+        // peor sostenido.
+        nivel: Math.min(
+          ...plan.reparto.pedazos.map(
+            (x) => plan.rutas.find((r) => r.id === x.rutaId)?.nivelMasDebil ?? 1
+          )
+        ) as NivelSupuesto,
       }
     : rutaElegida
       ? {
@@ -500,6 +509,7 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
           metrica: `Oyentes mensuales en ${rutaElegida.plaza}`,
           senal: rutaElegida.senal,
           deDonde: `Borde bajo de la ruta ${rutaElegida.canalLabel} · ${rutaElegida.plaza} con US$${rutaElegida.presupuestoUsd}. La ruta se apoya en un supuesto de nivel ${rutaElegida.nivelMasDebil}, así que la meta hereda esa firmeza.`,
+          nivel: rutaElegida.nivelMasDebil,
         }
       : null;
 
@@ -812,18 +822,35 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
             <button
               className="vin-btn-primary mt-4"
               disabled={!obj.valorInicial || !obj.fechaCorte || !activo}
-              onClick={() =>
-                activo &&
+              onClick={() => {
+                if (!activo) return;
+                const meta = Number(obj.valorMeta || metaSugerida) || 0;
+                const inicial = Number(obj.valorInicial) || 0;
                 updateLanzamiento(proyecto.id, activo.id, {
                   objetivo: {
                     metrica: eleccion.metrica,
-                    valorInicial: Number(obj.valorInicial) || 0,
-                    valorMeta: Number(obj.valorMeta || metaSugerida) || 0,
+                    valorInicial: inicial,
+                    valorMeta: meta,
                     fechaCorte: obj.fechaCorte,
                     deDonde: eleccion.deDonde,
                   },
-                })
-              }
+                });
+                // El objetivo de un lanzamiento ES una predicción: dice que un
+                // número va a estar en cierto punto en cierta fecha, y se puede
+                // demostrar falso. Entra al marcador solo, con el nivel del
+                // eslabón más débil de la cadena que lo produjo — nadie lo
+                // escribe a mano, y por eso mide al sistema.
+                addPrediccion(proyecto.id, {
+                  motor: "lanzamiento",
+                  origen: "motor",
+                  afirmacion: `«${activo.nombreCancion}»: ${eleccion.metrica.toLocaleLowerCase("es")} pasa de ${n(
+                    inicial
+                  )} a ${n(meta)} con US$${activo.presupuestoUsd} por ${eleccion.titulo}.`,
+                  comoSeVerifica: eleccion.senal,
+                  venceEn: obj.fechaCorte,
+                  nivelAlEmitir: eleccion.nivel as VincereNivel,
+                });
+              }}
             >
               Fijar el objetivo
             </button>
