@@ -5,6 +5,8 @@ import { VincereProyecto, VincereLanzamiento, VincereNivel } from "@/lib/vincere
 import { useVincereStore } from "@/lib/vincere/store";
 import {
   planDeLanzamiento,
+  calendarioDeLanzamiento,
+  Hito,
   Ruta,
   Reparto,
   ADVERTENCIA_LANZAMIENTO,
@@ -330,6 +332,107 @@ function PanelReparto({
       <button onClick={onElegir} className={`mt-5 ${elegido ? "vin-btn-primary" : "vin-btn-ghost"}`} disabled={elegido}>
         {elegido ? "Reparto elegido" : "Usar este reparto"}
       </button>
+    </div>
+  );
+}
+
+// El calendario. Su razón de ser no es organizar: es impedir un error de
+// lectura concreto y caro. Los oyentes mensuales de Spotify son una ventana
+// móvil de 28 días, así que a los siete días una campaña que está funcionando
+// se ve como si no hiciera nada — y es cuando la gente la apaga.
+function Calendario({ hitos, aviso }: { hitos: Hito[]; aviso: string | null }) {
+  return (
+    <div>
+      {aviso && (
+        <p
+          className="vin-t-base mb-5 leading-relaxed"
+          style={{ color: "var(--vin-warn)", maxWidth: "76ch" }}
+        >
+          {aviso}
+        </p>
+      )}
+      <div className="flex flex-col">
+        {hitos.map((h, i) => (
+          <div key={i} className="flex gap-4 border-b py-4 last:border-b-0" style={{ borderColor: "var(--vin-border)" }}>
+            <div className="w-[92px] shrink-0">
+              <div className="vin-t-sm tabular-nums" style={{ color: h.pasado ? "var(--vin-dim)" : "var(--vin-text)" }}>
+                {h.fecha}
+              </div>
+              {/* Convención movible vs. consecuencia de cómo funciona la
+                  métrica. La diferencia decide qué se puede negociar. */}
+              <div className="vin-t-xs" style={{ color: h.esConvencion ? "var(--vin-dim)" : "var(--vin-accent)" }}>
+                {h.esConvencion ? "convención" : "no movible"}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1" style={{ opacity: h.pasado ? 0.5 : 1 }}>
+              <div className="vin-t-base font-medium">{h.titulo}</div>
+              <p className="vin-faint vin-t-sm mt-1 leading-relaxed">{h.queSeHace}</p>
+              {h.queSeMide && (
+                <p className="vin-t-sm mt-1.5 leading-relaxed" style={{ color: "var(--vin-muted)" }}>
+                  Se mide: {h.queSeMide}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Colaboraciones en juego.
+//
+// Lo que este panel NO hace, y hay que decirlo: no dice qué plaza abre cada
+// colaborador. A&R no guarda audiencia por ciudad de los candidatos, así que
+// cruzarlos con el mapa de plazas sería inventar un dato que nadie cargó.
+// Lo que sí puede decir es cuándo tiene que estar cerrado cada uno, que es la
+// parte que de verdad se rompe: un feature que se confirma dos semanas antes de
+// la salida ya no alcanza a grabarse, mezclarse y registrarse.
+function Colaboraciones({ proyecto, fechaSalida }: { proyecto: VincereProyecto; fechaSalida: string }) {
+  const evaluados = proyecto.arDiagnostico?.candidatos ?? [];
+  const perseguir = evaluados.filter((c) => c.veredicto === "perseguir" || c.veredicto === "explorar");
+
+  const limite = new Date(fechaSalida + "T12:00:00");
+  limite.setDate(limite.getDate() - 30);
+  const fechaLimite = limite.toISOString().slice(0, 10);
+
+  if (!evaluados.length) {
+    return (
+      <p className="vin-muted vin-t-base leading-relaxed">
+        A&R no ha evaluado colaboradores para este proyecto. Si la canción va con feature, esa decisión tiene que estar
+        cerrada antes del {fechaLimite} — treinta días antes de la salida — o no alcanza a grabarse y registrarse.
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <p className="vin-muted vin-t-base leading-relaxed" style={{ maxWidth: "76ch" }}>
+        Si «{proyecto.nombre}» sale con feature, la decisión tiene que estar cerrada antes del{" "}
+        <span style={{ color: "var(--vin-text)" }}>{fechaLimite}</span>. Después de esa fecha ya no alcanza a grabarse,
+        mezclarse y registrarse a tiempo.
+      </p>
+      {perseguir.length ? (
+        <div className="mt-4 flex flex-col gap-3">
+          {perseguir.map((c) => (
+            <div key={c.nombre}>
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <span className="vin-t-base font-medium">{c.nombre}</span>
+                <span className="vin-faint vin-t-sm">{c.veredicto}</span>
+              </div>
+              <p className="vin-faint vin-t-sm mt-0.5 leading-relaxed">{c.queGana}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="vin-faint vin-t-sm mt-3 leading-relaxed">
+          Ningún candidato quedó en «perseguir» ni «explorar». Salir sola es la lectura de A&R, no una omisión.
+        </p>
+      )}
+      <p className="vin-faint vin-t-sm mt-4 leading-relaxed" style={{ maxWidth: "76ch" }}>
+        El sistema no dice qué plaza abre cada colaborador: A&R no guarda audiencia por ciudad de los candidatos, y
+        cruzarlos con el mapa de plazas sería inventar un dato que nadie cargó.
+      </p>
     </div>
   );
 }
@@ -858,7 +961,25 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
         )}
       </Paso>
 
-      <Paso n={4} titulo="Cerrar el ciclo" estado={activo?.cierre ? "cerrado" : "abierto"}>
+      <Paso
+        n={4}
+        titulo="El calendario"
+        estado={activo ? `sale el ${activo.fechaSalida}` : "falta el paso 1"}
+      >
+        {activo ? (
+          <>
+            <Calendario {...calendarioDeLanzamiento(activo.fechaSalida, activo.objetivo?.fechaCorte ?? null)} />
+            <div className="mt-7">
+              <div className="vin-muted vin-t-sm mb-2 font-medium">Colaboraciones en juego</div>
+              <Colaboraciones proyecto={proyecto} fechaSalida={activo.fechaSalida} />
+            </div>
+          </>
+        ) : (
+          <p className="vin-muted vin-t-base">Declara el lanzamiento y el calendario se arma solo desde la fecha.</p>
+        )}
+      </Paso>
+
+      <Paso n={5} titulo="Cerrar el ciclo" estado={activo?.cierre ? "cerrado" : "abierto"}>
         {activo ? (
           <Cierre proyecto={proyecto} l={activo} />
         ) : (
