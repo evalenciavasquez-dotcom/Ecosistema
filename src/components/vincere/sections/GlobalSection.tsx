@@ -7,6 +7,10 @@ import { indicadoresGlobales } from "@/lib/vincere/global";
 import {
   calcularNps,
   vocesDetractoras,
+  leerPegado,
+  porCanal,
+  brechaEntreCanales,
+  npsAplicable,
   LecturaNps,
   NpsSobre,
   NPS_SOBRE_LABEL,
@@ -112,10 +116,14 @@ function CapturaNps({ proyecto }: { proyecto: VincereProyecto }) {
   const [puntaje, setPuntaje] = useState<number | null>(null);
   const [comentario, setComentario] = useState("");
   const [canal, setCanal] = useState("");
+  const [pegando, setPegando] = useState(false);
+  const [bloque, setBloque] = useState("");
+
+  const previo = useMemo(() => (bloque.trim() ? leerPegado(bloque) : null), [bloque]);
 
   return (
     <Panel>
-      <PanelLabel>Registrar una respuesta</PanelLabel>
+      <PanelLabel>Registrar respuestas</PanelLabel>
       <div className="mb-4 flex flex-wrap gap-2">
         {(["artista", "vincere"] as NpsSobre[]).map((s) => (
           <button
@@ -184,6 +192,62 @@ function CapturaNps({ proyecto }: { proyecto: VincereProyecto }) {
         />
       </div>
 
+      {/* Pegar en bloque. Sin esto la función es teórica: nadie carga treinta
+          respuestas de a una por una pantalla de once botones. Se recogen en un
+          formulario y llegan como una columna. */}
+      <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
+        <button onClick={() => setPegando((v) => !v)} className="vin-faint vin-t-sm hover:underline">
+          {pegando ? "cerrar" : "o pegar varias de una vez"}
+        </button>
+        {pegando && (
+          <div className="mt-3">
+            <p className="vin-faint vin-t-sm mb-2 leading-relaxed" style={{ maxWidth: "70ch" }}>
+              Una respuesta por línea. Solo el puntaje, o «puntaje, comentario». Es lo que sale de exportar un Google
+              Form o una hoja de cálculo. Si pegás el encabezado, se rechaza y te lo dice.
+            </p>
+            <textarea
+              className="vin-input min-h-[120px] font-mono"
+              value={bloque}
+              onChange={(e) => setBloque(e.target.value)}
+              placeholder={"10, la vi en vivo y me voló\n9\n7\n4, no me engancha la letra"}
+            />
+            {previo && (
+              <div className="mt-2">
+                <p className="vin-t-sm" style={{ color: "var(--vin-ok)" }}>
+                  {previo.validas.length} respuesta{previo.validas.length === 1 ? "" : "s"} lista
+                  {previo.validas.length === 1 ? "" : "s"} para cargar.
+                </p>
+                {previo.rechazadas.map((r) => (
+                  <p key={r.linea} className="vin-t-sm mt-0.5" style={{ color: "var(--vin-warn)" }}>
+                    línea {r.linea} «{r.texto}» — {r.porQue}
+                  </p>
+                ))}
+              </div>
+            )}
+            <button
+              className="vin-btn-primary mt-3"
+              disabled={!previo || previo.validas.length === 0}
+              onClick={() => {
+                if (!previo) return;
+                for (const v of previo.validas) {
+                  addRespuestaNps(proyecto.id, {
+                    sobre,
+                    puntaje: v.puntaje,
+                    comentario: v.comentario,
+                    canal: canal.trim() || undefined,
+                    fecha: new Date().toISOString().slice(0, 10),
+                  });
+                }
+                setBloque("");
+                setPegando(false);
+              }}
+            >
+              Cargar {previo?.validas.length ?? 0} respuesta{(previo?.validas.length ?? 0) === 1 ? "" : "s"}
+            </button>
+          </div>
+        )}
+      </div>
+
       <button
         className="vin-btn-primary mt-4"
         disabled={puntaje == null}
@@ -225,6 +289,16 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
     () => vocesDetractoras((proyectoActivo?.npsRespuestas ?? []).filter((r) => r.sobre === "artista")),
     [proyectoActivo]
   );
+  const canales = useMemo(
+    () => porCanal((proyectoActivo?.npsRespuestas ?? []).filter((r) => r.sobre === "artista"), "artista"),
+    [proyectoActivo]
+  );
+  const brecha = useMemo(() => brechaEntreCanales(canales), [canales]);
+
+  // Con dos o tres clientes el NPS no es la herramienta, por mucha respuesta
+  // que se junte. Decirlo evita construir un número que después no se puede
+  // defender en una mesa.
+  const noAplica = npsAplicable(proyectos.filter((p) => p.tipo === "propio").length, "vincere");
 
   return (
     <div className="flex flex-col gap-8">
@@ -348,10 +422,51 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
           Mide si alguien recomienda, y eso <span style={{ color: "var(--vin-text)" }}>no se puede deducir</span> de
           streams, oyentes ni seguidores. Esas métricas dicen quién escucha. Hay que preguntar.
         </p>
+        {noAplica && (
+          <p className="vin-t-base mb-4 leading-relaxed" style={{ color: "var(--vin-warn)", maxWidth: "74ch" }}>
+            {noAplica}
+          </p>
+        )}
         <div className="grid gap-4 lg:grid-cols-2">
           <TarjetaNps l={g.npsVincere} sobre="vincere" />
           {proyectoActivo && <TarjetaNps l={npsArtista} sobre="artista" />}
         </div>
+
+        {/* El sesgo, medido. La advertencia "el NPS mide a quien responde" no
+            cambia ninguna decisión mientras sea una frase al pie: se vuelve
+            útil cuando se ve que el público de un show y los DM dicen cosas
+            distintas. */}
+        {canales.length > 1 && (
+          <div className="mt-5">
+            <div className="vin-muted vin-t-sm mb-2 font-medium">Por dónde se preguntó</div>
+            {brecha && (
+              <p
+                className="vin-t-base mb-3 leading-relaxed"
+                style={{ maxWidth: "74ch", color: /no representa/.test(brecha) ? "var(--vin-warn)" : "var(--vin-muted)" }}
+              >
+                {brecha}
+              </p>
+            )}
+            <div className="flex flex-col gap-2">
+              {canales.map((c) => (
+                <div key={c.canal} className="flex flex-wrap items-baseline justify-between gap-x-4">
+                  <span className="vin-t-base">{c.canal}</span>
+                  <span className="vin-t-sm tabular-nums">
+                    {c.lectura.puntaje != null ? (
+                      <span style={{ color: colorNps(c.lectura.puntaje, c.lectura.rangoBajo, c.lectura.rangoAlto) }}>
+                        {c.lectura.puntaje > 0 ? "+" : ""}
+                        {c.lectura.puntaje}
+                      </span>
+                    ) : (
+                      <span className="vin-faint">—</span>
+                    )}
+                    <span className="vin-faint"> · {c.lectura.respuestas} resp.</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {voces.length > 0 && (
           <div className="mt-5">

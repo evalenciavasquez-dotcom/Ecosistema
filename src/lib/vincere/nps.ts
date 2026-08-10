@@ -197,3 +197,131 @@ export function vocesDetractoras(respuestas: RespuestaNps[]): RespuestaNps[] {
 
 export const ADVERTENCIA_NPS =
   "El NPS mide a quien responde, no a quien no responde. Si la encuesta la contesta sobre todo el círculo cercano, el número mide a ese círculo. Anotá siempre por dónde se preguntó.";
+
+
+// ---------------------------------------------------------------------------
+// Recolectar: pegar respuestas en bloque
+// ---------------------------------------------------------------------------
+//
+// Nadie va a cargar treinta respuestas de a una por una pantalla de once
+// botones. Se recogen en un formulario —Google Forms, Tally, un papel en un
+// show— y llegan como una columna. Esto la lee.
+//
+// Acepta lo que sale de un CSV o de una hoja de cálculo: un puntaje por línea,
+// o "puntaje, comentario", o "puntaje<tab>comentario". Lo que no entiende lo
+// devuelve como línea rechazada con su número, en vez de tragárselo en
+// silencio: una respuesta perdida sin aviso corrompe un promedio que nadie
+// vuelve a auditar.
+
+export interface LineaPegada {
+  puntaje: number;
+  comentario?: string;
+}
+
+export interface ResultadoPegado {
+  validas: LineaPegada[];
+  // Línea original y por qué no se pudo leer. Con el número de línea, para
+  // poder ir a arreglarla en el origen.
+  rechazadas: { linea: number; texto: string; porQue: string }[];
+}
+
+export function leerPegado(texto: string): ResultadoPegado {
+  const validas: LineaPegada[] = [];
+  const rechazadas: ResultadoPegado["rechazadas"] = [];
+
+  const lineas = texto.split(/\r?\n/);
+  lineas.forEach((cruda, i) => {
+    const linea = cruda.trim();
+    if (!linea) return;
+
+    // El separador puede ser tabulación (pegado desde una hoja) o la primera
+    // coma (pegado desde CSV). Se parte solo en la PRIMERA, porque el
+    // comentario puede traer comas propias.
+    const corte = linea.search(/[\t,;]/);
+    const cabeza = corte === -1 ? linea : linea.slice(0, corte);
+    const cola = corte === -1 ? "" : linea.slice(corte + 1).trim();
+
+    const num = Number(cabeza.trim().replace(",", "."));
+    if (!Number.isFinite(num)) {
+      // Encabezados tipo "puntaje,comentario" caen acá y se dicen como tal:
+      // es el caso más común al pegar desde una hoja.
+      rechazadas.push({
+        linea: i + 1,
+        texto: linea.slice(0, 60),
+        porQue: "no empieza con un número — si es el encabezado de la hoja, bórralo antes de pegar",
+      });
+      return;
+    }
+    if (num < 0 || num > 10) {
+      rechazadas.push({
+        linea: i + 1,
+        texto: linea.slice(0, 60),
+        porQue: `${num} está fuera de la escala 0-10`,
+      });
+      return;
+    }
+
+    validas.push({
+      puntaje: Math.round(num),
+      comentario: cola.replace(/^["']|["']$/g, "").trim() || undefined,
+    });
+  });
+
+  return { validas, rechazadas };
+}
+
+// ---------------------------------------------------------------------------
+// El sesgo, medido en vez de advertido
+// ---------------------------------------------------------------------------
+//
+// La advertencia "el NPS mide a quien responde" no cambia ninguna decisión
+// mientras sea una frase al pie. Se vuelve útil cuando se puede VER: si el
+// público de un show puntúa 30 y los DM puntúan 80, el problema no es el
+// promedio — es que se preguntó en el lugar equivocado.
+
+export interface NpsPorCanal {
+  canal: string;
+  lectura: LecturaNps;
+}
+
+export function porCanal(respuestas: RespuestaNps[], sobre: NpsSobre = "artista"): NpsPorCanal[] {
+  const canales = new Map<string, RespuestaNps[]>();
+  for (const r of respuestas) {
+    const c = r.canal?.trim() || "sin canal anotado";
+    canales.set(c, [...(canales.get(c) ?? []), r]);
+  }
+  return [...canales.entries()]
+    .map(([canal, rs]) => ({ canal, lectura: calcularNps(rs, sobre) }))
+    .sort((a, b) => b.lectura.respuestas - a.lectura.respuestas);
+}
+
+// La brecha entre el canal más generoso y el más duro. Cuando es grande, el
+// promedio general no representa a nadie.
+export function brechaEntreCanales(canales: NpsPorCanal[]): string | null {
+  const conDatos = canales.filter((c) => c.lectura.puntaje != null && c.lectura.respuestas >= 3);
+  if (conDatos.length < 2) return null;
+
+  const orden = [...conDatos].sort((a, b) => (b.lectura.puntaje ?? 0) - (a.lectura.puntaje ?? 0));
+  const alto = orden[0];
+  const bajo = orden[orden.length - 1];
+  const brecha = (alto.lectura.puntaje ?? 0) - (bajo.lectura.puntaje ?? 0);
+
+  if (brecha < 20) {
+    return `Los canales coinciden (${brecha} puntos de diferencia entre el más alto y el más bajo). El promedio representa a todos.`;
+  }
+  return `«${alto.canal}» puntúa ${alto.lectura.puntaje} y «${bajo.canal}» puntúa ${
+    bajo.lectura.puntaje
+  }: ${brecha} puntos de diferencia. El promedio general no representa a ninguno de los dos — lo que cambia el número no es el artista, es por dónde se preguntó.`;
+}
+
+// Cuándo el NPS es directamente la herramienta equivocada.
+//
+// Con una población de cinco clientes no hay muestra que alcance: el margen se
+// come el resultado por completo. Decirlo es más útil que calcular un número
+// que después nadie puede defender.
+export function npsAplicable(poblacionEstimada: number | null, sobre: NpsSobre): string | null {
+  if (sobre === "vincere" && poblacionEstimada != null && poblacionEstimada < 15) {
+    return `Con ${poblacionEstimada} cliente(s) el NPS no es la herramienta: aunque respondan todos, el margen se come el resultado. Preguntá igual —la pregunta es buena— pero leé los comentarios, no el puntaje.`;
+  }
+  return null;
+}
