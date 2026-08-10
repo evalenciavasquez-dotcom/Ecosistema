@@ -31,6 +31,7 @@ import {
   VincerePrediccion,
   VincereVinculo,
   VincereLanzamiento,
+  VincereRespuestaNps,
   VincereCierreLanzamiento,
   VincereVinculoTipo,
   vinculoVacio,
@@ -156,6 +157,9 @@ interface VincereState {
   deleteZonaCalor: (proyectoId: string, zonaId: string) => void;
 
   updateVinculo: (proyectoId: string, patch: Partial<VincereVinculo>) => void;
+
+  addRespuestaNps: (proyectoId: string, r: Omit<VincereRespuestaNps, "id">) => void;
+  deleteRespuestaNps: (proyectoId: string, respuestaId: string) => void;
 
   addLanzamiento: (
     proyectoId: string,
@@ -583,6 +587,28 @@ export const useVincereStore = create<VincereState>()(
             }
             return { ...p, vinculo: { ...base, actualizadoEn: new Date().toISOString() } };
           }),
+        })),
+
+      // El puntaje se recorta a 0-10 al entrar. Una respuesta de 11 o de -3 no
+      // es un dato que haya que "interpretar" después: es un error de captura,
+      // y dejarlo pasar contamina un número que después nadie audita.
+      addRespuestaNps: (proyectoId, r) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            npsRespuestas: [
+              { ...r, puntaje: Math.max(0, Math.min(10, Math.round(r.puntaje))), id: genId("nps") },
+              ...(p.npsRespuestas ?? []),
+            ],
+          })),
+        })),
+
+      deleteRespuestaNps: (proyectoId, respuestaId) =>
+        set((s) => ({
+          proyectos: mapProyecto(s.proyectos, proyectoId, (p) => ({
+            ...p,
+            npsRespuestas: (p.npsRespuestas ?? []).filter((r) => r.id !== respuestaId),
+          })),
         })),
 
       addLanzamiento: (proyectoId, l) =>

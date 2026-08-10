@@ -13,6 +13,7 @@ export const VINCERE_NIVEL_LABEL: Record<VincereNivel, string> = {
 };
 
 export type VincereSeccion =
+  | "global"
   | "resumen"
   | "diagnostico"
   | "marca"
@@ -36,6 +37,7 @@ export type VincereSeccion =
   | "manual";
 
 export const VINCERE_SECCION_LABEL: Record<VincereSeccion, string> = {
+  global: "Indicadores globales",
   resumen: "Resumen · Momentum",
   diagnostico: "Diagnóstico Maestro",
   marca: "Marca",
@@ -1269,6 +1271,7 @@ export interface VincereProyecto {
   stressTests?: VincereStressTest[];
   investigaciones?: VincereInvestigacion[];
   lanzamientos?: VincereLanzamiento[];
+  npsRespuestas?: VincereRespuestaNps[];
   creadoEn: string;
 }
 
@@ -1376,4 +1379,28 @@ export interface VincereLanzamiento {
   cierre: VincereCierreLanzamiento | null;
   notas: string;
   creadoEn: string;
+}
+
+
+// ---------------------------------------------------------------------------
+// NPS
+// ---------------------------------------------------------------------------
+
+// Una respuesta a la pregunta de recomendación. Vive dentro del proyecto pero
+// lleva 'sobre': las que preguntan por VINCERE se juntan después entre todos
+// los proyectos, porque son una sola encuesta repartida.
+//
+// El cálculo vive en nps.ts, no acá: restar proporciones y sacar el margen de
+// error es aritmética, y la aritmética no pasa por el modelo.
+export interface VincereRespuestaNps {
+  id: string;
+  // "artista" = se le preguntó a un fan sobre el artista.
+  // "vincere" = se le preguntó a un artista o cliente sobre el servicio.
+  sobre: "artista" | "vincere";
+  puntaje: number; // 0-10
+  comentario?: string;
+  // Por dónde se preguntó. Importa más de lo que parece: un NPS levantado
+  // entre el círculo cercano mide al círculo cercano.
+  canal?: string;
+  fecha: string;
 }
