@@ -14,7 +14,7 @@
 import { VincereProyecto } from "./types";
 import { calcularMarcador } from "./types";
 import { motoresDelProyecto } from "./motores";
-import { calcularNps, LecturaNps, RespuestaNps } from "./nps";
+import { calcularNps, LecturaNps, ModoNps, RespuestaNps } from "./nps";
 import { calcularFanRate } from "./fanrate";
 
 const HOY = () => new Date().toISOString().slice(0, 10);
@@ -44,6 +44,10 @@ export interface FilaProyecto {
   lanzamientosAbiertos: number;
   nps: number | null;
   npsRespuestas: number;
+  // Con pocas respuestas la tabla muestra el conteo y no el puntaje: comparar
+  // puntajes entre proyectos a esa escala es comparar ruido con ruido.
+  npsModo: ModoNps;
+  npsPromotores: number;
 }
 
 export interface IndicadoresGlobales {
@@ -139,6 +143,8 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
       lanzamientosAbiertos: lanzamientos.filter((l) => !l.cierre).length,
       nps: npsArtista.puntaje,
       npsRespuestas: npsArtista.respuestas,
+      npsModo: npsArtista.modo,
+      npsPromotores: npsArtista.promotores,
     };
   });
 

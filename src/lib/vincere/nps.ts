@@ -14,8 +14,22 @@
 // de quince respuestas no es 42. Es un número con un margen de error enorme,
 // porque el puntaje resta dos proporciones y cada una arrastra su propia
 // incertidumbre. Este módulo calcula ese margen y lo muestra pegado a la cifra.
-// Es la diferencia entre presentar un dato y presentar una anécdota con
-// decimales.
+//
+// PERO —y esta es la corrección importante— de ahí NO se sigue que con pocas
+// respuestas no haya nada que decir. Ese fue el error de la primera versión:
+// mostraba un número gris con una disculpa al lado, que es un indicador que no
+// indica nada.
+//
+// La distinción que lo resuelve: el PUNTAJE es una inferencia sobre gente a la
+// que no se le preguntó; los CONTEOS son una observación de lo que respondió
+// quien sí respondió. Con ocho respuestas no se puede afirmar "el NPS es +40",
+// pero sí se puede afirmar "de ocho personas, cinco lo recomendarían y una no".
+// Eso es un hecho, no una estimación, y sirve desde la primera respuesta.
+//
+// Por eso el módulo tiene tres modos y elige solo:
+//   cuenta      (n < 10)  → los conteos como hecho. Sin puntaje: no aplica.
+//   provisional (10-29)   → conteos arriba, puntaje con margen abajo.
+//   puntaje     (30+)     → el puntaje manda, ya distingue.
 //
 // Y LO TERCERO: el NPS mide a quien responde, no a quien no responde. Si la
 // encuesta la contesta el club de fans, el número mide al club de fans. Eso
@@ -79,6 +93,12 @@ export interface LecturaNps {
   // El rango honesto: puntaje ± margen, recortado a [-100, 100].
   rangoBajo: number | null;
   rangoAlto: number | null;
+  // Cómo hay que leer esto: como conteo, como puntaje provisional, o como
+  // puntaje. Lo decide la cantidad de respuestas, no quien presenta.
+  modo: ModoNps;
+  // El hecho, dicho en una frase. Funciona desde la primera respuesta porque no
+  // proyecta nada: cuenta lo que pasó.
+  frase: string;
   // Qué se puede y qué no se puede decir con estas respuestas.
   lectura: string;
   // Cuando falta algo, qué falta.
@@ -87,11 +107,22 @@ export interface LecturaNps {
   descartadas: number;
 }
 
-// Cuántas respuestas hacen falta antes de que el número deje de ser anécdota.
-// No es un número mágico: es donde el margen de error al 95% baja de ±20
-// puntos en un reparto típico, que es cuando el puntaje empieza a distinguir
-// un NPS bueno de uno malo.
+// Dónde el PUNTAJE empieza a distinguir un resultado bueno de uno malo: es
+// donde el margen al 95% baja de ±20 puntos en un reparto típico. No es un
+// mínimo para usar el indicador — es un mínimo para usar el puntaje.
 export const MINIMO_UTIL = 30;
+
+// Por debajo de esto ni siquiera vale la pena mostrar el puntaje: se reportan
+// los conteos, que son un hecho.
+export const MINIMO_PUNTAJE = 10;
+
+export type ModoNps = "cuenta" | "provisional" | "puntaje";
+
+function modoDe(n: number): ModoNps {
+  if (n < MINIMO_PUNTAJE) return "cuenta";
+  if (n < MINIMO_UTIL) return "provisional";
+  return "puntaje";
+}
 
 const r0 = (n: number) => Math.round(n);
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -113,6 +144,8 @@ export function calcularNps(respuestas: RespuestaNps[], sobre: NpsSobre = "artis
     margen: null,
     rangoBajo: null,
     rangoAlto: null,
+    modo: "cuenta",
+    frase: "",
     lectura: "",
     falta,
     descartadas,
@@ -157,24 +190,48 @@ export function calcularNps(respuestas: RespuestaNps[], sobre: NpsSobre = "artis
     margen,
     rangoBajo,
     rangoAlto,
+    modo: modoDe(n),
+    frase: frasear(promotores, pasivos, detractores, n, sobre),
     lectura: leer(puntaje, n, margen, sobre),
     falta:
-      n < MINIMO_UTIL
-        ? `Con ${n} respuesta(s) el margen es de ±${margen} puntos. Hacen falta unas ${MINIMO_UTIL} para que el número distinga un NPS bueno de uno malo.`
+      modoDe(n) === "provisional"
+        ? `El puntaje es provisional: con ${n} respuestas el margen es de ±${margen}. Los conteos de arriba sí son firmes.`
         : null,
     descartadas,
   };
 }
 
+// El hecho, sin proyectar nada.
+//
+// "De 8 personas, 5 la recomendarían" es verdad con 8 respuestas. "El NPS es
+// +40" no lo es. Esta frase es la que hace que el indicador sirva desde el
+// primer día, y es la que se puede decir en una reunión sin exagerar.
+function frasear(prom: number, pas: number, detr: number, n: number, sobre: NpsSobre): string {
+  const que = sobre === "artista" ? "lo recomendarían" : "te recomendarían";
+  const partes: string[] = [`${prom} de ${n} ${que}`];
+  if (detr > 0) partes.push(`${detr} no`);
+  if (pas > 0) partes.push(`${pas} ni sí ni no`);
+  return partes.join(", ") + ".";
+}
+
 function leer(puntaje: number, n: number, margen: number, sobre: NpsSobre): string {
-  // Lo primero que hay que mirar no es el puntaje sino si el rango cruza el
-  // cero: si lo cruza, ni siquiera se sabe el signo, y discutir la magnitud es
-  // discutir sobre ruido.
+  // Con pocas respuestas la lectura NO es "no se puede decir nada". Es que hay
+  // que leer los comentarios en vez del puntaje: con ocho respuestas cada
+  // detractor es una persona concreta con un motivo concreto, y eso es más
+  // accionable que cualquier promedio.
+  if (n < MINIMO_PUNTAJE) {
+    return `Con ${n} respuesta${
+      n === 1 ? "" : "s"
+    } no hay puntaje que proyectar, pero sí hay qué leer: a esta escala cada respuesta es una persona con un motivo. Los comentarios valen más que cualquier promedio, y de ahí sale la decisión.`;
+  }
+
+  // Con muestra suficiente para intentar un puntaje, lo primero es si el rango
+  // cruza el cero: si lo cruza, ni siquiera se sabe el signo.
   if (puntaje - margen < 0 && puntaje + margen > 0) {
-    return `Con ${n} respuesta(s) el rango va de ${Math.max(-100, Math.round(puntaje - margen))} a ${Math.min(
+    return `El puntaje va de ${Math.max(-100, Math.round(puntaje - margen))} a ${Math.min(
       100,
       Math.round(puntaje + margen)
-    )} y cruza el cero: todavía no se sabe ni si es positivo. No hay lectura que sostener — hay que juntar más respuestas.`;
+    )} y cruza el cero, así que todavía no dice si es positivo. Los conteos sí valen — y los comentarios más.`;
   }
 
   const quien = sobre === "artista" ? "la audiencia" : "los clientes";

@@ -17,6 +17,7 @@ import {
   NPS_SOBRE_PREGUNTA,
   NPS_SOBRE_QUE_MIDE,
   MINIMO_UTIL,
+  MINIMO_PUNTAJE,
   ADVERTENCIA_NPS,
 } from "@/lib/vincere/nps";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
@@ -63,16 +64,52 @@ function TarjetaNps({ l, sobre }: { l: LecturaNps; sobre: NpsSobre }) {
         <p className="vin-muted vin-t-base leading-relaxed" style={{ maxWidth: "70ch" }}>
           {l.falta}
         </p>
+      ) : l.modo === "cuenta" ? (
+        // MODO CUENTA. Lo grande es el hecho, no una proyección.
+        //
+        // Con ocho respuestas "5 de 8 lo recomendarían" es verdad; "el NPS es
+        // +40" no lo es. Mostrar el puntaje acá —aunque fuera en gris y con
+        // disculpa— invita a leerlo igual, y eso es lo que había antes.
+        <>
+          <p className="vin-t-xl vin-serif leading-snug" style={{ maxWidth: "70ch" }}>
+            {l.frase}
+          </p>
+          <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full" style={{ background: "var(--vin-border)" }}>
+            <div style={{ width: `${l.pctPromotores}%`, background: "var(--vin-ok)" }} />
+            <div style={{ width: `${l.pctPasivos}%`, background: "var(--vin-dim)" }} />
+            <div style={{ width: `${l.pctDetractores}%`, background: "var(--vin-risk)" }} />
+          </div>
+          <p className="vin-faint vin-t-sm mt-4 leading-relaxed" style={{ maxWidth: "70ch" }}>
+            {l.lectura}
+          </p>
+        </>
       ) : (
         <>
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <span className="vin-t-display vin-serif tabular-nums" style={{ color: colorNps(l.puntaje, l.rangoBajo, l.rangoAlto) }}>
+          {/* El hecho va PRIMERO también acá: es lo que se sostiene sin
+              importar el tamaño de la muestra. */}
+          <p className="vin-t-lg leading-snug" style={{ maxWidth: "70ch" }}>
+            {l.frase}
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span
+              className="vin-t-display vin-serif tabular-nums"
+              style={{ color: colorNps(l.puntaje, l.rangoBajo, l.rangoAlto) }}
+            >
               {l.puntaje > 0 ? "+" : ""}
               {l.puntaje}
             </span>
             {l.margen != null && (
               <span className="vin-muted vin-t-base tabular-nums">
                 ± {l.margen} · va de {l.rangoBajo} a {l.rangoAlto}
+              </span>
+            )}
+            {l.modo === "provisional" && (
+              <span
+                className="vin-t-xs rounded-full px-2.5 py-1"
+                style={{ border: "1px solid var(--vin-warn)55", color: "var(--vin-warn)" }}
+              >
+                provisional
               </span>
             )}
           </div>
@@ -94,7 +131,7 @@ function TarjetaNps({ l, sobre }: { l: LecturaNps; sobre: NpsSobre }) {
             {l.lectura}
           </p>
           {l.falta && (
-            <p className="vin-t-sm mt-2 leading-relaxed" style={{ color: "var(--vin-warn)", maxWidth: "70ch" }}>
+            <p className="vin-faint vin-t-sm mt-2 leading-relaxed" style={{ maxWidth: "70ch" }}>
               {l.falta}
             </p>
           )}
@@ -393,15 +430,24 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
                       <span style={{ color: "var(--vin-warn)" }}> ({f.prediccionesVencidas} vencidas)</span>
                     )}
                   </td>
-                  <td className="py-3 text-right vin-t-sm tabular-nums" style={{ color: colorNps(f.nps) }}>
-                    {f.nps != null ? (
-                      <>
+                  {/* Con pocas respuestas la celda muestra el CONTEO, no el
+                      puntaje: una columna de puntajes invita a compararlos
+                      entre proyectos, y a esta escala esa comparación es
+                      ruido contra ruido. */}
+                  <td className="py-3 text-right vin-t-sm tabular-nums">
+                    {f.nps == null ? (
+                      <span className="vin-faint">sin encuesta</span>
+                    ) : f.npsModo === "cuenta" ? (
+                      <span>
+                        {f.npsPromotores}/{f.npsRespuestas}
+                        <span className="vin-faint vin-t-xs"> recomiendan</span>
+                      </span>
+                    ) : (
+                      <span style={{ color: colorNps(f.nps) }}>
                         {f.nps > 0 ? "+" : ""}
                         {f.nps}
                         <span className="vin-faint vin-t-xs"> ({f.npsRespuestas})</span>
-                      </>
-                    ) : (
-                      <span className="vin-faint">sin encuesta</span>
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -410,8 +456,9 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
           </table>
         </div>
         <p className="vin-faint vin-t-sm mt-3 leading-relaxed" style={{ maxWidth: "74ch" }}>
-          Un NPS con menos de {MINIMO_UTIL} respuestas no distingue un resultado bueno de uno malo. El número entre
-          paréntesis es cuántas hay.
+          Con menos de {MINIMO_PUNTAJE} respuestas la columna muestra cuántos recomiendan sobre cuántos respondieron,
+          que es un hecho. El puntaje aparece cuando hay muestra para proyectarlo, y solo distingue bien a partir de{" "}
+          {MINIMO_UTIL}.
         </p>
       </div>
 
