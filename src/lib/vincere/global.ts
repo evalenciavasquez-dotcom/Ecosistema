@@ -14,7 +14,6 @@
 import { VincereProyecto } from "./types";
 import { calcularMarcador } from "./types";
 import { motoresDelProyecto } from "./motores";
-import { calcularNps, LecturaNps, ModoNps, RespuestaNps } from "./nps";
 import { calcularFanRate } from "./fanrate";
 
 const HOY = () => new Date().toISOString().slice(0, 10);
@@ -42,12 +41,6 @@ export interface FilaProyecto {
   prediccionesAbiertas: number;
   prediccionesVencidas: number;
   lanzamientosAbiertos: number;
-  nps: number | null;
-  npsRespuestas: number;
-  // Con pocas respuestas la tabla muestra el conteo y no el puntaje: comparar
-  // puntajes entre proyectos a esa escala es comparar ruido con ruido.
-  npsModo: ModoNps;
-  npsPromotores: number;
 }
 
 export interface IndicadoresGlobales {
@@ -57,9 +50,6 @@ export interface IndicadoresGlobales {
   // Lo que hay que atender hoy, de lo más viejo a lo más nuevo.
   pendientes: PendienteGlobal[];
   filas: FilaProyecto[];
-  // NPS de VINCERE como servicio: junta las respuestas marcadas 'vincere' de
-  // todos los proyectos, porque es una sola encuesta repartida.
-  npsVincere: LecturaNps;
   // Aciertos del sistema sumando todos los proyectos. Es el número que
   // responde "¿esto sirve?" mejor que cualquier otro del tablero.
   prediccionesCerradas: number;
@@ -77,7 +67,6 @@ function diasEntre(desde: string, hasta: string): number {
 export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGlobales {
   const hoy = HOY();
   const pendientes: PendienteGlobal[] = [];
-  const respuestasVincere: RespuestaNps[] = [];
 
   let cerradas = 0;
   let acertadas = 0;
@@ -123,10 +112,6 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
     decisivas += dec;
     acertadas += marcador.acertadas;
 
-    const npsRespuestas = (p.npsRespuestas ?? []).filter((r) => r.sobre === "artista");
-    const npsArtista = calcularNps(npsRespuestas, "artista");
-    respuestasVincere.push(...(p.npsRespuestas ?? []).filter((r) => r.sobre === "vincere"));
-
     const fr = calcularFanRate(p);
     const marginalUtil = fr.marginal && !fr.marginal.audienciaBajo && fr.marginal.oyentesGanados > 0;
 
@@ -141,10 +126,6 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
       prediccionesAbiertas: marcador.abiertas,
       prediccionesVencidas: marcador.vencidas,
       lanzamientosAbiertos: lanzamientos.filter((l) => !l.cierre).length,
-      nps: npsArtista.puntaje,
-      npsRespuestas: npsArtista.respuestas,
-      npsModo: npsArtista.modo,
-      npsPromotores: npsArtista.promotores,
     };
   });
 
@@ -182,7 +163,6 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
     competencia: proyectos.length - propios,
     pendientes,
     filas,
-    npsVincere: calcularNps(respuestasVincere, "vincere"),
     prediccionesCerradas: cerradas,
     pctAcierto,
     titular,

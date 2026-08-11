@@ -131,7 +131,7 @@ function SectionRouter({
     case "kpis":
       return <KpisSection proyecto={proyecto} />;
     case "global":
-      return <GlobalSection proyectoActivo={proyecto} />;
+      return <GlobalSection />;
     case "lanzamiento":
       return <LanzamientoSection proyecto={proyecto} />;
     case "triage":

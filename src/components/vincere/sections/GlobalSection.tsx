@@ -1,26 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { VincereProyecto } from "@/lib/vincere/types";
+import { useMemo } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
 import { indicadoresGlobales } from "@/lib/vincere/global";
-import {
-  calcularNps,
-  vocesDetractoras,
-  leerPegado,
-  porCanal,
-  brechaEntreCanales,
-  npsAplicable,
-  LecturaNps,
-  NpsSobre,
-  NPS_SOBRE_LABEL,
-  NPS_SOBRE_PREGUNTA,
-  NPS_SOBRE_QUE_MIDE,
-  MINIMO_UTIL,
-  MINIMO_PUNTAJE,
-  ADVERTENCIA_NPS,
-} from "@/lib/vincere/nps";
-import { SectionHeader, Panel, PanelLabel } from "../primitives";
+import { SectionHeader, PanelLabel } from "../primitives";
 
 // La vista de un lunes.
 //
@@ -28,314 +11,21 @@ import { SectionHeader, Panel, PanelLabel } from "../primitives";
 // deliberado: abre por lo VENCIDO SIN CERRAR, no por las cifras bonitas. Un
 // marcador que no se cierra siempre parece que va ganando, y esa es la forma
 // más fácil de que este sistema se vuelva decorado.
-
-// El color sigue a la CONFIANZA, no al puntaje.
 //
-// Pintar de verde un +50 cuyo rango va de -35 a 100 sería una mentira visual:
-// el texto diría que no se sabe ni el signo mientras el número se ve como un
-// logro, y de esas dos cosas la que se captura para una presentación es el
-// verde. Cuando el rango cruza el cero el número va en gris, porque eso es
-// exactamente lo que significa: todavía no dice nada.
-function colorNps(p: number | null, rangoBajo?: number | null, rangoAlto?: number | null): string {
-  if (p == null) return "var(--vin-dim)";
-  if (rangoBajo != null && rangoAlto != null && rangoBajo < 0 && rangoAlto > 0) return "var(--vin-dim)";
-  if (p >= 50) return "var(--vin-ok)";
-  if (p >= 0) return "var(--vin-warn)";
-  return "var(--vin-risk)";
-}
+// Aquí vivió un NPS y se sacó a propósito. La métrica es buena y la
+// implementación quedó honesta —conteos con pocas respuestas, puntaje solo con
+// muestra suficiente, margen de error siempre visible—, pero se alimenta de
+// encuestas que a esta escala de operación no se van a levantar. Un indicador
+// que nadie puede alimentar no queda neutro: queda vacío en pantalla y hace ver
+// incompleto un tablero que sí está completo. Está en el historial de git si
+// algún día hay volumen para sostenerlo.
 
-// El puntaje con su margen. El margen no es un adorno: con pocas respuestas es
-// tan ancho que el número no distingue nada, y verlo es lo que impide
-// presentar ruido como resultado.
-function TarjetaNps({ l, sobre }: { l: LecturaNps; sobre: NpsSobre }) {
-  return (
-    <div className="vin-card p-6">
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
-        <span className="vin-t-base font-medium">{NPS_SOBRE_LABEL[sobre]}</span>
-        <span className="vin-faint vin-t-sm tabular-nums">
-          {l.respuestas} respuesta{l.respuestas === 1 ? "" : "s"}
-        </span>
-      </div>
-      <p className="vin-faint vin-t-sm mb-4 leading-relaxed" style={{ maxWidth: "70ch" }}>
-        {NPS_SOBRE_QUE_MIDE[sobre]}
-      </p>
-
-      {l.puntaje == null ? (
-        <p className="vin-muted vin-t-base leading-relaxed" style={{ maxWidth: "70ch" }}>
-          {l.falta}
-        </p>
-      ) : l.modo === "cuenta" ? (
-        // MODO CUENTA. Lo grande es el hecho, no una proyección.
-        //
-        // Con ocho respuestas "5 de 8 lo recomendarían" es verdad; "el NPS es
-        // +40" no lo es. Mostrar el puntaje acá —aunque fuera en gris y con
-        // disculpa— invita a leerlo igual, y eso es lo que había antes.
-        <>
-          <p className="vin-t-xl vin-serif leading-snug" style={{ maxWidth: "70ch" }}>
-            {l.frase}
-          </p>
-          <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full" style={{ background: "var(--vin-border)" }}>
-            <div style={{ width: `${l.pctPromotores}%`, background: "var(--vin-ok)" }} />
-            <div style={{ width: `${l.pctPasivos}%`, background: "var(--vin-dim)" }} />
-            <div style={{ width: `${l.pctDetractores}%`, background: "var(--vin-risk)" }} />
-          </div>
-          <p className="vin-faint vin-t-sm mt-4 leading-relaxed" style={{ maxWidth: "70ch" }}>
-            {l.lectura}
-          </p>
-        </>
-      ) : (
-        <>
-          {/* El hecho va PRIMERO también acá: es lo que se sostiene sin
-              importar el tamaño de la muestra. */}
-          <p className="vin-t-lg leading-snug" style={{ maxWidth: "70ch" }}>
-            {l.frase}
-          </p>
-
-          <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <span
-              className="vin-t-display vin-serif tabular-nums"
-              style={{ color: colorNps(l.puntaje, l.rangoBajo, l.rangoAlto) }}
-            >
-              {l.puntaje > 0 ? "+" : ""}
-              {l.puntaje}
-            </span>
-            {l.margen != null && (
-              <span className="vin-muted vin-t-base tabular-nums">
-                ± {l.margen} · va de {l.rangoBajo} a {l.rangoAlto}
-              </span>
-            )}
-            {l.modo === "provisional" && (
-              <span
-                className="vin-t-xs rounded-full px-2.5 py-1"
-                style={{ border: "1px solid var(--vin-warn)55", color: "var(--vin-warn)" }}
-              >
-                provisional
-              </span>
-            )}
-          </div>
-
-          {/* El reparto. Los pasivos son el bloque que nadie mira y suele ser
-              el más grande: no dicen nada malo y tampoco traen a nadie. */}
-          <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full" style={{ background: "var(--vin-border)" }}>
-            <div style={{ width: `${l.pctPromotores}%`, background: "var(--vin-ok)" }} />
-            <div style={{ width: `${l.pctPasivos}%`, background: "var(--vin-dim)" }} />
-            <div style={{ width: `${l.pctDetractores}%`, background: "var(--vin-risk)" }} />
-          </div>
-          <div className="vin-faint vin-t-sm mt-2 flex flex-wrap gap-x-5">
-            <span style={{ color: "var(--vin-ok)" }}>{l.pctPromotores}% promotores</span>
-            <span>{l.pctPasivos}% pasivos</span>
-            <span style={{ color: "var(--vin-risk)" }}>{l.pctDetractores}% detractores</span>
-          </div>
-
-          <p className="vin-t-base mt-4 leading-relaxed" style={{ maxWidth: "70ch" }}>
-            {l.lectura}
-          </p>
-          {l.falta && (
-            <p className="vin-faint vin-t-sm mt-2 leading-relaxed" style={{ maxWidth: "70ch" }}>
-              {l.falta}
-            </p>
-          )}
-        </>
-      )}
-
-      {l.descartadas > 0 && (
-        <p className="vin-t-sm mt-3" style={{ color: "var(--vin-warn)" }}>
-          {l.descartadas} respuesta(s) fuera del rango 0-10 quedaron descartadas.
-        </p>
-      )}
-    </div>
-  );
-}
-
-function CapturaNps({ proyecto }: { proyecto: VincereProyecto }) {
-  const addRespuestaNps = useVincereStore((s) => s.addRespuestaNps);
-  const [sobre, setSobre] = useState<NpsSobre>("artista");
-  const [puntaje, setPuntaje] = useState<number | null>(null);
-  const [comentario, setComentario] = useState("");
-  const [canal, setCanal] = useState("");
-  const [pegando, setPegando] = useState(false);
-  const [bloque, setBloque] = useState("");
-
-  const previo = useMemo(() => (bloque.trim() ? leerPegado(bloque) : null), [bloque]);
-
-  return (
-    <Panel>
-      <PanelLabel>Registrar respuestas</PanelLabel>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(["artista", "vincere"] as NpsSobre[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSobre(s)}
-            className="vin-t-sm rounded-full px-3 py-1.5"
-            style={{
-              border: sobre === s ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
-              color: sobre === s ? "var(--vin-text)" : "var(--vin-muted)",
-              background: sobre === s ? "rgba(224,72,58,0.12)" : "transparent",
-            }}
-          >
-            {NPS_SOBRE_LABEL[s]}
-          </button>
-        ))}
-      </div>
-
-      <p className="vin-muted vin-t-base mb-3 leading-relaxed" style={{ maxWidth: "70ch" }}>
-        «{NPS_SOBRE_PREGUNTA[sobre]}»
-      </p>
-
-      {/* Los once botones en vez de un campo numérico: la escala del NPS es
-          cerrada y verla completa evita el error de captura antes de que
-          ocurra. */}
-      <div className="flex flex-wrap gap-1.5">
-        {Array.from({ length: 11 }, (_, i) => i).map((v) => (
-          <button
-            key={v}
-            onClick={() => setPuntaje(v)}
-            className="vin-t-sm h-9 w-9 rounded-[--r-sm] tabular-nums"
-            style={{
-              border: puntaje === v ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
-              background:
-                puntaje === v
-                  ? "rgba(224,72,58,0.18)"
-                  : v >= 9
-                    ? "rgba(78,201,138,0.10)"
-                    : v <= 6
-                      ? "rgba(224,72,58,0.07)"
-                      : "transparent",
-              color: puntaje === v ? "var(--vin-text)" : "var(--vin-muted)",
-            }}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-      <div className="vin-faint vin-t-xs mt-1.5 flex gap-5">
-        <span>0-6 detractor</span>
-        <span>7-8 pasivo</span>
-        <span>9-10 promotor</span>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <input
-          className="vin-input"
-          placeholder="Por qué (opcional, pero es lo que más sirve)"
-          value={comentario}
-          onChange={(e) => setComentario(e.target.value)}
-        />
-        <input
-          className="vin-input"
-          placeholder="Por dónde se preguntó — correo, show, DM"
-          value={canal}
-          onChange={(e) => setCanal(e.target.value)}
-        />
-      </div>
-
-      {/* Pegar en bloque. Sin esto la función es teórica: nadie carga treinta
-          respuestas de a una por una pantalla de once botones. Se recogen en un
-          formulario y llegan como una columna. */}
-      <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
-        <button onClick={() => setPegando((v) => !v)} className="vin-faint vin-t-sm hover:underline">
-          {pegando ? "cerrar" : "o pegar varias de una vez"}
-        </button>
-        {pegando && (
-          <div className="mt-3">
-            <p className="vin-faint vin-t-sm mb-2 leading-relaxed" style={{ maxWidth: "70ch" }}>
-              Una respuesta por línea. Solo el puntaje, o «puntaje, comentario». Es lo que sale de exportar un Google
-              Form o una hoja de cálculo. Si pegás el encabezado, se rechaza y te lo dice.
-            </p>
-            <textarea
-              className="vin-input min-h-[120px] font-mono"
-              value={bloque}
-              onChange={(e) => setBloque(e.target.value)}
-              placeholder={"10, la vi en vivo y me voló\n9\n7\n4, no me engancha la letra"}
-            />
-            {previo && (
-              <div className="mt-2">
-                <p className="vin-t-sm" style={{ color: "var(--vin-ok)" }}>
-                  {previo.validas.length} respuesta{previo.validas.length === 1 ? "" : "s"} lista
-                  {previo.validas.length === 1 ? "" : "s"} para cargar.
-                </p>
-                {previo.rechazadas.map((r) => (
-                  <p key={r.linea} className="vin-t-sm mt-0.5" style={{ color: "var(--vin-warn)" }}>
-                    línea {r.linea} «{r.texto}» — {r.porQue}
-                  </p>
-                ))}
-              </div>
-            )}
-            <button
-              className="vin-btn-primary mt-3"
-              disabled={!previo || previo.validas.length === 0}
-              onClick={() => {
-                if (!previo) return;
-                for (const v of previo.validas) {
-                  addRespuestaNps(proyecto.id, {
-                    sobre,
-                    puntaje: v.puntaje,
-                    comentario: v.comentario,
-                    canal: canal.trim() || undefined,
-                    fecha: new Date().toISOString().slice(0, 10),
-                  });
-                }
-                setBloque("");
-                setPegando(false);
-              }}
-            >
-              Cargar {previo?.validas.length ?? 0} respuesta{(previo?.validas.length ?? 0) === 1 ? "" : "s"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <button
-        className="vin-btn-primary mt-4"
-        disabled={puntaje == null}
-        onClick={() => {
-          if (puntaje == null) return;
-          addRespuestaNps(proyecto.id, {
-            sobre,
-            puntaje,
-            comentario: comentario.trim() || undefined,
-            canal: canal.trim() || undefined,
-            fecha: new Date().toISOString().slice(0, 10),
-          });
-          setPuntaje(null);
-          setComentario("");
-        }}
-      >
-        Guardar respuesta
-      </button>
-    </Panel>
-  );
-}
-
-export default function GlobalSection({ proyectoActivo }: { proyectoActivo: VincereProyecto | null }) {
+export default function GlobalSection() {
   const proyectos = useVincereStore((s) => s.proyectos);
   const setSeccion = useVincereStore((s) => s.setSeccion);
   const selectProyecto = useVincereStore((s) => s.selectProyecto);
 
   const g = useMemo(() => indicadoresGlobales(proyectos), [proyectos]);
-
-  const npsArtista = useMemo(
-    () =>
-      calcularNps(
-        (proyectoActivo?.npsRespuestas ?? []).filter((r) => r.sobre === "artista"),
-        "artista"
-      ),
-    [proyectoActivo]
-  );
-  const voces = useMemo(
-    () => vocesDetractoras((proyectoActivo?.npsRespuestas ?? []).filter((r) => r.sobre === "artista")),
-    [proyectoActivo]
-  );
-  const canales = useMemo(
-    () => porCanal((proyectoActivo?.npsRespuestas ?? []).filter((r) => r.sobre === "artista"), "artista"),
-    [proyectoActivo]
-  );
-  const brecha = useMemo(() => brechaEntreCanales(canales), [canales]);
-
-  // Con dos o tres clientes el NPS no es la herramienta, por mucha respuesta
-  // que se junte. Decirlo evita construir un número que después no se puede
-  // defender en una mesa.
-  const noAplica = npsAplicable(proyectos.filter((p) => p.tipo === "propio").length, "vincere");
 
   return (
     <div className="flex flex-col gap-8">
@@ -396,7 +86,7 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
                 <th className="pb-2 text-right font-normal">Motores</th>
                 <th className="pb-2 text-right font-normal">Fan rate</th>
                 <th className="pb-2 text-right font-normal">Predicciones</th>
-                <th className="pb-2 text-right font-normal">NPS</th>
+                <th className="pb-2 text-right font-normal">Lanzamientos</th>
               </tr>
             </thead>
             <tbody>
@@ -430,24 +120,14 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
                       <span style={{ color: "var(--vin-warn)" }}> ({f.prediccionesVencidas} vencidas)</span>
                     )}
                   </td>
-                  {/* Con pocas respuestas la celda muestra el CONTEO, no el
-                      puntaje: una columna de puntajes invita a compararlos
-                      entre proyectos, y a esta escala esa comparación es
-                      ruido contra ruido. */}
                   <td className="py-3 text-right vin-t-sm tabular-nums">
-                    {f.nps == null ? (
-                      <span className="vin-faint">sin encuesta</span>
-                    ) : f.npsModo === "cuenta" ? (
-                      <span>
-                        {f.npsPromotores}/{f.npsRespuestas}
-                        <span className="vin-faint vin-t-xs"> recomiendan</span>
-                      </span>
+                    {f.lanzamientosAbiertos > 0 ? (
+                      <>
+                        {f.lanzamientosAbiertos}
+                        <span className="vin-faint vin-t-xs"> abierto{f.lanzamientosAbiertos === 1 ? "" : "s"}</span>
+                      </>
                     ) : (
-                      <span style={{ color: colorNps(f.nps) }}>
-                        {f.nps > 0 ? "+" : ""}
-                        {f.nps}
-                        <span className="vin-faint vin-t-xs"> ({f.npsRespuestas})</span>
-                      </span>
+                      <span className="vin-faint">—</span>
                     )}
                   </td>
                 </tr>
@@ -456,95 +136,8 @@ export default function GlobalSection({ proyectoActivo }: { proyectoActivo: Vinc
           </table>
         </div>
         <p className="vin-faint vin-t-sm mt-3 leading-relaxed" style={{ maxWidth: "74ch" }}>
-          Con menos de {MINIMO_PUNTAJE} respuestas la columna muestra cuántos recomiendan sobre cuántos respondieron,
-          que es un hecho. El puntaje aparece cuando hay muestra para proyectarlo, y solo distingue bien a partir de{" "}
-          {MINIMO_UTIL}.
-        </p>
-      </div>
-
-      {/* NPS */}
-      <div>
-        <PanelLabel alto>NPS</PanelLabel>
-        <p className="vin-muted vin-t-base mb-5 leading-relaxed" style={{ maxWidth: "74ch" }}>
-          Mide si alguien recomienda, y eso <span style={{ color: "var(--vin-text)" }}>no se puede deducir</span> de
-          streams, oyentes ni seguidores. Esas métricas dicen quién escucha. Hay que preguntar.
-        </p>
-        {noAplica && (
-          <p className="vin-t-base mb-4 leading-relaxed" style={{ color: "var(--vin-warn)", maxWidth: "74ch" }}>
-            {noAplica}
-          </p>
-        )}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TarjetaNps l={g.npsVincere} sobre="vincere" />
-          {proyectoActivo && <TarjetaNps l={npsArtista} sobre="artista" />}
-        </div>
-
-        {/* El sesgo, medido. La advertencia "el NPS mide a quien responde" no
-            cambia ninguna decisión mientras sea una frase al pie: se vuelve
-            útil cuando se ve que el público de un show y los DM dicen cosas
-            distintas. */}
-        {canales.length > 1 && (
-          <div className="mt-5">
-            <div className="vin-muted vin-t-sm mb-2 font-medium">Por dónde se preguntó</div>
-            {brecha && (
-              <p
-                className="vin-t-base mb-3 leading-relaxed"
-                style={{ maxWidth: "74ch", color: /no representa/.test(brecha) ? "var(--vin-warn)" : "var(--vin-muted)" }}
-              >
-                {brecha}
-              </p>
-            )}
-            <div className="flex flex-col gap-2">
-              {canales.map((c) => (
-                <div key={c.canal} className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <span className="vin-t-base">{c.canal}</span>
-                  <span className="vin-t-sm tabular-nums">
-                    {c.lectura.puntaje != null ? (
-                      <span style={{ color: colorNps(c.lectura.puntaje, c.lectura.rangoBajo, c.lectura.rangoAlto) }}>
-                        {c.lectura.puntaje > 0 ? "+" : ""}
-                        {c.lectura.puntaje}
-                      </span>
-                    ) : (
-                      <span className="vin-faint">—</span>
-                    )}
-                    <span className="vin-faint"> · {c.lectura.respuestas} resp.</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {voces.length > 0 && (
-          <div className="mt-5">
-            <div className="vin-muted vin-t-sm mb-2 font-medium">Lo que dicen los detractores</div>
-            <p className="vin-faint vin-t-sm mb-3 leading-relaxed" style={{ maxWidth: "74ch" }}>
-              El número dice que hay un problema; esto dice cuál. Es la parte del NPS que cambia una decisión.
-            </p>
-            <div className="flex flex-col gap-2">
-              {voces.slice(0, 6).map((v) => (
-                <div key={v.id} className="flex gap-3">
-                  <span
-                    className="vin-t-sm shrink-0 tabular-nums"
-                    style={{ color: "var(--vin-risk)", width: "1.5rem" }}
-                  >
-                    {v.puntaje}
-                  </span>
-                  <p className="vin-t-sm leading-relaxed">{v.comentario}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {proyectoActivo && (
-          <div className="mt-5">
-            <CapturaNps proyecto={proyectoActivo} />
-          </div>
-        )}
-
-        <p className="vin-faint vin-t-sm mt-4 leading-relaxed" style={{ maxWidth: "74ch" }}>
-          {ADVERTENCIA_NPS}
+          «Motores» es cuántos tienen data suficiente para dar una lectura, no cuántos existen. Un proyecto con dos de
+          once no está mal: está sin cargar.
         </p>
       </div>
     </div>
