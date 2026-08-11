@@ -721,7 +721,17 @@ export function planDeLanzamiento(
   // no existe se cae al acumulado, diciéndolo.
   let fanRatePct: number | null = null;
   let fanRateNivel: NivelSupuesto = 1;
-  if (fr.marginal && !fr.marginal.audienciaBajo && fr.marginal.oyentesGanados > 0) {
+  // El marginal se usa como coeficiente de la cadena, así que tiene que ser
+  // usable COMO CONVERSIÓN. Un marginal por encima de 100% —más seguidores
+  // nuevos que oyentes nuevos— es un dato real pero no es una tasa de
+  // conversión, y multiplicar por 4,4 los oyentes de una campaña produciría una
+  // proyección de seguidores inventada. En ese caso se cae al acumulado.
+  if (
+    fr.marginal &&
+    fr.marginal.movimiento === "creció" &&
+    !fr.marginal.imposibleComoConversion &&
+    fr.marginal.pct > 0
+  ) {
     fanRatePct = fr.marginal.pct;
     fanRateNivel = 4;
   } else if (fr.actual) {

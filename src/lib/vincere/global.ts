@@ -113,7 +113,13 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
     acertadas += marcador.acertadas;
 
     const fr = calcularFanRate(p);
-    const marginalUtil = fr.marginal && !fr.marginal.audienciaBajo && fr.marginal.oyentesGanados > 0;
+    // Mismo criterio que en el motor de lanzamiento: el marginal solo se
+    // muestra como fan rate cuando se puede leer como conversión.
+    const marginalUtil =
+      fr.marginal &&
+      fr.marginal.movimiento === "creció" &&
+      !fr.marginal.imposibleComoConversion &&
+      fr.marginal.pct > 0;
 
     return {
       id: p.id,

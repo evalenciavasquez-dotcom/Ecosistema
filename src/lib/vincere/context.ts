@@ -602,18 +602,41 @@ function bloqueFanRate(p: VincereProyecto) {
       seguidores: f.actual.seguidores,
       oyentesMensuales: f.actual.oyentes,
       nota: "Qué proporción de quien escucha terminó siguiendo. Arrastra toda la historia del artista.",
-      ...(f.marginal && !f.marginal.audienciaBajo
+      // El marginal solo entra como PORCENTAJE DE CONVERSIÓN cuando de verdad
+      // lo es. Si la audiencia no creció, o si entraron más seguidores que
+      // oyentes nuevos, el número existe pero no es una tasa — y entregárselo
+      // al modelo con esa etiqueta es pedirle que construya una frase falsa.
+      ...(f.marginal && f.marginal.movimiento === "creció" && !f.marginal.imposibleComoConversion
         ? {
             deLaAudienciaNuevaPct: f.marginal.pct,
             oyentesGanados: f.marginal.oyentesGanados,
             seguidoresGanados: f.marginal.seguidoresGanados,
             desde: f.marginal.desde,
+            ventanaDias: f.marginal.dias,
             notaMarginal:
-              "De los oyentes ganados desde esa fecha, cuántos se volvieron seguidores. Es el que dice si lo que se está haciendo AHORA atrae gente que se queda. Un marginal muy por debajo del acumulado es tráfico prestado: playlist editorial o pauta mal apuntada.",
+              "De los oyentes ganados en ESE tramo —el más reciente, no todo el historial—, cuántos se volvieron seguidores. Es el que dice si lo que se está haciendo AHORA atrae gente que se queda. Un marginal muy por debajo del acumulado es tráfico prestado: playlist editorial o pauta mal apuntada.",
           }
         : {}),
-      ...(f.marginal?.audienciaBajo
-        ? { avisoMarginal: "Los oyentes bajaron respecto a la primera foto: el marginal no se puede leer como conversión." }
+      ...(f.marginal && f.marginal.movimiento !== "creció"
+        ? {
+            avisoMarginal:
+              f.marginal.movimiento === "cayó"
+                ? `Los oyentes cayeron ${Math.abs(f.marginal.oyentesGanados)} desde la última carga: no hay conversión que medir, hay pérdida de audiencia. NO lo presentes como una tasa.`
+                : "Los oyentes quedaron igual desde la última carga: no hay audiencia nueva sobre la cual medir conversión. No es una caída — no pasó nada.",
+          }
+        : {}),
+      ...(f.marginal?.imposibleComoConversion
+        ? {
+            avisoMarginal: `Entraron ${f.marginal.seguidoresGanados} seguidores contra ${f.marginal.oyentesGanados} oyentes nuevos. Eso da ${f.marginal.pct}%, que como tasa de conversión es imposible: significa que están llegando seguidores por fuera del streaming (video, show, feature). NO lo llames fan rate ni lo presentes como conversión.`,
+          }
+        : {}),
+      ...(f.desdeElInicio && f.desdeElInicio.movimiento === "creció" && !f.desdeElInicio.imposibleComoConversion
+        ? {
+            desdeElInicioPct: f.desdeElInicio.pct,
+            desdeElInicioDias: f.desdeElInicio.dias,
+            notaDesdeElInicio:
+              "Lo mismo pero sobre TODO el historial cargado, no solo el último tramo. Comparar los dos dice si la conversión mejoró o empeoró con el tiempo.",
+          }
         : {}),
       ...(f.falta ? { loQueFalta: f.falta } : {}),
     },
