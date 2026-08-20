@@ -33,6 +33,7 @@ import {
   ClasificacionSugerida,
   Decision,
   Evidencia,
+  FuenteExterna,
   Goal,
   HistorialEntry,
   Interrogatorio,
@@ -124,8 +125,13 @@ interface AppState {
   aceptarAnalisisBandeja: (id: string) => Promise<void>;
   rechazarAnalisisBandeja: (id: string) => void;
   ejecutarAnalisisDecision: (decisionId: string, detectoDisparador?: boolean) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  crearCasoDesdeAnalisis: (decisionId: string, result: any, detectoDisparador?: boolean) => void;
+  crearCasoDesdeAnalisis: (
+    decisionId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    result: any,
+    detectoDisparador?: boolean,
+    trazabilidad?: { razonamiento?: string | null; fuentesExternas?: FuenteExterna[] | null }
+  ) => void;
   updateStrategicCase: (decisionId: string, patch: Partial<StrategicCase>) => void;
 
   addProyecto: (proyecto: Omit<Proyecto, "id" | "creadoEn">) => string;
@@ -688,7 +694,10 @@ export const useAppStore = create<AppState>()(
           });
           const data = await res.json().catch(() => null);
           if (!res.ok || !data?.result) return;
-          get().crearCasoDesdeAnalisis(decisionId, data.result, detectoDisparador);
+          get().crearCasoDesdeAnalisis(decisionId, data.result, detectoDisparador, {
+            razonamiento: data.razonamiento ?? null,
+            fuentesExternas: data.fuentesExternas ?? null,
+          });
         } catch (err) {
           console.warn("No se pudo ejecutar el análisis automático de la decisión", err);
         }
@@ -700,7 +709,7 @@ export const useAppStore = create<AppState>()(
       // campos en dos lugares. Los 4 ítems del checklist de proceso que
       // dependen del motor de análisis (Bloque 2) ya son obligatorios en el
       // esquema de salida — si la llamada tuvo éxito, corrieron de verdad.
-      crearCasoDesdeAnalisis: (decisionId, result, detectoDisparador = false) => {
+      crearCasoDesdeAnalisis: (decisionId, result, detectoDisparador = false, trazabilidad) => {
         const checklistProceso: ChecklistProceso = {
           detectoDisparador,
           corrioMetricasAntesDeOpinar: true,
@@ -713,10 +722,12 @@ export const useAppStore = create<AppState>()(
           decisionId,
           ...result,
           nivelAnalisis: "3",
-          modeloUsado: "claude-sonnet-5",
+          modeloUsado: "claude-opus-5",
           creadoEn: new Date().toISOString(),
           recomendacionSistema: result?.recomendacion?.decision ?? null,
           checklistProceso,
+          razonamiento: trazabilidad?.razonamiento ?? null,
+          fuentesExternas: trazabilidad?.fuentesExternas ?? null,
         };
         get().addStrategicCase(nuevoCaso);
       },

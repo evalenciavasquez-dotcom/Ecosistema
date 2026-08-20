@@ -37,10 +37,11 @@ export async function POST(request: Request) {
 
   try {
     const response = await client.messages.parse({
-      model: "claude-sonnet-5",
-      max_tokens: 1200,
-      output_config: { format: zodOutputFormat(recomendacionResponseSchema) },
-      system: CUARTEL_RECOMENDACION_SYSTEM_PROMPT,
+      model: "claude-opus-5",
+      max_tokens: 2500,
+      output_config: { effort: "high", format: zodOutputFormat(recomendacionResponseSchema) },
+      thinking: { type: "adaptive" },
+      system: [{ type: "text", text: CUARTEL_RECOMENDACION_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       messages: [
         { role: "user", content: buildRecomendacionPrompt(body.escenario, validas, body.descartadas ?? []) },
       ],

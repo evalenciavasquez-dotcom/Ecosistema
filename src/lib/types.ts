@@ -545,4 +545,14 @@ export interface StrategicCase {
   metricasFinancieras?: MetricaFinanciera[] | null;
   argumentoEnContra?: string | null;
   costoDeEsperar30Dias?: string | null;
+  // --- Trazabilidad del análisis: cómo se llegó a la recomendación y con
+  // qué datos del mundo real. Nullable porque los análisis viejos no los
+  // tienen y porque no todo caso necesita salir a buscar afuera.
+  razonamiento?: string | null;
+  fuentesExternas?: FuenteExterna[] | null;
+}
+
+export interface FuenteExterna {
+  titulo: string;
+  url: string;
 }

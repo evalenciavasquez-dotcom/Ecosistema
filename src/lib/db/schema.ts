@@ -14,6 +14,7 @@ import type {
   GoalCriterioAuto,
   TurnoInterrogatorio,
   HechoOHipotesis,
+  FuenteExterna,
   MetricaFinanciera,
   RecomendacionEjecutiva,
   Rentabilidad,
@@ -197,6 +198,10 @@ export const strategicCases = pgTable("strategic_cases", {
   metricasFinancieras: jsonb("metricas_financieras").$type<MetricaFinanciera[]>(),
   argumentoEnContra: text("argumento_en_contra"),
   costoDeEsperar30Dias: text("costo_de_esperar_30_dias"),
+  // --- Trazabilidad: el razonamiento resumido del modelo y las fuentes
+  // reales que se consultaron para este caso ---
+  razonamiento: text("razonamiento"),
+  fuentesExternas: jsonb("fuentes_externas").$type<FuenteExterna[]>(),
 });
 
 export const tiempo = pgTable("tiempo", {

@@ -105,14 +105,24 @@ export async function generarTurnoInterrogatorio(
   const messages = buildMessages(ctx, turnos, preguntaNumero);
 
   const response = await client.messages.parse({
-    model: "claude-sonnet-5",
-    max_tokens: 600,
-    output_config: { format: zodOutputFormat(turnoSchema) },
-    system:
-      SYSTEM +
-      (esLaUltimaPosible
-        ? "\n\nEsta es la ÚLTIMA pregunta posible — se llegó al tope de 5. cerrar debe ser true sin excepción, y el mensaje tiene que cerrar la sesión de verdad (tipo 'cierre' o 'aceptacion' según corresponda), no cortar a mitad de camino."
-        : ""),
+    model: "claude-opus-5",
+    max_tokens: 1500,
+    // Dar con la pregunta correcta —  la que desarma el punto ciego en vez de
+    // rellenar el cupo— es justo donde el modelo más capaz cambia el
+    // resultado. El prompt base es fijo, así que se cachea entre turnos.
+    output_config: { effort: "high", format: zodOutputFormat(turnoSchema) },
+    thinking: { type: "adaptive" },
+    system: [
+      { type: "text" as const, text: SYSTEM, cache_control: { type: "ephemeral" as const } },
+      ...(esLaUltimaPosible
+        ? [
+            {
+              type: "text" as const,
+              text: "Esta es la ÚLTIMA pregunta posible — se llegó al tope de 5. cerrar debe ser true sin excepción, y el mensaje tiene que cerrar la sesión de verdad (tipo 'cierre' o 'aceptacion' según corresponda), no cortar a mitad de camino.",
+            },
+          ]
+        : []),
+    ],
     messages,
   });
   const parsed = response.parsed_output;
