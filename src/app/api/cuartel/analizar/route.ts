@@ -22,10 +22,13 @@ export async function POST(request: Request) {
 
   try {
     const response = await client.messages.parse({
-      model: "claude-sonnet-5",
-      max_tokens: 4000,
-      output_config: { format: zodOutputFormat(analisisResponseSchema) },
-      system: CUARTEL_ANALISIS_SYSTEM_PROMPT,
+      model: "claude-opus-5",
+      max_tokens: 8000,
+      // Las tres rutas por los seis sombreros es el análisis más pesado del
+      // Cuartel: es donde conviene gastar el máximo esfuerzo del modelo.
+      output_config: { effort: "max", format: zodOutputFormat(analisisResponseSchema) },
+      thinking: { type: "adaptive" },
+      system: [{ type: "text", text: CUARTEL_ANALISIS_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: buildAnalisisPrompt(body.escenario, body.rutas) }],
     });
 

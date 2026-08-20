@@ -165,7 +165,10 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
         setErrorAnalisis(data.error || "No se pudo generar el análisis.");
         return;
       }
-      crearCasoDesdeAnalisis(decision.id, data.result, false);
+      crearCasoDesdeAnalisis(decision.id, data.result, false, {
+        razonamiento: data.razonamiento ?? null,
+        fuentesExternas: data.fuentesExternas ?? null,
+      });
     } catch {
       setErrorAnalisis("Error de conexión al generar el análisis.");
     } finally {
@@ -756,6 +759,51 @@ function StrategicCaseView({ strategicCase: c, decision }: { strategicCase: Stra
           <p className="text-xs text-muted mt-2">Síntesis integrada del panel de especialistas activado para este caso.</p>
         )}
       </Section>
+
+      {(c.razonamiento || (c.fuentesExternas && c.fuentesExternas.length > 0)) && (
+        <Section title="Cómo llegó aquí">
+          {c.fuentesExternas && c.fuentesExternas.length > 0 && (
+            <div className="mb-3">
+              <div className="text-xs text-muted mb-1.5">
+                Este caso salió a buscar datos reales — {c.fuentesExternas.length} fuente
+                {c.fuentesExternas.length === 1 ? "" : "s"} consultada
+                {c.fuentesExternas.length === 1 ? "" : "s"}:
+              </div>
+              <ul className="space-y-1">
+                {c.fuentesExternas.map((f, i) => (
+                  <li key={i} className="text-xs">
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent-blue hover:underline break-words"
+                    >
+                      {f.titulo}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {c.razonamiento && (
+            <details className="text-xs text-muted">
+              <summary className="cursor-pointer select-none">
+                Ver el razonamiento del sistema antes de recomendar
+              </summary>
+              <div className="mt-2 space-y-2">
+                {c.razonamiento
+                  .split("\n")
+                  .filter((p) => p.trim())
+                  .map((parrafo, i) => (
+                    <p key={i} className="leading-relaxed rounded-xl bg-surface border border-border-subtle p-3">
+                      {parrafo}
+                    </p>
+                  ))}
+              </div>
+            </details>
+          )}
+        </Section>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Section title="Hechos verificados">
