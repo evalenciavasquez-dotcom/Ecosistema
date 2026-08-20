@@ -10,6 +10,7 @@ import AlertasPanel from "../AlertasPanel";
 import EvolucionPanel from "../EvolucionPanel";
 import MotoresRunner from "../MotoresRunner";
 import FanRatePanel from "../FanRatePanel";
+import CalidadAudienciaPanel from "../CalidadAudienciaPanel";
 import { Panel, PanelLabel, StatCard } from "../primitives";
 
 const SCENARIO_DEFS = [
@@ -92,6 +93,7 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
       </div>
 
       <FanRatePanel proyecto={proyecto} />
+      <CalidadAudienciaPanel proyecto={proyecto} />
 
       {/* Después de las cifras, no antes: primero se ve dónde está el artista,
           después se ofrece interpretarlo. */}

@@ -12,6 +12,7 @@ import { describirTextura } from "./audio";
 import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
+import { profundidadDeEscucha, lecturaDeOrigen, UMBRAL_STREAMS_POR_OYENTE, ALARMA_PLAYLIST } from "./calidadAudiencia";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
 import { compararFirma, referenciasSugeridas } from "./firma";
@@ -644,6 +645,44 @@ function bloqueFanRate(p: VincereProyecto) {
 }
 
 
+// Cuánto vuelve cada persona y de dónde viene el tráfico. A diferencia del fan
+// rate, acá SÍ hay umbrales publicados, así que el modelo puede decir "por
+// debajo de la línea" sin inventarse una referencia.
+function bloqueCalidadAudiencia(p: VincereProyecto) {
+  const prof = profundidadDeEscucha(p);
+  const origen = lecturaDeOrigen(p);
+  if (!prof && !origen) return {};
+
+  return {
+    calidadDeAudiencia: {
+      ...(prof
+        ? {
+            streamsPorOyente: prof.ratio,
+            umbralAlgoritmico: UMBRAL_STREAMS_POR_OYENTE,
+            sobreElUmbral: prof.sobreUmbral,
+            notaProfundidad: `Cuántas veces al mes te pone cada persona. Por encima de ${UMBRAL_STREAMS_POR_OYENTE} los temas disparan colocación algorítmica: el algoritmo pesa la re-escucha muy por encima del volumen bruto. Seguir es un toque barato; volver a poner una canción no se finge.`,
+          }
+        : { profundidad: "Faltan streams u oyentes del mes: no se puede calcular cuánto vuelve cada persona." }),
+      ...(origen
+        ? {
+            origenDeStreams: {
+              playlistPct: origen.playlistPct,
+              algoritmicoPct: origen.algoritmicoPct,
+              perfilPct: origen.perfilPct,
+              externoPct: origen.externoPct,
+              sinClasificarPct: origen.sinClasificarPct,
+              estado: origen.estado,
+              lectura: origen.lectura,
+              queHacer: origen.queHacer,
+              regla: `Por encima de ${ALARMA_PLAYLIST}% de streams desde playlists el crecimiento es PRESTADO: se acaba cuando el curador rote la lista. Sano es playlist bajo 60% con algorítmico sobre 40%. Esta clasificación la calcula el sistema — respétala, no la recalcules.`,
+            },
+          }
+        : { origenDeStreams: "No se ha cargado el desglose de fuentes de Spotify for Artists, así que no se puede distinguir audiencia propia de audiencia alquilada." }),
+    },
+  };
+}
+
+
 // El mapa de plazas va resuelto al contexto. La regla de dónde rinde la pauta
 // es determinista a propósito: si la decidiera el modelo, cambiaría entre
 // corridas y dejaría de ser algo que se puede defender en una mesa.
@@ -837,6 +876,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
         ...bloqueFanRate(p),
+        ...bloqueCalidadAudiencia(p),
     ...bloqueDePlazas(p),
     ...bloqueDeCostos(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
@@ -930,6 +970,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         ...base,
         ...bloqueDeLanzamiento(p),
         ...bloqueFanRate(p),
+        ...bloqueCalidadAudiencia(p),
         ...bloqueDePlazas(p),
         ...bloqueDeFirmas(p),
         ...conExterno("plazas"),

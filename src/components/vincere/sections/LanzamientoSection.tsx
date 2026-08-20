@@ -6,6 +6,11 @@ import { useVincereStore } from "@/lib/vincere/store";
 import {
   planDeLanzamiento,
   calendarioDeLanzamiento,
+  OBJETIVOS,
+  OBJETIVO_LABEL,
+  OBJETIVO_POR_DEFECTO,
+  FUENTE_OBJETIVOS,
+  ObjetivoCampana,
   Hito,
   Ruta,
   Reparto,
@@ -576,9 +581,11 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
   });
   const [obj, setObj] = useState({ valorInicial: "", valorMeta: "", fechaCorte: "" });
 
+  const [objetivo, setObjetivo] = useState<ObjetivoCampana>(OBJETIVO_POR_DEFECTO);
+
   const plan = useMemo(
-    () => (activo ? planDeLanzamiento(proyecto, activo.presupuestoUsd) : null),
-    [proyecto, activo]
+    () => (activo ? planDeLanzamiento(proyecto, activo.presupuestoUsd, 2, objetivo) : null),
+    [proyecto, activo, objetivo]
   );
   const rutaElegida = plan?.rutas.find((r) => r.id === activo?.rutaElegidaId) ?? null;
   const usandoReparto = activo?.rutaElegidaId === ID_REPARTO;
@@ -751,7 +758,40 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
               </p>
             ))}
 
+            {/* El objetivo cambia el costo por oyente más que el país: con el
+                mismo presupuesto, alcance sale 4,7× más barato por oyente que
+                conversiones. Va arriba de todo porque cambia todos los números
+                de abajo. */}
             <div className="mt-5">
+              <div className="vin-muted vin-t-sm mb-2 font-medium">Con qué objetivo se compra</div>
+              <div className="flex flex-wrap gap-2">
+                {(["alcance", "trafico", "conversion"] as ObjetivoCampana[]).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => setObjetivo(o)}
+                    className="vin-t-sm rounded-full px-3 py-1.5"
+                    style={{
+                      border: objetivo === o ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
+                      color: objetivo === o ? "var(--vin-text)" : "var(--vin-muted)",
+                      background: objetivo === o ? "rgba(224,72,58,0.12)" : "transparent",
+                    }}
+                  >
+                    {OBJETIVO_LABEL[o]}
+                  </button>
+                ))}
+              </div>
+              <p className="vin-faint vin-t-sm mt-2.5 leading-relaxed" style={{ maxWidth: "74ch" }}>
+                {OBJETIVOS[objetivo].queEs} {OBJETIVOS[objetivo].cuandoSirve}
+              </p>
+              <p className="vin-faint vin-t-xs mt-1.5 leading-relaxed">
+                CPM ×{OBJETIVOS[objetivo].factorCpm} y CTR ×{OBJETIVOS[objetivo].factorCtr} sobre la base de la plaza ·{" "}
+                <a href={FUENTE_OBJETIVOS.url} target="_blank" rel="noreferrer" className="underline">
+                  {FUENTE_OBJETIVOS.fuente}
+                </a>
+              </p>
+            </div>
+
+            <div className="mt-6">
               <PanelReparto
                 r={plan.reparto}
                 elegido={usandoReparto}

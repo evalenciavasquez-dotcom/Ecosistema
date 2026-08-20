@@ -19,7 +19,7 @@
 //
 // EL CONTRASTE. Para Meta hay dos maneras públicas de estimar esto y no
 // coinciden: la cadena de arriba, y el costo por oyente que reportan las
-// campañas de música (US$0,15-0,40). El motor calcula las dos y muestra la
+// campañas de música (US$0,30-0,50). El motor calcula las dos y muestra la
 // brecha en vez de escoger la que le convenga: cuando dos referencias
 // independientes no coinciden, esa distancia ES la incertidumbre, medida y no
 // escondida. Para YouTube y Spotify ese segundo método NO existe —el benchmark
@@ -146,19 +146,92 @@ const CLIC_A_OYENTE: Supuesto = {
 };
 
 // El contraste top-down: costo por oyente en campañas de música en Meta.
+//
+// CORREGIDO EL 2026-08-20. El rango anterior arrancaba en US$0,15 y ese borde
+// no aparece en ninguna fuente: salió de leer de más un promedio. El efecto era
+// del lado peligroso — con un costo por oyente demasiado bajo, el contraste
+// devolvía MÁS oyentes de los razonables en el escenario optimista, que es
+// justo el error que este motor existe para no cometer. Las fuentes de 2026
+// coinciden en menos de US$0,30 para campañas buenas y US$0,40-0,50 para
+// mediocres.
 const CPL_MUSICA: Supuesto = {
   clave: "cpl-musica",
   label: "Costo por oyente nuevo",
-  bajo: 0.15,
-  alto: 0.4,
+  bajo: 0.3,
+  alto: 0.5,
   unidad: "USD",
   nivel: 2,
-  fuente: "Dynamoi — métricas de Meta Ads para campañas de música 2026",
-  url: "https://dynamoi.com/learn/instagram-ads/meta-ads-manager-metrics-music-campaigns",
-  consultadoEn: CONSULTA,
-  nota: "Reportado para Meta en mercados grandes. En LATAM el CPM es más barato, así que el costo por oyente debería ser menor.",
+  fuente: "Streamlord / Dynamoi — costos reales de marketing musical 2026",
+  url: "https://streamlordmusic.com/blog/2026/7/9/how-much-does-music-marketing-cost-the-honest-budget-guide-for-independent-artists",
+  consultadoEn: "2026-08-20",
+  nota: "Bajo US$0,30 se considera una campaña buena; US$0,40-0,50 es lo normal. Reportado sobre todo para Meta en mercados grandes: en LATAM el CPM es más barato y el costo por oyente debería quedar en el borde bajo.",
   comoSubirlo: "Dividiendo el gasto real de una campaña entre los oyentes nuevos de esa ventana.",
 };
+
+// ---------------------------------------------------------------------------
+// El objetivo de campaña
+// ---------------------------------------------------------------------------
+//
+// El hueco más caro que tenía este motor: usaba un solo CPM por plataforma y
+// país, como si comprar alcance costara lo mismo que comprar conversiones. No
+// cuesta lo mismo — se separan más del doble, y el CTR va en dirección
+// contraria. Elegir mal el objetivo sale más caro que elegir mal el país.
+//
+// Los multiplicadores salen de comparar los benchmarks por objetivo contra el
+// promedio de la plataforma. Se aplican COMO FACTOR sobre el CPM regional en
+// vez de reemplazarlo, porque los benchmarks por objetivo están medidos en
+// mercados grandes: usarlos crudos en Colombia multiplicaría el costo por seis
+// y el resultado no tendría nada que ver con la realidad. Lo que se traslada
+// entre regiones es la proporción, no el valor absoluto.
+
+export type ObjetivoCampana = "alcance" | "trafico" | "conversion";
+
+export const OBJETIVO_LABEL: Record<ObjetivoCampana, string> = {
+  alcance: "Alcance",
+  trafico: "Tráfico",
+  conversion: "Conversiones",
+};
+
+export interface PerfilObjetivo {
+  // Cuánto más caro es el CPM que el promedio de la plataforma.
+  factorCpm: number;
+  // Cuánto más (o menos) hace clic la gente que ve este tipo de anuncio.
+  factorCtr: number;
+  queEs: string;
+  cuandoSirve: string;
+}
+
+export const OBJETIVOS: Record<ObjetivoCampana, PerfilObjetivo> = {
+  alcance: {
+    factorCpm: 0.66,
+    factorCtr: 1.3,
+    queEs: "Le muestra el anuncio a la mayor cantidad de gente posible. El CPM más barato y, curiosamente, el CTR más alto: la gente no está siendo empujada a nada, así que toca sin resistencia.",
+    cuandoSirve:
+      "Para que exista la canción. Sirve antes de la salida y en plaza fría, donde nadie te conoce todavía. Lo que NO hace es traer oyentes: los clics que produce son de curiosidad, no de intención.",
+  },
+  trafico: {
+    factorCpm: 1.2,
+    factorCtr: 0.85,
+    queEs: "Optimiza por clic al enlace. CPM intermedio y CTR por debajo del alcance, porque la plataforma busca gente dispuesta a salir de la app.",
+    cuandoSirve:
+      "Es el objetivo por defecto de un lanzamiento: llevar gente al enlace de la canción. Con presupuesto chico suele ser el que mejor rinde.",
+  },
+  conversion: {
+    factorCpm: 1.48,
+    factorCtr: 0.64,
+    queEs: "Optimiza por una acción medible del otro lado. El CPM más caro y el CTR más bajo: menos gente, pero mejor apuntada.",
+    cuandoSirve:
+      "Solo si hay un píxel o un evento que la plataforma pueda leer. Sin señal de conversión que aprender, este objetivo cobra el precio alto y no entrega la ventaja — es el error más común y el más caro.",
+  },
+};
+
+export const FUENTE_OBJETIVOS = {
+  fuente: "Chartlex — calculadora de Meta Ads para músicos, benchmarks por objetivo 2026",
+  url: "https://www.chartlex.com/tools/meta-ads-calculator",
+  consultadoEn: "2026-08-20",
+};
+
+export const OBJETIVO_POR_DEFECTO: ObjetivoCampana = "trafico";
 
 export const SUPUESTOS_PUBLICOS: Supuesto[] = [
   CTR.youtube,
@@ -193,6 +266,7 @@ export interface PasoDeCadena {
 export interface Ruta {
   id: string;
   canal: Plataforma;
+  objetivo: ObjetivoCampana;
   canalLabel: string;
   plaza: string;
   pais: string | null;
@@ -238,9 +312,19 @@ function construirRuta(
   plaza: PlazaEvaluada,
   presupuestoUsd: number,
   fanRatePct: number | null,
-  fanRateNivel: NivelSupuesto
+  fanRateNivel: NivelSupuesto,
+  objetivo: ObjetivoCampana = OBJETIVO_POR_DEFECTO
 ): Ruta {
-  const cpm = referenciaDe(canal, plaza.pais);
+  const cpmBase = referenciaDe(canal, plaza.pais);
+  const perfil = OBJETIVOS[objetivo];
+  // El objetivo ajusta el CPM regional como factor, no lo reemplaza. Ver el
+  // comentario de OBJETIVOS: lo que se traslada entre regiones es la
+  // proporción entre objetivos, no el valor absoluto de un mercado grande.
+  const cpm: RangoCosto = {
+    ...cpmBase,
+    cpmBajoUsd: r2(cpmBase.cpmBajoUsd * perfil.factorCpm),
+    cpmAltoUsd: r2(cpmBase.cpmAltoUsd * perfil.factorCpm),
+  };
   const cadena: PasoDeCadena[] = [];
 
   // Escalón 1: dólares → impresiones. Ojo con el cruce: el CPM ALTO produce
@@ -269,7 +353,9 @@ function construirRuta(
           : cpm.nota,
       comoSubirlo: "Con el CPM que efectivamente pagó la campaña, que aparece en el reporte de la plataforma.",
     },
-    operacion: `US$${presupuestoUsd} ÷ CPM de US$${cpm.cpmBajoUsd}–${cpm.cpmAltoUsd} × 1.000`,
+    operacion: `US$${presupuestoUsd} ÷ CPM de US$${cpm.cpmBajoUsd}–${cpm.cpmAltoUsd} × 1.000 · objetivo «${OBJETIVO_LABEL[
+      objetivo
+    ].toLocaleLowerCase("es")}»${perfil.factorCpm !== 1 ? ` (${perfil.factorCpm}× el CPM base de la plaza)` : ""}`,
     enCadena: true,
   });
 
@@ -290,17 +376,25 @@ function construirRuta(
     });
   }
 
-  // Escalón 3: clics.
-  const ctr = CTR[canal];
-  const clicsBajo = impresionesBajo * (ctr.bajo / 100);
-  const clicsAlto = impresionesAlto * (ctr.alto / 100);
+  // Escalón 3: clics, ajustados por el objetivo. Un anuncio de alcance recibe
+  // más clics que uno de conversiones —la gente no está siendo empujada a
+  // nada—, pero son clics de curiosidad y no de intención. Por eso el objetivo
+  // mueve el CTR en dirección CONTRARIA al CPM.
+  const ctrBase = CTR[canal];
+  const ctrBajo = r2(ctrBase.bajo * perfil.factorCtr);
+  const ctrAlto = r2(ctrBase.alto * perfil.factorCtr);
+  const ctr: Supuesto = { ...ctrBase, bajo: ctrBajo, alto: ctrAlto };
+  const clicsBajo = impresionesBajo * (ctrBajo / 100);
+  const clicsAlto = impresionesAlto * (ctrAlto / 100);
   cadena.push({
     label: "Clics",
     bajo: r0(clicsBajo),
     alto: r0(clicsAlto),
     unidad: "",
     supuesto: ctr,
-    operacion: `${ctr.bajo}–${ctr.alto}% de las impresiones`,
+    operacion: `${ctrBajo}–${ctrAlto}% de las impresiones, con el objetivo «${OBJETIVO_LABEL[
+      objetivo
+    ].toLocaleLowerCase("es")}»`,
     enCadena: true,
   });
 
@@ -414,6 +508,11 @@ function construirRuta(
       "Plaza fría: la pauta entra sin audiencia previa que la respalde, así que el CTR real suele quedar por debajo del benchmark."
     );
   }
+  if (objetivo === "conversion") {
+    riesgos.push(
+      "El objetivo de conversiones cobra el CPM más alto y entrega el CTR más bajo: solo compensa si hay un píxel o un evento que la plataforma pueda aprender. Sin señal de conversión que leer, se paga el precio caro sin la ventaja — es el error más común de un lanzamiento."
+    );
+  }
   if (fanRatePct == null) {
     riesgos.push(
       "Sin oyentes mensuales cargados no hay fan rate, así que la cadena se corta en oyentes y no llega a seguidores."
@@ -423,6 +522,7 @@ function construirRuta(
   return {
     id: `${canal}-${plaza.ciudad}`.toLocaleLowerCase("es").replace(/\s+/g, "-"),
     canal,
+    objetivo,
     canalLabel: PLATAFORMA_LABEL[canal],
     plaza: plaza.ciudad,
     pais: plaza.pais,
@@ -544,7 +644,8 @@ export function repartirPresupuesto(
   p: VincereProyecto,
   presupuestoUsd: number,
   fanRatePct: number | null,
-  fanRateNivel: NivelSupuesto
+  fanRateNivel: NivelSupuesto,
+  objetivo: ObjetivoCampana = OBJETIVO_POR_DEFECTO
 ): Reparto {
   const mapa = mapaDePlazas(p);
   const avisos: string[] = [];
@@ -616,7 +717,7 @@ export function repartirPresupuesto(
 
   const pedazos: Pedazo[] = dentro.map((c, i) => {
     const monto = asignados[i];
-    const ruta = construirRuta(p, c.canal, c.plaza, monto, fanRatePct, fanRateNivel);
+    const ruta = construirRuta(p, c.canal, c.plaza, monto, fanRatePct, fanRateNivel, objetivo);
     return {
       rutaId: ruta.id,
       canal: c.canal,
@@ -705,6 +806,7 @@ export interface PlanDeLanzamiento {
   paraCalibrar: string[];
   // Qué hacer el lunes: el presupuesto ya partido en pedazos ejecutables.
   reparto: Reparto;
+  objetivo: ObjetivoCampana;
 }
 
 const CANALES: Plataforma[] = ["youtube", "meta", "spotify"];
@@ -712,7 +814,8 @@ const CANALES: Plataforma[] = ["youtube", "meta", "spotify"];
 export function planDeLanzamiento(
   p: VincereProyecto,
   presupuestoUsd: number,
-  cuantasPlazas = 2
+  cuantasPlazas = 2,
+  objetivo: ObjetivoCampana = OBJETIVO_POR_DEFECTO
 ): PlanDeLanzamiento {
   const mapa = mapaDePlazas(p);
   const fr = calcularFanRate(p);
@@ -789,14 +892,15 @@ export function planDeLanzamiento(
       fanRatePct,
       fanRateNivel,
       paraCalibrar,
-      reparto: repartirPresupuesto(p, presupuestoUsd, fanRatePct, fanRateNivel),
+      objetivo,
+      reparto: repartirPresupuesto(p, presupuestoUsd, fanRatePct, fanRateNivel, objetivo),
     };
   }
 
   const rutas: Ruta[] = [];
   for (const plaza of elegidas) {
     for (const canal of CANALES) {
-      rutas.push(construirRuta(p, canal, plaza, presupuestoUsd, fanRatePct, fanRateNivel));
+      rutas.push(construirRuta(p, canal, plaza, presupuestoUsd, fanRatePct, fanRateNivel, objetivo));
     }
   }
 
@@ -835,7 +939,8 @@ export function planDeLanzamiento(
     fanRatePct,
     fanRateNivel,
     paraCalibrar,
-    reparto: repartirPresupuesto(p, presupuestoUsd, fanRatePct, fanRateNivel),
+    objetivo,
+    reparto: repartirPresupuesto(p, presupuestoUsd, fanRatePct, fanRateNivel, objetivo),
   };
 }
 

@@ -100,6 +100,11 @@ export interface VincereResumen {
   // no se puede calcular — dividir seguidores entre streams da un número que se
   // ve bien y no significa nada. Opcional por compatibilidad con lo ya guardado.
   oyentesMes?: number;
+  // De dónde vienen los streams, en porcentaje. Sale de Spotify for Artists →
+  // Audiencia → Fuentes de streams. Es la única forma de distinguir audiencia
+  // ganada de audiencia alquilada: una playlist se acaba y con ella los
+  // streams, mientras que la presencia algorítmica se sostiene sola.
+  origenStreams?: VincereOrigenStreams;
   momentumIndex: number;
   serie: VincereStreamMes[];
 }
@@ -1378,4 +1383,30 @@ export interface VincereLanzamiento {
   cierre: VincereCierreLanzamiento | null;
   notas: string;
   creadoEn: string;
+}
+
+
+// ---------------------------------------------------------------------------
+// De dónde vienen los streams
+// ---------------------------------------------------------------------------
+
+// El reparto por fuente, en porcentaje del total de streams del mes.
+//
+// Spotify for Artists lo entrega en Audiencia → Fuentes de streams. Los cuatro
+// campos no tienen por qué sumar 100: hay fuentes menores que no se listan, y
+// forzar la suma inventaría data. El módulo que lo lee trabaja con lo que haya
+// y dice cuánto queda sin clasificar.
+export interface VincereOrigenStreams {
+  // Playlists de terceros y editoriales de Spotify. Es audiencia prestada: se
+  // acaba cuando el curador rota la lista.
+  playlistPct?: number;
+  // Discover Weekly, Release Radar, Radio, Autoplay. Es lo que el algoritmo
+  // empuja solo, y no se apaga de un día para otro.
+  algoritmicoPct?: number;
+  // El perfil del artista, su catálogo, la biblioteca del usuario. Audiencia
+  // que ya te busca: la más valiosa y la más difícil de comprar.
+  perfilPct?: number;
+  // Enlaces de fuera de Spotify: pauta, redes, prensa.
+  externoPct?: number;
+  fecha?: string;
 }
