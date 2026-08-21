@@ -13,6 +13,7 @@ import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
 import { profundidadDeEscucha, lecturaDeOrigen, UMBRAL_STREAMS_POR_OYENTE, ALARMA_PLAYLIST } from "./calidadAudiencia";
+import { concentracionDeCatalogo, MINIMO_PARA_VEREDICTO, TURNOS_DESCUENTO } from "./catalogo";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
 import { compararFirma, referenciasSugeridas } from "./firma";
@@ -683,6 +684,38 @@ function bloqueCalidadAudiencia(p: VincereProyecto) {
 }
 
 
+// De cuántas canciones depende la carrera. El veredicto y los cortes van
+// resueltos: el modelo narra, no clasifica. Y va con su límite pegado, porque
+// es el número del sistema que más se parece a una medición sin serlo —
+// los cortes de la industria son de ingreso y acá se mide en streams.
+function bloqueDeCatalogo(p: VincereProyecto) {
+  const c = concentracionDeCatalogo(p);
+  if (!c) return {};
+
+  return {
+    concentracionDeCatalogo: {
+      cancionesCargadas: c.canciones,
+      cancionesQueTienenLaMitadDeLosStreams: c.cancionesParaLaMitad,
+      masFuerte: { nombre: c.top[0].nombre, pct: c.top1Pct },
+      dosMasFuertesPct: c.top2Pct,
+      repartoParejoPct: c.parejoPct,
+      estado: c.estado,
+      lectura: c.lectura,
+      queHacer: c.queHacer,
+      nivel: c.nivel,
+      limite: c.limite,
+      regla:
+        `El estado lo calcula el sistema: respétalo y no lo recalcules. ` +
+        `Un catálogo de menos de ${MINIMO_PARA_VEREDICTO} canciones NO recibe veredicto de dependencia — con pocas canciones ` +
+        `la más fuerte pasa la mitad por aritmética, no por fragilidad. ` +
+        `NO conviertas esto en una valuación: el descuento de ${TURNOS_DESCUENTO.bajo} a ${TURNOS_DESCUENTO.alto} turnos ` +
+        `es el corte de la industria, no un precio de este catálogo. ` +
+        `Y NO afirmes que el artista depende de una canción sin decir que se mide sobre streams acumulados.`,
+    },
+  };
+}
+
+
 // El mapa de plazas va resuelto al contexto. La regla de dónde rinde la pauta
 // es determinista a propósito: si la decidiera el modelo, cambiaría entre
 // corridas y dejaría de ser algo que se puede defender en una mesa.
@@ -877,6 +910,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         serieStreamsMiles: p.resumen.serie,
         ...bloqueFanRate(p),
         ...bloqueCalidadAudiencia(p),
+        ...bloqueDeCatalogo(p),
     ...bloqueDePlazas(p),
     ...bloqueDeCostos(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
@@ -971,6 +1005,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         ...bloqueDeLanzamiento(p),
         ...bloqueFanRate(p),
         ...bloqueCalidadAudiencia(p),
+        ...bloqueDeCatalogo(p),
         ...bloqueDePlazas(p),
         ...bloqueDeFirmas(p),
         ...conExterno("plazas"),
