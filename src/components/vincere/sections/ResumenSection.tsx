@@ -12,6 +12,7 @@ import MotoresRunner from "../MotoresRunner";
 import FanRatePanel from "../FanRatePanel";
 import CalidadAudienciaPanel from "../CalidadAudienciaPanel";
 import CatalogoPanel from "../CatalogoPanel";
+import CuelloPanel from "../CuelloPanel";
 import { Panel, PanelLabel, StatCard } from "../primitives";
 
 const SCENARIO_DEFS = [
@@ -50,6 +51,10 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
       aiTitle="Lectura VINCERE — Momentum"
     >
       <AlertasPanel proyecto={proyecto} compacto />
+
+      {/* Arriba de todo, antes de cualquier número suelto: la pregunta de
+          dónde va el peso manda sobre el detalle de cuántos streams hay. */}
+      <CuelloPanel proyecto={proyecto} />
 
       {/* La cifra principal manda: ocupa el ancho, lleva su curva adentro y el
           resto queda a su lado. Cuatro tarjetas iguales no dicen cuál importa. */}

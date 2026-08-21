@@ -15,6 +15,7 @@ import { VincereProyecto } from "./types";
 import { calcularMarcador } from "./types";
 import { motoresDelProyecto } from "./motores";
 import { calcularFanRate } from "./fanrate";
+import { cuelloDeBotella, Etapa, ETAPA_LABEL } from "./cuello";
 
 const HOY = () => new Date().toISOString().slice(0, 10);
 
@@ -41,6 +42,14 @@ export interface FilaProyecto {
   prediccionesAbiertas: number;
   prediccionesVencidas: number;
   lanzamientosAbiertos: number;
+  // En qué etapa está trabado cada artista. Puesto en una columna, el tablero
+  // deja de ser una lista de proyectos y pasa a ser una cartera: tres artistas
+  // trabados en conversión es un problema de método, no tres casualidades.
+  cuello: Etapa | null;
+  cuelloEvidencia: string | null;
+  // Etapas que no se pueden ver. Una cartera donde nadie tiene el dato de
+  // propiedad no está sana: está a ciegas, y eso se decide distinto.
+  etapasCiegas: number;
 }
 
 export interface IndicadoresGlobales {
@@ -56,6 +65,10 @@ export interface IndicadoresGlobales {
   pctAcierto: number | null;
   // La frase de arriba. Dice qué atender, no qué celebrar.
   titular: string;
+  // Cuando el mismo cuello se repite entre proyectos propios. Null si no hay
+  // patrón: no se fuerza uno con dos proyectos que están trabados en cosas
+  // distintas.
+  patronDeCuello: string | null;
 }
 
 function diasEntre(desde: string, hasta: string): number {
@@ -112,6 +125,7 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
     decisivas += dec;
     acertadas += marcador.acertadas;
 
+    const cuello = cuelloDeBotella(p);
     const fr = calcularFanRate(p);
     // Mismo criterio que en el motor de lanzamiento: el marginal solo se
     // muestra como fan rate cuando se puede leer como conversión.
@@ -132,6 +146,9 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
       prediccionesAbiertas: marcador.abiertas,
       prediccionesVencidas: marcador.vencidas,
       lanzamientosAbiertos: lanzamientos.filter((l) => !l.cierre).length,
+      cuello: cuello.cuello?.etapa ?? null,
+      cuelloEvidencia: cuello.cuello?.evidencia ?? null,
+      etapasCiegas: cuello.ciegas.length,
     };
   });
 
@@ -172,5 +189,39 @@ export function indicadoresGlobales(proyectos: VincereProyecto[]): IndicadoresGl
     prediccionesCerradas: cerradas,
     pctAcierto,
     titular,
+    patronDeCuello: patronDeCuello(filas.filter((f) => f.tipo === "propio")),
   };
+}
+
+// Cuando varios artistas propios se traban en la MISMA etapa, eso deja de ser
+// una coincidencia: es el método. Un solo artista trabado en conversión es un
+// caso; tres es una forma de trabajar que no está funcionando, y se arregla una
+// vez para todos en lugar de tres veces por separado.
+//
+// Solo mira los proyectos propios: los de competencia están cargados para
+// comparar, y meterlos acá inventaría un patrón sobre carreras que nadie opera.
+function patronDeCuello(filas: FilaProyecto[]): string | null {
+  const conCuello = filas.filter((f) => f.cuello);
+  if (conCuello.length < 2) return null;
+
+  const cuenta = new Map<Etapa, number>();
+  conCuello.forEach((f) => cuenta.set(f.cuello!, (cuenta.get(f.cuello!) ?? 0) + 1));
+
+  let etapa: Etapa | null = null;
+  let veces = 0;
+  cuenta.forEach((n, e) => {
+    if (n > veces) {
+      veces = n;
+      etapa = e;
+    }
+  });
+
+  if (veces < 2) return null;
+
+  const quienes = conCuello.filter((f) => f.cuello === etapa).map((f) => f.nombre);
+  return (
+    `${veces} de ${conCuello.length} proyectos propios están trabados en la misma etapa — ${ETAPA_LABEL[etapa!].toLowerCase()} ` +
+    `(${quienes.join(", ")}). Cuando el cuello se repite deja de ser el artista y pasa a ser el método: ` +
+    `conviene arreglarlo una vez para todos antes que ${veces} veces por separado.`
+  );
 }

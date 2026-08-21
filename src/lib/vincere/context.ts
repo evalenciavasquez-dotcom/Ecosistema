@@ -14,6 +14,7 @@ import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
 import { profundidadDeEscucha, lecturaDeOrigen, UMBRAL_STREAMS_POR_OYENTE, ALARMA_PLAYLIST } from "./calidadAudiencia";
 import { concentracionDeCatalogo, MINIMO_PARA_VEREDICTO, TURNOS_DESCUENTO } from "./catalogo";
+import { cuelloDeBotella } from "./cuello";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
 import { compararFirma, referenciasSugeridas } from "./firma";
@@ -684,6 +685,45 @@ function bloqueCalidadAudiencia(p: VincereProyecto) {
 }
 
 
+// El cuello de botella. Va PRIMERO en el contexto a propósito: es lo que
+// ordena todo lo demás. El modelo narra el cuello encontrado — no elige otro,
+// porque elegir cuál de seis problemas es EL problema es exactamente la
+// decisión que no puede cambiar entre corridas.
+function bloqueDelCuello(p: VincereProyecto) {
+  const c = cuelloDeBotella(p);
+
+  return {
+    cuelloDeBotella: {
+      titular: c.titular,
+      ...(c.cuello
+        ? {
+            etapa: c.cuello.etapa,
+            evidencia: c.cuello.evidencia,
+            porQue: c.cuello.porQue,
+          }
+        : { etapa: null }),
+      queHacer: c.queHacer,
+      cadenaEnOrdenDeArreglo: c.etapas.map((e) => ({
+        etapa: e.etapa,
+        pregunta: e.pregunta,
+        estado: e.estado,
+        evidencia: e.evidencia,
+        ...(e.falta ? { falta: e.falta } : {}),
+      })),
+      ...(c.advertencia ? { advertencia: c.advertencia } : {}),
+      nivel: c.nivel,
+      regla:
+        `El cuello lo calcula el sistema: NO elijas otro y NO lo recalcules. ` +
+        `El orden de arreglo es obra → conversión → retención → propiedad → monetización → ALCANCE, y el alcance va último ` +
+        `porque es la única etapa que se puede comprar: recomendar pauta cuando hay una etapa rota antes es el error caro ` +
+        `que este motor existe para evitar. ` +
+        `Una etapa en "noSeSabe" NO está sana: es invisible, y decir que está bien es inventar. ` +
+        `Si hay advertencia, nómbrala — significa que el cuello encontrado podría no ser el cuello.`,
+    },
+  };
+}
+
+
 // De cuántas canciones depende la carrera. El veredicto y los cortes van
 // resueltos: el modelo narra, no clasifica. Y va con su límite pegado, porque
 // es el número del sistema que más se parece a una medición sin serlo —
@@ -910,6 +950,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         serieStreamsMiles: p.resumen.serie,
         ...bloqueFanRate(p),
         ...bloqueCalidadAudiencia(p),
+        ...bloqueDelCuello(p),
         ...bloqueDeCatalogo(p),
     ...bloqueDePlazas(p),
     ...bloqueDeCostos(p),
@@ -1005,6 +1046,7 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         ...bloqueDeLanzamiento(p),
         ...bloqueFanRate(p),
         ...bloqueCalidadAudiencia(p),
+        ...bloqueDelCuello(p),
         ...bloqueDeCatalogo(p),
         ...bloqueDePlazas(p),
         ...bloqueDeFirmas(p),

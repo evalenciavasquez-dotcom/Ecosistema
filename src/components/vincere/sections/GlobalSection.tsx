@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
 import { indicadoresGlobales } from "@/lib/vincere/global";
+import { ETAPA_LABEL } from "@/lib/vincere/cuello";
 import { SectionHeader, PanelLabel } from "../primitives";
 
 // La vista de un lunes.
@@ -38,6 +39,23 @@ export default function GlobalSection() {
       <p className="vin-t-lg leading-relaxed" style={{ maxWidth: "74ch" }}>
         {g.titular}
       </p>
+
+      {/* Cuando el mismo cuello se repite, el problema dejó de ser el artista.
+          Va acá arriba porque es lo único de esta pantalla que cambia cómo se
+          trabaja y no solo qué se atiende primero. */}
+      {g.patronDeCuello && (
+        <p
+          className="vin-t-base rounded-xl px-4 py-3.5 leading-relaxed"
+          style={{
+            maxWidth: "74ch",
+            color: "var(--vin-warn)",
+            background: "rgba(229,169,60,0.09)",
+            border: "1px solid rgba(229,169,60,0.22)",
+          }}
+        >
+          {g.patronDeCuello}
+        </p>
+      )}
 
       {/* LO VENCIDO PRIMERO. Es el sesgo de esta pantalla y es a propósito. */}
       {g.pendientes.length > 0 && (
@@ -83,6 +101,9 @@ export default function GlobalSection() {
             <thead>
               <tr className="vin-faint vin-t-sm" style={{ borderBottom: "1px solid var(--vin-border)" }}>
                 <th className="pb-2 text-left font-normal">Proyecto</th>
+                {/* Segunda columna, no la última: es el dato que decide dónde
+                    va el trabajo esta semana. */}
+                <th className="pb-2 text-left font-normal">Trabado en</th>
                 <th className="pb-2 text-right font-normal">Motores</th>
                 <th className="pb-2 text-right font-normal">Fan rate</th>
                 <th className="pb-2 text-right font-normal">Predicciones</th>
@@ -97,6 +118,25 @@ export default function GlobalSection() {
                       {f.nombre}
                     </button>
                     {f.tipo === "competencia" && <span className="vin-faint vin-t-xs"> · competencia</span>}
+                  </td>
+                  <td className="py-3 vin-t-sm">
+                    {f.cuello ? (
+                      <>
+                        <span style={{ color: f.cuello === "alcance" ? "var(--vin-ok)" : "var(--vin-risk)" }}>
+                          {ETAPA_LABEL[f.cuello]}
+                        </span>
+                        {/* El alcance es el único cuello que se resuelve
+                            comprando. Que se vea distinto no es decoración:
+                            es la diferencia entre gastar y quemar. */}
+                        {f.cuello === "alcance" && <span className="vin-faint vin-t-xs"> · listo para pauta</span>}
+                      </>
+                    ) : f.etapasCiegas > 0 ? (
+                      <span className="vin-faint">
+                        {f.etapasCiegas === 6 ? "sin data" : `${f.etapasCiegas} etapa${f.etapasCiegas === 1 ? "" : "s"} a ciegas`}
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--vin-ok)" }}>nada roto</span>
+                    )}
                   </td>
                   <td className="py-3 text-right vin-t-sm tabular-nums">
                     {f.motoresListos}/{f.motoresTotal}
