@@ -19,7 +19,7 @@
 //
 // EL CONTRASTE. Para Meta hay dos maneras públicas de estimar esto y no
 // coinciden: la cadena de arriba, y el costo por oyente que reportan las
-// campañas de música (US$0,15-0,40). El motor calcula las dos y muestra la
+// campañas de música (US$0,30-0,50). El motor calcula las dos y muestra la
 // brecha en vez de escoger la que le convenga: cuando dos referencias
 // independientes no coinciden, esa distancia ES la incertidumbre, medida y no
 // escondida. Para YouTube y Spotify ese segundo método NO existe —el benchmark
@@ -146,19 +146,92 @@ const CLIC_A_OYENTE: Supuesto = {
 };
 
 // El contraste top-down: costo por oyente en campañas de música en Meta.
+//
+// CORREGIDO EL 2026-08-20. El rango anterior arrancaba en US$0,15 y ese borde
+// no aparece en ninguna fuente: salió de leer de más un promedio. El efecto era
+// del lado peligroso — con un costo por oyente demasiado bajo, el contraste
+// devolvía MÁS oyentes de los razonables en el escenario optimista, que es
+// justo el error que este motor existe para no cometer. Las fuentes de 2026
+// coinciden en menos de US$0,30 para campañas buenas y US$0,40-0,50 para
+// mediocres.
 const CPL_MUSICA: Supuesto = {
   clave: "cpl-musica",
   label: "Costo por oyente nuevo",
-  bajo: 0.15,
-  alto: 0.4,
+  bajo: 0.3,
+  alto: 0.5,
   unidad: "USD",
   nivel: 2,
-  fuente: "Dynamoi — métricas de Meta Ads para campañas de música 2026",
-  url: "https://dynamoi.com/learn/instagram-ads/meta-ads-manager-metrics-music-campaigns",
-  consultadoEn: CONSULTA,
-  nota: "Reportado para Meta en mercados grandes. En LATAM el CPM es más barato, así que el costo por oyente debería ser menor.",
+  fuente: "Streamlord / Dynamoi — costos reales de marketing musical 2026",
+  url: "https://streamlordmusic.com/blog/2026/7/9/how-much-does-music-marketing-cost-the-honest-budget-guide-for-independent-artists",
+  consultadoEn: "2026-08-20",
+  nota: "Bajo US$0,30 se considera una campaña buena; US$0,40-0,50 es lo normal. Reportado sobre todo para Meta en mercados grandes: en LATAM el CPM es más barato y el costo por oyente debería quedar en el borde bajo.",
   comoSubirlo: "Dividiendo el gasto real de una campaña entre los oyentes nuevos de esa ventana.",
 };
+
+// ---------------------------------------------------------------------------
+// El objetivo de campaña
+// ---------------------------------------------------------------------------
+//
+// El hueco más caro que tenía este motor: usaba un solo CPM por plataforma y
+// país, como si comprar alcance costara lo mismo que comprar conversiones. No
+// cuesta lo mismo — se separan más del doble, y el CTR va en dirección
+// contraria. Elegir mal el objetivo sale más caro que elegir mal el país.
+//
+// Los multiplicadores salen de comparar los benchmarks por objetivo contra el
+// promedio de la plataforma. Se aplican COMO FACTOR sobre el CPM regional en
+// vez de reemplazarlo, porque los benchmarks por objetivo están medidos en
+// mercados grandes: usarlos crudos en Colombia multiplicaría el costo por seis
+// y el resultado no tendría nada que ver con la realidad. Lo que se traslada
+// entre regiones es la proporción, no el valor absoluto.
+
+export type ObjetivoCampana = "alcance" | "trafico" | "conversion";
+
+export const OBJETIVO_LABEL: Record<ObjetivoCampana, string> = {
+  alcance: "Alcance",
+  trafico: "Tráfico",
+  conversion: "Conversiones",
+};
+
+export interface PerfilObjetivo {
+  // Cuánto más caro es el CPM que el promedio de la plataforma.
+  factorCpm: number;
+  // Cuánto más (o menos) hace clic la gente que ve este tipo de anuncio.
+  factorCtr: number;
+  queEs: string;
+  cuandoSirve: string;
+}
+
+export const OBJETIVOS: Record<ObjetivoCampana, PerfilObjetivo> = {
+  alcance: {
+    factorCpm: 0.66,
+    factorCtr: 1.3,
+    queEs: "Le muestra el anuncio a la mayor cantidad de gente posible. El CPM más barato y, curiosamente, el CTR más alto: la gente no está siendo empujada a nada, así que toca sin resistencia.",
+    cuandoSirve:
+      "Para que exista la canción. Sirve antes de la salida y en plaza fría, donde nadie te conoce todavía. Lo que NO hace es traer oyentes: los clics que produce son de curiosidad, no de intención.",
+  },
+  trafico: {
+    factorCpm: 1.2,
+    factorCtr: 0.85,
+    queEs: "Optimiza por clic al enlace. CPM intermedio y CTR por debajo del alcance, porque la plataforma busca gente dispuesta a salir de la app.",
+    cuandoSirve:
+      "Es el objetivo por defecto de un lanzamiento: llevar gente al enlace de la canción. Con presupuesto chico suele ser el que mejor rinde.",
+  },
+  conversion: {
+    factorCpm: 1.48,
+    factorCtr: 0.64,
+    queEs: "Optimiza por una acción medible del otro lado. El CPM más caro y el CTR más bajo: menos gente, pero mejor apuntada.",
+    cuandoSirve:
+      "Solo si hay un píxel o un evento que la plataforma pueda leer. Sin señal de conversión que aprender, este objetivo cobra el precio alto y no entrega la ventaja — es el error más común y el más caro.",
+  },
+};
+
+export const FUENTE_OBJETIVOS = {
+  fuente: "Chartlex — calculadora de Meta Ads para músicos, benchmarks por objetivo 2026",
+  url: "https://www.chartlex.com/tools/meta-ads-calculator",
+  consultadoEn: "2026-08-20",
+};
+
+export const OBJETIVO_POR_DEFECTO: ObjetivoCampana = "trafico";
 
 export const SUPUESTOS_PUBLICOS: Supuesto[] = [
   CTR.youtube,
@@ -193,6 +266,7 @@ export interface PasoDeCadena {
 export interface Ruta {
   id: string;
   canal: Plataforma;
+  objetivo: ObjetivoCampana;
   canalLabel: string;
   plaza: string;
   pais: string | null;
@@ -238,9 +312,19 @@ function construirRuta(
   plaza: PlazaEvaluada,
   presupuestoUsd: number,
   fanRatePct: number | null,
-  fanRateNivel: NivelSupuesto
+  fanRateNivel: NivelSupuesto,
+  objetivo: ObjetivoCampana = OBJETIVO_POR_DEFECTO
 ): Ruta {
-  const cpm = referenciaDe(canal, plaza.pais);
+  const cpmBase = referenciaDe(canal, plaza.pais);
+  const perfil = OBJETIVOS[objetivo];
+  // El objetivo ajusta el CPM regional como factor, no lo reemplaza. Ver el
+  // comentario de OBJETIVOS: lo que se traslada entre regiones es la
+  // proporción entre objetivos, no el valor absoluto de un mercado grande.
+  const cpm: RangoCosto = {
+    ...cpmBase,
+    cpmBajoUsd: r2(cpmBase.cpmBajoUsd * perfil.factorCpm),
+    cpmAltoUsd: r2(cpmBase.cpmAltoUsd * perfil.factorCpm),
+  };
   const cadena: PasoDeCadena[] = [];
 
   // Escalón 1: dólares → impresiones. Ojo con el cruce: el CPM ALTO produce
@@ -269,7 +353,9 @@ function construirRuta(
           : cpm.nota,
       comoSubirlo: "Con el CPM que efectivamente pagó la campaña, que aparece en el reporte de la plataforma.",
     },
-    operacion: `US$${presupuestoUsd} ÷ CPM de US$${cpm.cpmBajoUsd}–${cpm.cpmAltoUsd} × 1.000`,
+    operacion: `US$${presupuestoUsd} ÷ CPM de US$${cpm.cpmBajoUsd}–${cpm.cpmAltoUsd} × 1.000 · objetivo «${OBJETIVO_LABEL[
+      objetivo
+    ].toLocaleLowerCase("es")}»${perfil.factorCpm !== 1 ? ` (${perfil.factorCpm}× el CPM base de la plaza)` : ""}`,
     enCadena: true,
   });
 
@@ -290,17 +376,25 @@ function construirRuta(
     });
   }
 
-  // Escalón 3: clics.
-  const ctr = CTR[canal];
-  const clicsBajo = impresionesBajo * (ctr.bajo / 100);
-  const clicsAlto = impresionesAlto * (ctr.alto / 100);
+  // Escalón 3: clics, ajustados por el objetivo. Un anuncio de alcance recibe
+  // más clics que uno de conversiones —la gente no está siendo empujada a
+  // nada—, pero son clics de curiosidad y no de intención. Por eso el objetivo
+  // mueve el CTR en dirección CONTRARIA al CPM.
+  const ctrBase = CTR[canal];
+  const ctrBajo = r2(ctrBase.bajo * perfil.factorCtr);
+  const ctrAlto = r2(ctrBase.alto * perfil.factorCtr);
+  const ctr: Supuesto = { ...ctrBase, bajo: ctrBajo, alto: ctrAlto };
+  const clicsBajo = impresionesBajo * (ctrBajo / 100);
+  const clicsAlto = impresionesAlto * (ctrAlto / 100);
   cadena.push({
     label: "Clics",
     bajo: r0(clicsBajo),
     alto: r0(clicsAlto),
     unidad: "",
     supuesto: ctr,
-    operacion: `${ctr.bajo}–${ctr.alto}% de las impresiones`,
+    operacion: `${ctrBajo}–${ctrAlto}% de las impresiones, con el objetivo «${OBJETIVO_LABEL[
+      objetivo
+    ].toLocaleLowerCase("es")}»`,
     enCadena: true,
   });
 
@@ -414,6 +508,11 @@ function construirRuta(
       "Plaza fría: la pauta entra sin audiencia previa que la respalde, así que el CTR real suele quedar por debajo del benchmark."
     );
   }
+  if (objetivo === "conversion") {
+    riesgos.push(
+      "El objetivo de conversiones cobra el CPM más alto y entrega el CTR más bajo: solo compensa si hay un píxel o un evento que la plataforma pueda aprender. Sin señal de conversión que leer, se paga el precio caro sin la ventaja — es el error más común de un lanzamiento."
+    );
+  }
   if (fanRatePct == null) {
     riesgos.push(
       "Sin oyentes mensuales cargados no hay fan rate, así que la cadena se corta en oyentes y no llega a seguidores."
@@ -423,6 +522,7 @@ function construirRuta(
   return {
     id: `${canal}-${plaza.ciudad}`.toLocaleLowerCase("es").replace(/\s+/g, "-"),
     canal,
+    objetivo,
     canalLabel: PLATAFORMA_LABEL[canal],
     plaza: plaza.ciudad,
     pais: plaza.pais,
@@ -451,6 +551,240 @@ function construirRuta(
 }
 
 // ---------------------------------------------------------------------------
+// El reparto: en qué se convierte el presupuesto cuando hay que ejecutarlo
+// ---------------------------------------------------------------------------
+//
+// Comparar rutas responde "por dónde entra más barato". Repartir responde "qué
+// hago el lunes", que es otra pregunta y es la que se paga.
+//
+// EL PRINCIPIO, y es contrario a lo que hace casi todo el mundo: **repartir un
+// presupuesto chico entre muchas plazas es peor que concentrarlo.** En un
+// reporte, cinco ciudades se ven como trabajo; en la práctica, cinco pedazos
+// diminutos no producen ni un solo dato utilizable. Cuando termine la campaña
+// vas a tener cinco resultados donde no se puede distinguir el efecto del ruido,
+// y vas a seguir sin saber cuánto convierte tu artista.
+//
+// EL PISO, y sale de una cuenta, no de una opinión: el propósito de la primera
+// campaña es CALIBRAR el coeficiente de nivel 1 (clics → oyentes). Para medir
+// una proporción con algún sentido hacen falta del orden de cien eventos. Menos
+// que eso y el resultado es indistinguible del azar. Así que cada pedazo tiene
+// que alcanzar para ~100 clics EN EL PEOR CASO —CPM alto y CTR bajo—, y si no
+// alcanza, el sistema lo dice en vez de repartir humo.
+//
+// De ahí sale una consecuencia incómoda y honesta: en Spotify el piso pasa de
+// US$1.000. No es un capricho del cálculo, es que el CPM de audio es diez veces
+// el de Meta y el CTR es la mitad.
+
+const CLICS_PARA_APRENDER = 100;
+
+// Cuánto hay que poner en esa plaza y canal para que la campaña ENSEÑE algo.
+// Peor caso a propósito: el presupuesto que solo alcanza en el escenario
+// optimista no es un presupuesto, es una ilusión.
+export function pisoParaAprender(canal: Plataforma, pais: string | null): number {
+  const cpm = referenciaDe(canal, pais);
+  const ctr = CTR[canal];
+  const porImpresiones = (CLICS_PARA_APRENDER / (ctr.bajo / 100)) * (cpm.cpmAltoUsd / 1000);
+  return Math.max(Math.ceil(porImpresiones), cpm.minimoUsd ?? 0);
+}
+
+export interface Pedazo {
+  rutaId: string;
+  canal: Plataforma;
+  canalLabel: string;
+  plaza: string;
+  pais: string | null;
+  accionDePlaza: AccionDePlaza;
+  montoUsd: number;
+  // Por qué a esta plaza le toca esto y no otra cosa.
+  porQue: string;
+  pisoUsd: number;
+  // Con este monto, ¿alcanza para aprender algo?
+  ensena: boolean;
+  queEnsena: string;
+  oyentesBajo: number;
+  oyentesAlto: number;
+  seguidoresBajo: number | null;
+  seguidoresAlto: number | null;
+}
+
+export interface Reparto {
+  pedazos: Pedazo[];
+  // La regla, dicha una sola vez para todo el panel.
+  regla: string;
+  totalUsd: number;
+  sinRepartirUsd: number;
+  titular: string;
+  // La parte que nadie escribe: por qué NO se repartió entre más plazas.
+  porQueNoMas: string | null;
+  avisos: string[];
+  // Sumas para poder fijar un objetivo sobre la campaña entera, no sobre un
+  // pedazo suelto.
+  oyentesBajoTotal: number;
+  oyentesAltoTotal: number;
+  seguidoresBajoTotal: number | null;
+  seguidoresAltoTotal: number | null;
+}
+
+// EL PESO SIGUE A LA SEÑAL. Cada plaza recibe en proporción a su calor, y una
+// plaza que se está abriendo recibe la mitad de lo que le tocaría: es una
+// apuesta con respaldo, no una certeza.
+//
+// Repartir primero el piso y después sobrar por partes iguales —que fue lo
+// primero que escribí— produce un resultado al revés: la plaza CARA termina
+// con más plata que la plaza BUENA, porque su piso era más alto. Costar más no
+// es rendir más. Por eso el reparto se hace sobre el presupuesto completo y el
+// piso solo decide quién entra, no cuánto le toca.
+const MITAD_POR_APOSTAR = 0.5;
+
+function pesoDePlaza(z: PlazaEvaluada): number {
+  return z.calor * (z.accion === "abrir" ? MITAD_POR_APOSTAR : 1);
+}
+
+export function repartirPresupuesto(
+  p: VincereProyecto,
+  presupuestoUsd: number,
+  fanRatePct: number | null,
+  fanRateNivel: NivelSupuesto,
+  objetivo: ObjetivoCampana = OBJETIVO_POR_DEFECTO
+): Reparto {
+  const mapa = mapaDePlazas(p);
+  const avisos: string[] = [];
+
+  const candidatas = mapa.plazas
+    .filter((z) => z.prioridadPauta != null)
+    .sort((a, b) => (a.prioridadPauta ?? 99) - (b.prioridadPauta ?? 99));
+
+  const REGLA =
+    "El monto sigue al calor: entre plazas que refuerzan, la que más señal tiene se lleva más. Una plaza que se está abriendo recibe la mitad de lo que le tocaría, porque es una apuesta.";
+
+  const vacio = (titular: string, porQueNoMas: string | null = null): Reparto => ({
+    pedazos: [],
+    regla: REGLA,
+    totalUsd: 0,
+    sinRepartirUsd: presupuestoUsd,
+    titular,
+    porQueNoMas,
+    avisos,
+    oyentesBajoTotal: 0,
+    oyentesAltoTotal: 0,
+    seguidoresBajoTotal: null,
+    seguidoresAltoTotal: null,
+  });
+
+  if (!candidatas.length) {
+    return vacio(
+      mapa.plazas.length
+        ? "Ninguna plaza está en el rango donde la pauta rinde, así que no hay nada que repartir."
+        : "Sin zonas de calor cargadas no se puede repartir un presupuesto: sería tirar dardos."
+    );
+  }
+
+  // Para cada plaza, el canal más barato POR CLIC que se pueda ejecutar ahí.
+  // Se escoge por costo de aprendizaje, no por costo por impresión: lo que
+  // importa en la primera campaña es cuánto cuesta enterarse de algo.
+  const conCanal = candidatas.map((z) => {
+    const opciones = (["meta", "youtube", "spotify"] as Plataforma[])
+      .map((canal) => ({ canal, piso: pisoParaAprender(canal, z.pais) }))
+      .sort((a, b) => a.piso - b.piso);
+    return { plaza: z, ...opciones[0], alternativas: opciones };
+  });
+
+  // Cuántas plazas caben. Se prueba con todas y se va quitando la última
+  // mientras alguna quede por debajo de su piso: el reparto por señal puede
+  // dejar sin piso a una plaza cara aunque la suma de pisos sí cupiera, y meter
+  // una plaza que no va a enseñar nada es peor que dejarla afuera.
+  const montos = (grupo: typeof conCanal): number[] => {
+    const total = grupo.reduce((s, c) => s + pesoDePlaza(c.plaza), 0);
+    return grupo.map((c) => Math.floor((presupuestoUsd * pesoDePlaza(c.plaza)) / total));
+  };
+
+  let dentro = [...conCanal];
+  while (dentro.length > 0) {
+    const m = montos(dentro);
+    if (dentro.every((c, i) => m[i] >= c.piso)) break;
+    dentro = dentro.slice(0, -1);
+  }
+
+  if (!dentro.length) {
+    const barata = conCanal[0];
+    return vacio(
+      `Con US$${presupuestoUsd} no alcanza ni para una plaza. La más barata de aprender es ${barata.plaza.ciudad} por ${PLATAFORMA_LABEL[barata.canal]}, y necesita al menos US$${barata.piso}.`,
+      `El piso no es un mínimo de la plataforma: es lo que hace falta para juntar unos ${CLICS_PARA_APRENDER} clics en el peor escenario. Por debajo de eso la campaña corre, gasta y no deja ni un dato que sirva para calibrar.`
+    );
+  }
+
+  const asignados = montos(dentro);
+
+  const pedazos: Pedazo[] = dentro.map((c, i) => {
+    const monto = asignados[i];
+    const ruta = construirRuta(p, c.canal, c.plaza, monto, fanRatePct, fanRateNivel, objetivo);
+    return {
+      rutaId: ruta.id,
+      canal: c.canal,
+      canalLabel: PLATAFORMA_LABEL[c.canal],
+      plaza: c.plaza.ciudad,
+      pais: c.plaza.pais,
+      accionDePlaza: c.plaza.accion,
+      montoUsd: monto,
+      // Corto a propósito. La regla del reparto se explica UNA vez arriba del
+      // panel; repetirla en cada plaza llenaba la pantalla de la misma frase
+      // tres veces y enterraba lo único que cambia, que es el número.
+      porQue:
+        c.plaza.accion === "reforzar"
+          ? `Calor ${c.plaza.calor}.`
+          : `Calor ${c.plaza.calor}, fría — pero ${c.plaza.pais ?? "el país"} ya responde. Va con la mitad: es apuesta, no certeza.`,
+      pisoUsd: c.piso,
+      ensena: monto >= c.piso,
+      queEnsena: `Con US$${monto} en ${PLATAFORMA_LABEL[c.canal]} salen al menos ~${CLICS_PARA_APRENDER} clics aun en el peor escenario. Eso alcanza para medir cuántos de esos clics se volvieron oyente — el número que hoy es nivel 1 y que ninguna agencia tiene de este artista.`,
+      oyentesBajo: ruta.oyentesBajo,
+      oyentesAlto: ruta.oyentesAlto,
+      seguidoresBajo: ruta.seguidoresBajo,
+      seguidoresAlto: ruta.seguidoresAlto,
+    };
+  });
+
+  const totalUsd = pedazos.reduce((s, x) => s + x.montoUsd, 0);
+  const oyentesBajoTotal = pedazos.reduce((s, x) => s + x.oyentesBajo, 0);
+  const oyentesAltoTotal = pedazos.reduce((s, x) => s + x.oyentesAlto, 0);
+  const conSeguidores = pedazos.every((x) => x.seguidoresBajo != null);
+
+  const quedaronFuera = conCanal.length - dentro.length;
+  const porQueNoMas =
+    quedaronFuera > 0
+      ? `Quedaron ${quedaronFuera} plaza(s) fuera del reparto y no por descarte: no alcanzaba para darles un pedazo que enseñara algo. Partir el presupuesto en tajadas más finas se vería como más trabajo en el reporte y produciría ${
+          dentro.length + quedaronFuera
+        } resultados de los que no se puede concluir nada. Es preferible concentrar y aprender.`
+      : null;
+
+  if (pedazos.length === 1) {
+    avisos.push(
+      "Todo el presupuesto va a una sola plaza. Es lo correcto con este monto: una campaña que enseña algo vale más que tres que no."
+    );
+  }
+
+  const primero = pedazos[0];
+  const titular = `US$${presupuestoUsd} en ${pedazos.length} ${
+    pedazos.length === 1 ? "plaza" : "plazas"
+  }: ${pedazos.map((x) => `${x.plaza} US$${x.montoUsd}`).join(", ")}. El grueso va a ${primero.plaza} por ${
+    primero.canalLabel
+  }.`;
+
+  return {
+    pedazos,
+    regla: REGLA,
+    totalUsd,
+    sinRepartirUsd: presupuestoUsd - totalUsd,
+    titular,
+    porQueNoMas,
+    avisos,
+    oyentesBajoTotal,
+    oyentesAltoTotal,
+    seguidoresBajoTotal: conSeguidores ? pedazos.reduce((s, x) => s + (x.seguidoresBajo ?? 0), 0) : null,
+    seguidoresAltoTotal: conSeguidores ? pedazos.reduce((s, x) => s + (x.seguidoresAlto ?? 0), 0) : null,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // El plan completo
 // ---------------------------------------------------------------------------
 
@@ -470,6 +804,9 @@ export interface PlanDeLanzamiento {
   fanRateNivel: NivelSupuesto;
   // Lo que hay que conseguir para que esto deje de ser estimación.
   paraCalibrar: string[];
+  // Qué hacer el lunes: el presupuesto ya partido en pedazos ejecutables.
+  reparto: Reparto;
+  objetivo: ObjetivoCampana;
 }
 
 const CANALES: Plataforma[] = ["youtube", "meta", "spotify"];
@@ -477,7 +814,8 @@ const CANALES: Plataforma[] = ["youtube", "meta", "spotify"];
 export function planDeLanzamiento(
   p: VincereProyecto,
   presupuestoUsd: number,
-  cuantasPlazas = 2
+  cuantasPlazas = 2,
+  objetivo: ObjetivoCampana = OBJETIVO_POR_DEFECTO
 ): PlanDeLanzamiento {
   const mapa = mapaDePlazas(p);
   const fr = calcularFanRate(p);
@@ -486,7 +824,17 @@ export function planDeLanzamiento(
   // no existe se cae al acumulado, diciéndolo.
   let fanRatePct: number | null = null;
   let fanRateNivel: NivelSupuesto = 1;
-  if (fr.marginal && !fr.marginal.audienciaBajo && fr.marginal.oyentesGanados > 0) {
+  // El marginal se usa como coeficiente de la cadena, así que tiene que ser
+  // usable COMO CONVERSIÓN. Un marginal por encima de 100% —más seguidores
+  // nuevos que oyentes nuevos— es un dato real pero no es una tasa de
+  // conversión, y multiplicar por 4,4 los oyentes de una campaña produciría una
+  // proyección de seguidores inventada. En ese caso se cae al acumulado.
+  if (
+    fr.marginal &&
+    fr.marginal.movimiento === "creció" &&
+    !fr.marginal.imposibleComoConversion &&
+    fr.marginal.pct > 0
+  ) {
     fanRatePct = fr.marginal.pct;
     fanRateNivel = 4;
   } else if (fr.actual) {
@@ -544,13 +892,15 @@ export function planDeLanzamiento(
       fanRatePct,
       fanRateNivel,
       paraCalibrar,
+      objetivo,
+      reparto: repartirPresupuesto(p, presupuestoUsd, fanRatePct, fanRateNivel, objetivo),
     };
   }
 
   const rutas: Ruta[] = [];
   for (const plaza of elegidas) {
     for (const canal of CANALES) {
-      rutas.push(construirRuta(p, canal, plaza, presupuestoUsd, fanRatePct, fanRateNivel));
+      rutas.push(construirRuta(p, canal, plaza, presupuestoUsd, fanRatePct, fanRateNivel, objetivo));
     }
   }
 
@@ -589,8 +939,123 @@ export function planDeLanzamiento(
     fanRatePct,
     fanRateNivel,
     paraCalibrar,
+    objetivo,
+    reparto: repartirPresupuesto(p, presupuestoUsd, fanRatePct, fanRateNivel, objetivo),
   };
 }
 
 export const ADVERTENCIA_LANZAMIENTO =
   "Esto es una estimación con coeficientes públicos, no una proyección de resultados. Cada escalón lleva su fuente y su nivel, y el conjunto vale lo que valga su eslabón más débil. Sirve para dimensionar y para poder volver en 30 días a preguntar qué falló; no para comprometer una cifra con nadie.";
+
+// ---------------------------------------------------------------------------
+// El calendario: cuándo pasa cada cosa, y cuándo se puede medir
+// ---------------------------------------------------------------------------
+//
+// Una hoja de ruta con una sola fecha no es una hoja de ruta. Pero acá hay que
+// ser claro sobre qué es cada cosa: los intervalos de abajo son CONVENCIÓN de
+// oficio, no data. Se pueden mover y no pretenden ser óptimos.
+//
+// Lo que NO es convención, y es la razón de que este módulo exista: los oyentes
+// mensuales de Spotify son una ventana móvil de 28 días. Medir el efecto de una
+// campaña a los siete días no muestra "poco efecto" — muestra un cuarto del
+// efecto, porque la métrica todavía arrastra tres semanas de antes de la
+// campaña. Es el error de lectura que hace que se apague una campaña que estaba
+// funcionando, y el calendario existe sobre todo para impedirlo.
+
+// Días de la ventana móvil de oyentes mensuales de Spotify.
+const VENTANA_OYENTES = 28;
+
+export interface Hito {
+  fecha: string;
+  titulo: string;
+  queSeHace: string;
+  // Qué se mira ese día. Vacío cuando ese día no se mide nada, que también es
+  // información: evita revisar métricas por ansiedad.
+  queSeMide: string;
+  // Si el día es una convención movible o una consecuencia de cómo funciona la
+  // métrica. La diferencia decide qué se puede negociar con un cliente.
+  esConvencion: boolean;
+  pasado: boolean;
+}
+
+function masDias(fecha: string, dias: number): string {
+  const d = new Date(fecha + "T12:00:00");
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+export function calendarioDeLanzamiento(
+  fechaSalida: string,
+  fechaCorte: string | null,
+  hoy = new Date().toISOString().slice(0, 10)
+): { hitos: Hito[]; aviso: string | null } {
+  const hitos: Hito[] = [
+    {
+      fecha: masDias(fechaSalida, -14),
+      titulo: "Anuncio y pre-save",
+      queSeHace: "Se abre el pre-save y se avisa. Nada de pauta todavía: pautar antes de que exista la canción compra clics que no pueden convertir.",
+      queSeMide: "",
+      esConvencion: true,
+      pasado: masDias(fechaSalida, -14) < hoy,
+    },
+    {
+      fecha: masDias(fechaSalida, -7),
+      titulo: "Contenido, sin pauta",
+      queSeHace: "Piezas orgánicas para probar qué gancho responde. Sirve para escoger la creatividad de la campaña sin pagar por descubrirlo.",
+      queSeMide: "Qué pieza retiene más, en orgánico. Es la que después se pauta.",
+      esConvencion: true,
+      pasado: masDias(fechaSalida, -7) < hoy,
+    },
+    {
+      fecha: fechaSalida,
+      titulo: "Sale la canción",
+      queSeHace: "Salida y arranque de la pauta el mismo día. Acá se congela el número de partida del objetivo.",
+      queSeMide: "El valor de partida: oyentes mensuales del día anterior. Sin ese número congelado no hay nada contra qué medir después.",
+      esConvencion: false,
+      pasado: fechaSalida < hoy,
+    },
+    {
+      fecha: masDias(fechaSalida, 7),
+      titulo: "Primer chequeo — solo de la pauta",
+      queSeHace: "Se revisa que la campaña esté entregando: CPM real, CTR real, si el presupuesto se está gastando.",
+      queSeMide:
+        "SOLO métricas de la plataforma de pauta. NO los oyentes mensuales: a los siete días esa métrica todavía arrastra tres semanas de antes de la campaña y va a mostrar casi nada. Apagar una campaña acá es el error más caro de un lanzamiento.",
+      esConvencion: false,
+      pasado: masDias(fechaSalida, 7) < hoy,
+    },
+    {
+      fecha: masDias(fechaSalida, VENTANA_OYENTES),
+      titulo: "Primera lectura real de audiencia",
+      queSeHace: "Recién acá la ventana móvil de oyentes mensuales está compuesta enteramente por días con la canción afuera.",
+      queSeMide:
+        `Oyentes mensuales por ciudad y seguidores. Es el primer día en que la cifra refleja el lanzamiento y no una mezcla con el mes anterior — la ventana de Spotify son ${VENTANA_OYENTES} días.`,
+      esConvencion: false,
+      pasado: masDias(fechaSalida, VENTANA_OYENTES) < hoy,
+    },
+  ];
+
+  if (fechaCorte) {
+    hitos.push({
+      fecha: fechaCorte,
+      titulo: "Corte del objetivo",
+      queSeHace: "Se cierra el lanzamiento: qué buscábamos, qué logramos, y si no, por qué no.",
+      queSeMide: "El número contra el que se fijó la meta, y los clics reales de la campaña para calibrar el coeficiente que hoy es nivel 1.",
+      esConvencion: false,
+      pasado: fechaCorte < hoy,
+    });
+  }
+
+  hitos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  // El aviso que de verdad importa: un corte antes de que la ventana se limpie
+  // mide una cifra contaminada, y va a parecer que la campaña falló.
+  let aviso: string | null = null;
+  if (fechaCorte) {
+    const limpio = masDias(fechaSalida, VENTANA_OYENTES);
+    if (fechaCorte < limpio) {
+      aviso = `El corte está el ${fechaCorte}, antes del ${limpio}. Los oyentes mensuales son una ventana móvil de ${VENTANA_OYENTES} días: a esa fecha la cifra todavía mezcla días de antes del lanzamiento y va a quedar por debajo de lo real. Mover el corte a partir del ${limpio} no es hacer trampa — es medir lo que se quiso medir.`;
+    }
+  }
+
+  return { hitos, aviso };
+}

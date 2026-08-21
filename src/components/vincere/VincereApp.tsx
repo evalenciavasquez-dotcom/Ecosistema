@@ -27,6 +27,7 @@ import StressTestSection from "./sections/StressTestSection";
 import InformeSection from "./sections/InformeSection";
 import ManualSection from "./sections/ManualSection";
 import ComparacionSection from "./sections/ComparacionSection";
+import GlobalSection from "./sections/GlobalSection";
 
 export default function VincereApp() {
   const proyectos = useVincereStore((s) => s.proyectos);
@@ -129,6 +130,8 @@ function SectionRouter({
       return <ManagementSection proyecto={proyecto} />;
     case "kpis":
       return <KpisSection proyecto={proyecto} />;
+    case "global":
+      return <GlobalSection />;
     case "lanzamiento":
       return <LanzamientoSection proyecto={proyecto} />;
     case "triage":

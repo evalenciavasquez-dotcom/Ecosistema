@@ -1,11 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { VincereProyecto, VincereLanzamiento } from "@/lib/vincere/types";
+import { VincereProyecto, VincereLanzamiento, VincereNivel } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import {
   planDeLanzamiento,
+  calendarioDeLanzamiento,
+  OBJETIVOS,
+  OBJETIVO_LABEL,
+  OBJETIVO_POR_DEFECTO,
+  FUENTE_OBJETIVOS,
+  ObjetivoCampana,
+  Hito,
   Ruta,
+  Reparto,
   ADVERTENCIA_LANZAMIENTO,
   NivelSupuesto,
 } from "@/lib/vincere/lanzamiento";
@@ -26,6 +34,11 @@ import { Panel } from "../primitives";
 
 const nf = new Intl.NumberFormat("es-CO");
 const n = (x: number) => nf.format(Math.round(x));
+
+// Identificador reservado: elegir "el reparto" no es elegir una de las rutas,
+// es elegirlas todas repartidas. Se guarda como si fuera una ruta más para no
+// duplicar el estado del lanzamiento.
+const ID_REPARTO = "reparto";
 
 const NIVEL_COLOR: Record<NivelSupuesto, string> = {
   1: "var(--vin-risk)",
@@ -224,6 +237,211 @@ function TarjetaRuta({
   );
 }
 
+// El reparto: qué se hace el lunes.
+//
+// Va ARRIBA de las rutas sueltas, no debajo, porque es la respuesta a la
+// pregunta que de verdad se hace: no "por dónde entra más barato" sino "cómo
+// reparto lo que tengo". Las rutas quedan abajo como el material con el que se
+// discute esa decisión.
+function PanelReparto({
+  r,
+  elegido,
+  onElegir,
+}: {
+  r: Reparto;
+  elegido: boolean;
+  onElegir: () => void;
+}) {
+  if (!r.pedazos.length) {
+    return (
+      <Panel>
+        <div className="vin-eyebrow mb-2">Cómo repartirlo</div>
+        <p className="vin-t-base leading-relaxed">{r.titular}</p>
+        {r.porQueNoMas && <p className="vin-faint vin-t-sm mt-3 leading-relaxed">{r.porQueNoMas}</p>}
+      </Panel>
+    );
+  }
+
+  const maximo = Math.max(...r.pedazos.map((x) => x.montoUsd));
+
+  return (
+    <div
+      className="rounded-[--r-lg] p-6"
+      style={{
+        border: elegido ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
+        background: elegido ? "rgba(224,72,58,0.06)" : "var(--vin-surface-2)",
+      }}
+    >
+      <div className="vin-eyebrow mb-2">Cómo repartirlo</div>
+      <p className="vin-faint vin-t-sm mb-5 leading-relaxed" style={{ maxWidth: "72ch" }}>
+        {r.regla}
+      </p>
+
+      <div className="flex flex-col gap-4">
+        {r.pedazos.map((x) => (
+          <div key={x.rutaId}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span className="vin-t-base font-medium">
+                {x.plaza} <span className="vin-faint">· {x.canalLabel}</span>
+              </span>
+              <span className="vin-t-lg vin-serif tabular-nums">US${n(x.montoUsd)}</span>
+            </div>
+            {/* La barra hace visible de un vistazo que el peso sigue al calor.
+                Un listado de cifras obliga a compararlas de cabeza. */}
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--vin-border)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${(x.montoUsd / maximo) * 100}%`,
+                  background: ACCION_COLOR[x.accionDePlaza],
+                }}
+              />
+            </div>
+            <p className="vin-faint vin-t-sm mt-1.5 leading-relaxed">
+              {x.porQue} Espera {n(x.oyentesBajo)}–{n(x.oyentesAlto)} oyentes
+              {x.seguidoresBajo != null && <> y {n(x.seguidoresBajo)}–{n(x.seguidoresAlto!)} seguidores</>}.
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <span className="vin-muted vin-t-sm">Sumando todo el reparto</span>
+          <span className="vin-t-lg tabular-nums">
+            {n(r.oyentesBajoTotal)}–{n(r.oyentesAltoTotal)} oyentes
+            {r.seguidoresBajoTotal != null && (
+              <span className="vin-faint">
+                {" "}
+                · {n(r.seguidoresBajoTotal)}–{n(r.seguidoresAltoTotal!)} seguidores
+              </span>
+            )}
+          </span>
+        </div>
+        {r.sinRepartirUsd > 0 && (
+          <p className="vin-faint vin-t-sm mt-1">Quedan US${n(r.sinRepartirUsd)} sin asignar por redondeo.</p>
+        )}
+      </div>
+
+      {r.porQueNoMas && (
+        <p className="vin-t-sm mt-4 leading-relaxed" style={{ color: "var(--vin-warn)", maxWidth: "72ch" }}>
+          {r.porQueNoMas}
+        </p>
+      )}
+      {r.avisos.map((a, i) => (
+        <p key={i} className="vin-faint vin-t-sm mt-2 leading-relaxed" style={{ maxWidth: "72ch" }}>
+          {a}
+        </p>
+      ))}
+
+      <button onClick={onElegir} className={`mt-5 ${elegido ? "vin-btn-primary" : "vin-btn-ghost"}`} disabled={elegido}>
+        {elegido ? "Reparto elegido" : "Usar este reparto"}
+      </button>
+    </div>
+  );
+}
+
+// El calendario. Su razón de ser no es organizar: es impedir un error de
+// lectura concreto y caro. Los oyentes mensuales de Spotify son una ventana
+// móvil de 28 días, así que a los siete días una campaña que está funcionando
+// se ve como si no hiciera nada — y es cuando la gente la apaga.
+function Calendario({ hitos, aviso }: { hitos: Hito[]; aviso: string | null }) {
+  return (
+    <div>
+      {aviso && (
+        <p
+          className="vin-t-base mb-5 leading-relaxed"
+          style={{ color: "var(--vin-warn)", maxWidth: "76ch" }}
+        >
+          {aviso}
+        </p>
+      )}
+      <div className="flex flex-col">
+        {hitos.map((h, i) => (
+          <div key={i} className="flex gap-4 border-b py-4 last:border-b-0" style={{ borderColor: "var(--vin-border)" }}>
+            <div className="w-[92px] shrink-0">
+              <div className="vin-t-sm tabular-nums" style={{ color: h.pasado ? "var(--vin-dim)" : "var(--vin-text)" }}>
+                {h.fecha}
+              </div>
+              {/* Convención movible vs. consecuencia de cómo funciona la
+                  métrica. La diferencia decide qué se puede negociar. */}
+              <div className="vin-t-xs" style={{ color: h.esConvencion ? "var(--vin-dim)" : "var(--vin-accent)" }}>
+                {h.esConvencion ? "convención" : "no movible"}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1" style={{ opacity: h.pasado ? 0.5 : 1 }}>
+              <div className="vin-t-base font-medium">{h.titulo}</div>
+              <p className="vin-faint vin-t-sm mt-1 leading-relaxed">{h.queSeHace}</p>
+              {h.queSeMide && (
+                <p className="vin-t-sm mt-1.5 leading-relaxed" style={{ color: "var(--vin-muted)" }}>
+                  Se mide: {h.queSeMide}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Colaboraciones en juego.
+//
+// Lo que este panel NO hace, y hay que decirlo: no dice qué plaza abre cada
+// colaborador. A&R no guarda audiencia por ciudad de los candidatos, así que
+// cruzarlos con el mapa de plazas sería inventar un dato que nadie cargó.
+// Lo que sí puede decir es cuándo tiene que estar cerrado cada uno, que es la
+// parte que de verdad se rompe: un feature que se confirma dos semanas antes de
+// la salida ya no alcanza a grabarse, mezclarse y registrarse.
+function Colaboraciones({ proyecto, fechaSalida }: { proyecto: VincereProyecto; fechaSalida: string }) {
+  const evaluados = proyecto.arDiagnostico?.candidatos ?? [];
+  const perseguir = evaluados.filter((c) => c.veredicto === "perseguir" || c.veredicto === "explorar");
+
+  const limite = new Date(fechaSalida + "T12:00:00");
+  limite.setDate(limite.getDate() - 30);
+  const fechaLimite = limite.toISOString().slice(0, 10);
+
+  if (!evaluados.length) {
+    return (
+      <p className="vin-muted vin-t-base leading-relaxed">
+        A&R no ha evaluado colaboradores para este proyecto. Si la canción va con feature, esa decisión tiene que estar
+        cerrada antes del {fechaLimite} — treinta días antes de la salida — o no alcanza a grabarse y registrarse.
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <p className="vin-muted vin-t-base leading-relaxed" style={{ maxWidth: "76ch" }}>
+        Si «{proyecto.nombre}» sale con feature, la decisión tiene que estar cerrada antes del{" "}
+        <span style={{ color: "var(--vin-text)" }}>{fechaLimite}</span>. Después de esa fecha ya no alcanza a grabarse,
+        mezclarse y registrarse a tiempo.
+      </p>
+      {perseguir.length ? (
+        <div className="mt-4 flex flex-col gap-3">
+          {perseguir.map((c) => (
+            <div key={c.nombre}>
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <span className="vin-t-base font-medium">{c.nombre}</span>
+                <span className="vin-faint vin-t-sm">{c.veredicto}</span>
+              </div>
+              <p className="vin-faint vin-t-sm mt-0.5 leading-relaxed">{c.queGana}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="vin-faint vin-t-sm mt-3 leading-relaxed">
+          Ningún candidato quedó en «perseguir» ni «explorar». Salir sola es la lectura de A&R, no una omisión.
+        </p>
+      )}
+      <p className="vin-faint vin-t-sm mt-4 leading-relaxed" style={{ maxWidth: "76ch" }}>
+        El sistema no dice qué plaza abre cada colaborador: A&R no guarda audiencia por ciudad de los candidatos, y
+        cruzarlos con el mapa de plazas sería inventar un dato que nadie cargó.
+      </p>
+    </div>
+  );
+}
+
 function Cierre({ proyecto, l }: { proyecto: VincereProyecto; l: VincereLanzamiento }) {
   const cerrarLanzamiento = useVincereStore((s) => s.cerrarLanzamiento);
   const reabrirLanzamiento = useVincereStore((s) => s.reabrirLanzamiento);
@@ -348,6 +566,7 @@ function Cierre({ proyecto, l }: { proyecto: VincereProyecto; l: VincereLanzamie
 
 export default function LanzamientoSection({ proyecto }: { proyecto: VincereProyecto }) {
   const addLanzamiento = useVincereStore((s) => s.addLanzamiento);
+  const addPrediccion = useVincereStore((s) => s.addPrediccion);
   const updateLanzamiento = useVincereStore((s) => s.updateLanzamiento);
   const deleteLanzamiento = useVincereStore((s) => s.deleteLanzamiento);
 
@@ -362,11 +581,47 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
   });
   const [obj, setObj] = useState({ valorInicial: "", valorMeta: "", fechaCorte: "" });
 
+  const [objetivo, setObjetivo] = useState<ObjetivoCampana>(OBJETIVO_POR_DEFECTO);
+
   const plan = useMemo(
-    () => (activo ? planDeLanzamiento(proyecto, activo.presupuestoUsd) : null),
-    [proyecto, activo]
+    () => (activo ? planDeLanzamiento(proyecto, activo.presupuestoUsd, 2, objetivo) : null),
+    [proyecto, activo, objetivo]
   );
   const rutaElegida = plan?.rutas.find((r) => r.id === activo?.rutaElegidaId) ?? null;
+  const usandoReparto = activo?.rutaElegidaId === ID_REPARTO;
+
+  // Lo que se eligió, sea una ruta sola o el reparto completo. El paso 3 no
+  // tiene que saber cuál de las dos es: solo necesita contra qué medir.
+  const eleccion = usandoReparto && plan?.reparto.pedazos.length
+    ? {
+        titulo: `Reparto en ${plan.reparto.pedazos.length} ${plan.reparto.pedazos.length === 1 ? "plaza" : "plazas"}`,
+        oyentesBajo: plan.reparto.oyentesBajoTotal,
+        metrica: "Oyentes mensuales sumando todas las plazas del reparto",
+        senal: `Oyentes mensuales en ${plan.reparto.pedazos
+          .map((x) => x.plaza)
+          .join(", ")} (Spotify for Artists → Audiencia), medidos el día antes de arrancar y 30 días después.`,
+        deDonde: `Suma de los bordes bajos del reparto de US$${activo?.presupuestoUsd} en ${plan.reparto.pedazos
+          .map((x) => `${x.plaza} US$${x.montoUsd}`)
+          .join(", ")}.`,
+        // El nivel de la meta es el del eslabón más flojo de todas las rutas
+        // del reparto: la campaña entera no puede ser más firme que su pedazo
+        // peor sostenido.
+        nivel: Math.min(
+          ...plan.reparto.pedazos.map(
+            (x) => plan.rutas.find((r) => r.id === x.rutaId)?.nivelMasDebil ?? 1
+          )
+        ) as NivelSupuesto,
+      }
+    : rutaElegida
+      ? {
+          titulo: `${rutaElegida.canalLabel} en ${rutaElegida.plaza}`,
+          oyentesBajo: rutaElegida.oyentesBajo,
+          metrica: `Oyentes mensuales en ${rutaElegida.plaza}`,
+          senal: rutaElegida.senal,
+          deDonde: `Borde bajo de la ruta ${rutaElegida.canalLabel} · ${rutaElegida.plaza} con US$${rutaElegida.presupuestoUsd}. La ruta se apoya en un supuesto de nivel ${rutaElegida.nivelMasDebil}, así que la meta hereda esa firmeza.`,
+          nivel: rutaElegida.nivelMasDebil,
+        }
+      : null;
 
   function declarar() {
     const c = proyecto.canciones.find((x) => x.id === decl.cancionId);
@@ -388,9 +643,7 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
   // Proponer el techo sería armar el fracaso desde el primer día: el borde bajo
   // es lo que la cadena sostiene aunque todo salga mediocre.
   const metaSugerida =
-    rutaElegida && obj.valorInicial !== ""
-      ? Number(obj.valorInicial) + rutaElegida.oyentesBajo
-      : null;
+    eleccion && obj.valorInicial !== "" ? Number(obj.valorInicial) + eleccion.oyentesBajo : null;
 
   return (
     <SectionShell
@@ -505,7 +758,70 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
               </p>
             ))}
 
-            <div className="mt-5 flex flex-col gap-3">
+            {/* El objetivo cambia el costo por oyente más que el país: con el
+                mismo presupuesto, alcance sale 4,7× más barato por oyente que
+                conversiones. Va arriba de todo porque cambia todos los números
+                de abajo. */}
+            <div className="mt-5">
+              <div className="vin-muted vin-t-sm mb-2 font-medium">Con qué objetivo se compra</div>
+              <div className="flex flex-wrap gap-2">
+                {(["alcance", "trafico", "conversion"] as ObjetivoCampana[]).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => setObjetivo(o)}
+                    className="vin-t-sm rounded-full px-3 py-1.5"
+                    style={{
+                      border: objetivo === o ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
+                      color: objetivo === o ? "var(--vin-text)" : "var(--vin-muted)",
+                      background: objetivo === o ? "rgba(224,72,58,0.12)" : "transparent",
+                    }}
+                  >
+                    {OBJETIVO_LABEL[o]}
+                  </button>
+                ))}
+              </div>
+              <p className="vin-faint vin-t-sm mt-2.5 leading-relaxed" style={{ maxWidth: "74ch" }}>
+                {OBJETIVOS[objetivo].queEs} {OBJETIVOS[objetivo].cuandoSirve}
+              </p>
+              <p className="vin-faint vin-t-xs mt-1.5 leading-relaxed">
+                CPM ×{OBJETIVOS[objetivo].factorCpm} y CTR ×{OBJETIVOS[objetivo].factorCtr} sobre la base de la plaza ·{" "}
+                <a href={FUENTE_OBJETIVOS.url} target="_blank" rel="noreferrer" className="underline">
+                  {FUENTE_OBJETIVOS.fuente}
+                </a>
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <PanelReparto
+                r={plan.reparto}
+                elegido={usandoReparto}
+                onElegir={() =>
+                  activo &&
+                  updateLanzamiento(proyecto.id, activo.id, {
+                    rutaElegidaId: ID_REPARTO,
+                    rutaElegidaLabel: `Reparto en ${plan.reparto.pedazos.length} ${
+                      plan.reparto.pedazos.length === 1 ? "plaza" : "plazas"
+                    }`,
+                  })
+                }
+              />
+            </div>
+
+            {/* Las rutas sueltas quedan debajo del reparto: son el material
+                para discutir la decisión, no la decisión. Cada una asume el
+                presupuesto COMPLETO, que es lo que las hace comparables entre
+                sí — y por eso no se pueden sumar. */}
+            <div className="mt-7">
+              <div className="vin-muted vin-t-sm mb-1 font-medium">
+                O todo por una sola ruta
+              </div>
+              <p className="vin-faint vin-t-sm mb-4 leading-relaxed" style={{ maxWidth: "72ch" }}>
+                Cada una supone el presupuesto entero en esa plaza y ese canal. Sirven para comparar cuál rinde más
+                por dólar; no se suman entre sí.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
               {plan.rutas.map((r) => (
                 <TarjetaRuta
                   key={r.id}
@@ -568,11 +884,12 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
       <Paso
         n={3}
         titulo="Fijar qué estamos buscando"
-        estado={activo?.objetivo ? "objetivo fijado" : rutaElegida ? "falta fijarlo" : "falta elegir ruta"}
+        estado={activo?.objetivo ? "objetivo fijado" : eleccion ? "falta fijarlo" : "falta decidir arriba"}
       >
-        {!rutaElegida ? (
+        {!eleccion ? (
           <p className="vin-muted vin-t-base leading-relaxed">
-            Elige una ruta arriba. La meta se propone desde esa ruta, no al aire.
+            Arriba: o usas el reparto completo, o eliges una sola ruta. La meta se propone desde lo que elijas, no al
+            aire.
           </p>
         ) : activo?.objetivo ? (
           <Panel>
@@ -595,12 +912,12 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
         ) : (
           <Panel>
             <p className="vin-muted vin-t-base leading-relaxed">
-              La ruta elegida es {rutaElegida.canalLabel} en {rutaElegida.plaza}. Lo que se va a medir son{" "}
-              <span className="vin-muted">{rutaElegida.senal}</span>
+              Se va a ejecutar: <span className="vin-t-base" style={{ color: "var(--vin-text)" }}>{eleccion.titulo}</span>. Lo
+              que se mide: {eleccion.senal}
             </p>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <label className="flex flex-col gap-1.5">
-                <span className="vin-faint vin-t-sm">Oyentes hoy en {rutaElegida.plaza}</span>
+                <span className="vin-faint vin-t-sm">{eleccion.metrica} — hoy</span>
                 <input
                   type="number"
                   className="vin-input"
@@ -635,12 +952,12 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
               {metaSugerida != null ? (
                 <>
                   El sistema propone <span className="tabular-nums">{n(metaSugerida)}</span>: la partida más el borde
-                  BAJO de la ruta ({n(rutaElegida.oyentesBajo)} oyentes), no el alto.
+                  BAJO ({n(eleccion.oyentesBajo)} oyentes), no el alto.
                 </>
               ) : (
                 <>
-                  Al escribir la partida, el sistema propone la meta sumándole el borde BAJO de la ruta (
-                  {n(rutaElegida.oyentesBajo)} oyentes), no el alto.
+                  Al escribir la partida, el sistema propone la meta sumándole el borde BAJO (
+                  {n(eleccion.oyentesBajo)} oyentes), no el alto.
                 </>
               )}{" "}
               Proponer el techo sería armar el fracaso desde el primer día.
@@ -648,18 +965,35 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
             <button
               className="vin-btn-primary mt-4"
               disabled={!obj.valorInicial || !obj.fechaCorte || !activo}
-              onClick={() =>
-                activo &&
+              onClick={() => {
+                if (!activo) return;
+                const meta = Number(obj.valorMeta || metaSugerida) || 0;
+                const inicial = Number(obj.valorInicial) || 0;
                 updateLanzamiento(proyecto.id, activo.id, {
                   objetivo: {
-                    metrica: `Oyentes mensuales en ${rutaElegida.plaza}`,
-                    valorInicial: Number(obj.valorInicial) || 0,
-                    valorMeta: Number(obj.valorMeta || metaSugerida) || 0,
+                    metrica: eleccion.metrica,
+                    valorInicial: inicial,
+                    valorMeta: meta,
                     fechaCorte: obj.fechaCorte,
-                    deDonde: `Borde bajo de la ruta ${rutaElegida.canalLabel} · ${rutaElegida.plaza} con US$${rutaElegida.presupuestoUsd}. La ruta se apoya en un supuesto de nivel ${rutaElegida.nivelMasDebil}, así que la meta hereda esa firmeza.`,
+                    deDonde: eleccion.deDonde,
                   },
-                })
-              }
+                });
+                // El objetivo de un lanzamiento ES una predicción: dice que un
+                // número va a estar en cierto punto en cierta fecha, y se puede
+                // demostrar falso. Entra al marcador solo, con el nivel del
+                // eslabón más débil de la cadena que lo produjo — nadie lo
+                // escribe a mano, y por eso mide al sistema.
+                addPrediccion(proyecto.id, {
+                  motor: "lanzamiento",
+                  origen: "motor",
+                  afirmacion: `«${activo.nombreCancion}»: ${eleccion.metrica.toLocaleLowerCase("es")} pasa de ${n(
+                    inicial
+                  )} a ${n(meta)} con US$${activo.presupuestoUsd} por ${eleccion.titulo}.`,
+                  comoSeVerifica: eleccion.senal,
+                  venceEn: obj.fechaCorte,
+                  nivelAlEmitir: eleccion.nivel as VincereNivel,
+                });
+              }}
             >
               Fijar el objetivo
             </button>
@@ -667,7 +1001,25 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
         )}
       </Paso>
 
-      <Paso n={4} titulo="Cerrar el ciclo" estado={activo?.cierre ? "cerrado" : "abierto"}>
+      <Paso
+        n={4}
+        titulo="El calendario"
+        estado={activo ? `sale el ${activo.fechaSalida}` : "falta el paso 1"}
+      >
+        {activo ? (
+          <>
+            <Calendario {...calendarioDeLanzamiento(activo.fechaSalida, activo.objetivo?.fechaCorte ?? null)} />
+            <div className="mt-7">
+              <div className="vin-muted vin-t-sm mb-2 font-medium">Colaboraciones en juego</div>
+              <Colaboraciones proyecto={proyecto} fechaSalida={activo.fechaSalida} />
+            </div>
+          </>
+        ) : (
+          <p className="vin-muted vin-t-base">Declara el lanzamiento y el calendario se arma solo desde la fecha.</p>
+        )}
+      </Paso>
+
+      <Paso n={5} titulo="Cerrar el ciclo" estado={activo?.cierre ? "cerrado" : "abierto"}>
         {activo ? (
           <Cierre proyecto={proyecto} l={activo} />
         ) : (

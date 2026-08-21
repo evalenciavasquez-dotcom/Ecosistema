@@ -9,6 +9,7 @@ import { VincereSeccion, VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 // decide y se sale afuera. Una lista plana de dieciocho motores obliga a cada
 // persona a inventarse ese orden en la cabeza.
 const GRUPOS: { titulo: string; secciones: VincereSeccion[] }[] = [
+  { titulo: "Todo junto", secciones: ["global"] },
   { titulo: "Entra la data", secciones: ["ingesta", "investigacion"] },
   { titulo: "Dónde está hoy", secciones: ["resumen", "diagnostico", "marca"] },
   { titulo: "La obra y el público", secciones: ["song", "ar", "audiencia", "calor", "touring"] },
