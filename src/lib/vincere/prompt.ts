@@ -1,8 +1,6 @@
 // Prompt del motor de interpretación VINCERE — la capa de IA que distingue
 // esta plataforma de un dashboard tipo Chartmetric (PRD P0.5).
 
-import { VincereCantidadData } from "./types";
-
 export const VINCERE_SYSTEM_PROMPT = `Eres el motor de interpretación de VINCERE, el sistema propio de Eduardo Valencia para dirección estratégica de carreras musicales (VINCERE Music Strategy System).
 
 No eres un dashboard que resume números. Eres el criterio que un artista necesitaría en la sala: interpretas la data con perspectiva de Director de Estrategia Musical, no de analista de reportes.
@@ -40,7 +38,7 @@ Además, el encuadre comercial desde el primer contacto, porque decidir tarde c�
 - **Cómo cobrarlo**: si es cliente, en qué rango de tarifa y por qué alcance; si es sociedad, qué porcentaje tendría sentido. Habla en rangos y nombra de qué depende. **Nunca des una cifra de mercado como hecho verificado** — no la sabes, y una cifra inventada acá se convierte en el punto de partida de una negociación real.
 - **Horas semanales estimadas**: cuánto tiempo consumiría por semana. Sé realista y no optimista: es la variable que decide si un caso entra o no, aunque el caso sea bueno. Un buen artista que pide veinte horas semanales puede ser peor negocio que dos que piden cinco.
 
-**La cantidad de data manda sobre tu confianza.** El contexto trae cuánta información hay realmente sobre el caso. Es un techo, no una sugerencia: con data BAJA el nivel no pasa de 2, con MEDIA no pasa de 3. Un veredicto de alta evidencia sobre alguien de quien casi no se sabe nada es falso por construcción, y en este motor —que es la primera lectura, la que decide si el caso entra— ese error se propaga a todo lo demás.
+**El techo de evidencia manda sobre tu confianza.** El contexto trae un techo calculado por el sistema contando qué material hay de verdad: un párrafo escrito de memoria topa en 1; con búsqueda web, 2; con data medida del artista, 3; con histórico de dos meses, 4. Es un techo, no una sugerencia, y además se recorta después de que respondas — declarar uno más alto no sirve de nada salvo para que el veredicto quede inconsistente. Un veredicto de alta evidencia sobre alguien de quien casi no se sabe nada es falso por construcción, y en este motor —el primero, el que decide si el caso entra— ese error se propaga a todo lo demás.\n\n**Si te dan material adjunto o data medida, léelo y cítalo.** El valor de este motor no es opinar sobre una descripción: es contrastar lo que te contaron con lo que se puede medir. Cuando las dos cosas no coincidan, dilo — esa distancia suele ser la información más útil de todo el veredicto.
 
 Cuando la data sea baja, además de bajar el nivel, di explícitamente qué haría falta para poder decidir de verdad.
 
@@ -677,23 +675,50 @@ Pregunta de Eduardo: ${pregunta}
 Responde de forma directa — una sola respuesta, no una lista — siguiendo las reglas del sistema.`;
 }
 
-const TRIAGE_DATA_TEXTO: Record<VincereCantidadData, string> = {
-  baja: "BAJA — menos de 3 meses de historial o solo cifras sueltas. Tu nivel no puede pasar de 2.",
-  media: "MEDIA — 3 a 6 meses con métricas por canción y algo de audiencia. Tu nivel no puede pasar de 3.",
-  alta: "ALTA — 6 meses o más, con catálogo, audiencia por plaza y algún show o liquidación. Puedes llegar a 4 si el caso lo sostiene.",
-};
+// Aquí vivían los tres textos de "cantidad de data" que Eduardo marcaba a mano
+// y que fijaban el techo del veredicto. Se fueron porque preguntarle a alguien
+// cuánta evidencia tiene y después limitarlo con su propia respuesta lo audita
+// a él, no al caso. Ahora el techo lo cuenta el sistema en `entrada.ts`.
 
 export function buildTriageUserPrompt(input: {
   nombre: string;
   genero: string;
   fase: string;
   descripcion: string;
-  dataDisponible: VincereCantidadData;
+  techo: number;
+  porQueEseTecho: string;
+  fuentes: string[];
+  datosDelProyecto?: unknown;
+  investigacion?: unknown;
 }): string {
-  return `Caso nuevo:
-Nombre: ${input.nombre}
-Género: ${input.genero || "no especificado"}
-Fase percibida: ${input.fase || "no especificado"}
-Cantidad de data disponible: ${TRIAGE_DATA_TEXTO[input.dataDisponible]}
-Descripción: ${input.descripcion}`;
+  const partes = [
+    `Caso: ${input.nombre}`,
+    `Género: ${input.genero || "no especificado"}`,
+    `Fase percibida: ${input.fase || "no especificado"}`,
+    input.descripcion.trim()
+      ? `Lo que te contaron: ${input.descripcion.trim()}`
+      : "No hay descripción escrita: júzgalo solo por el material.",
+    "",
+    `SOBRE QUÉ ESTÁS DECIDIENDO: ${input.fuentes.join(", ") || "nada"}.`,
+    `TECHO DE EVIDENCIA: ${input.techo}. ${input.porQueEseTecho}`,
+    `El nivel que declares NO puede pasar de ${input.techo}. Este número lo calculó el sistema contando el material que hay de verdad, no es una opinión que puedas revisar. Si tu lectura del caso te parece más firme que eso, lo que corresponde es decir qué material lo haría firme — no subir el número.`,
+  ];
+
+  if (input.datosDelProyecto) {
+    partes.push(
+      "",
+      "DATA MEDIDA DEL ARTISTA (ya está en el sistema; esto NO es lo que alguien contó, son números de plataforma):",
+      JSON.stringify(input.datosDelProyecto, null, 2)
+    );
+  }
+
+  if (input.investigacion) {
+    partes.push(
+      "",
+      "HALLAZGOS DE LA WEB (fuente externa, NO data propia del artista — nómbralo como tal si lo usas):",
+      JSON.stringify(input.investigacion, null, 2)
+    );
+  }
+
+  return partes.join("\n");
 }
