@@ -8,6 +8,7 @@ import {
   buildResearchSearchPrompt,
   buildResearchStructurePrompt,
 } from "@/lib/vincere/prompt";
+import { exigirLlaveDeIA } from "@/lib/vincere/llave";
 
 const TIPOS = ["artista", "cancion", "mercado", "libre"] as const;
 
@@ -29,10 +30,8 @@ interface FuenteRecogida {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   const { tipo, consulta, artista } = body ?? {};

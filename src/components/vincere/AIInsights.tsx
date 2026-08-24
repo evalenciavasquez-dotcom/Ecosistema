@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { VincereInsight, VincereSeccion } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
+import { useIaConfigurada } from "@/lib/vincere/useIaConfigurada";
 import EvidenceTag from "./EvidenceTag";
 
 interface Props {
@@ -118,6 +119,7 @@ function APrediccion({
 export default function AIInsights({ title, insights, onGenerate, emptyHint, proyectoId, seccion }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const iaConfigurada = useIaConfigurada();
 
   async function handleGenerate() {
     if (loading) return;
@@ -141,12 +143,41 @@ export default function AIInsights({ title, insights, onGenerate, emptyHint, pro
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--vin-accent)" }} />
           <span className="vin-eyebrow">{title}</span>
         </div>
-        <button onClick={handleGenerate} disabled={loading} className="vin-btn-ghost whitespace-nowrap !py-1.5 vin-t-sm">
+        {/* Sin llave el botón no se esconde: se apaga. Esconderlo dejaría la
+            pantalla sin explicación de por qué no está lo que debería estar. */}
+        <button
+          onClick={handleGenerate}
+          disabled={loading || iaConfigurada === false}
+          className="vin-btn-ghost whitespace-nowrap !py-1.5 vin-t-sm"
+          style={iaConfigurada === false ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
+          title={iaConfigurada === false ? "Falta configurar la llave de la IA" : undefined}
+        >
           {loading ? "Interpretando…" : has ? "Actualizar lectura" : "Generar lectura VINCERE"}
         </button>
       </div>
 
-      {error && <p className="mb-3 vin-t-sm" style={{ color: "var(--vin-accent)" }}>{error}</p>}
+      {/* Antes de apretar, no después. Es el mismo aviso en todas las secciones
+          porque la causa es una sola. */}
+      {iaConfigurada === false && (
+        <p
+          className="mb-3 rounded-xl px-3.5 py-2.5 vin-t-sm leading-relaxed"
+          style={{
+            maxWidth: "70ch",
+            color: "var(--vin-warn)",
+            background: "rgba(229,169,60,0.09)",
+            border: "1px solid rgba(229,169,60,0.24)",
+          }}
+        >
+          La IA no está configurada en este despliegue: falta <code>ANTHROPIC_API_KEY</code>. Los indicadores que el
+          sistema calcula siguen funcionando — lo que no se puede es redactar la lectura.
+        </p>
+      )}
+
+      {error && (
+        <p className="mb-3 vin-t-sm leading-relaxed" style={{ maxWidth: "70ch", color: "var(--vin-risk)" }}>
+          {error}
+        </p>
+      )}
 
       {/* Esta lista es el producto: lo que distingue la plataforma de un
           tablero. Se lee al tamaño del cuerpo, no al de una nota al pie. */}

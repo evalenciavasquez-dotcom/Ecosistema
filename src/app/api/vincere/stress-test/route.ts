@@ -3,16 +3,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { stressTestResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_STRESS_SYSTEM_PROMPT, buildStressUserPrompt } from "@/lib/vincere/prompt";
+import { exigirLlaveDeIA } from "@/lib/vincere/llave";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
 type ImageMediaType = (typeof IMAGE_TYPES)[number];
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   const { data, mediaType, texto, nota, artista } = body ?? {};

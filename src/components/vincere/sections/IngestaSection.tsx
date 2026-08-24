@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   VincereIngestaPropuesta,
   VincereIngestaResultado,
@@ -8,6 +8,7 @@ import {
   VINCERE_SECCION_LABEL,
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
+import { useIaConfigurada } from "@/lib/vincere/useIaConfigurada";
 import { fetchIngest } from "@/lib/vincere/ai-client";
 import { formatStreams } from "@/lib/vincere/format";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
@@ -69,27 +70,9 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [resultado, setResultado] = useState<VincereIngestaResultado | null>(null);
   const [aceptados, setAceptados] = useState<Record<string, boolean>>({});
   const [acabaDeAplicar, setAcabaDeAplicar] = useState(false);
-  // null mientras se pregunta. Se consulta al abrir la pantalla y no al apretar
-  // el botón: enterarse de que falta la llave con el archivo ya cargado hace
-  // parecer roto lo que solo está sin configurar.
-  const [iaConfigurada, setIaConfigurada] = useState<boolean | null>(null);
+  const iaConfigurada = useIaConfigurada();
   const setSeccion = useVincereStore((s) => s.setSeccion);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let vivo = true;
-    fetch("/api/vincere/ingest")
-      .then((r) => r.json())
-      .then((d) => {
-        if (vivo) setIaConfigurada(!!d?.iaConfigurada);
-      })
-      // Si ni siquiera responde, no se afirma que esté bien: se deja en null y
-      // el aviso no aparece. Mentir de más es peor que no avisar.
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, []);
 
   const contexto = {
     nombre: proyecto.nombre,

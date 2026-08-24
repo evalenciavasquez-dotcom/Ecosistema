@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { ingestResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_INGEST_SYSTEM_PROMPT, buildIngestUserPrompt } from "@/lib/vincere/prompt";
+import { exigirLlaveDeIA, hayLlaveDeIA } from "@/lib/vincere/llave";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
@@ -13,21 +14,16 @@ type ImageMediaType = (typeof IMAGE_TYPES)[number];
 // —con el material ya cargado y la expectativa puesta— hace parecer roto lo
 // que solo está sin configurar. Devuelve un booleano y nada más: la llave
 // nunca sale del servidor.
+//
+// Vive en esta ruta y no en una propia porque cualquier pantalla que use IA
+// puede preguntarle: la respuesta es la misma para todas.
 export async function GET() {
-  return NextResponse.json({ iaConfigurada: !!process.env.ANTHROPIC_API_KEY });
+  return NextResponse.json({ iaConfigurada: hayLlaveDeIA() });
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error:
-          "Falta la llave de la IA (ANTHROPIC_API_KEY). Sin ella el sistema calcula todos los indicadores pero no puede leer archivos ni redactar lecturas. Se configura en las variables de entorno del despliegue.",
-      },
-      { status: 500 }
-    );
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   const { data, mediaType, texto, nota, artista } = body ?? {};
