@@ -1,8 +1,8 @@
+import type { EvidenciaDeEntrada } from "./entrada";
 import {
   VincereAlerta,
   VincereAlertaSeveridad,
   VincereARDiagnostico,
-  VincereCantidadData,
   VincereVeredictoColab,
   VincereCancion,
   VincereCancionAnalisis,
@@ -80,7 +80,14 @@ export async function fetchTriage(input: {
   genero: string;
   fase: string;
   descripcion: string;
-  dataDisponible: VincereCantidadData;
+  // El material adjunto, igual que en la ingesta.
+  data?: string;
+  mediaType?: string;
+  investigoWeb?: boolean;
+  proyectoConMedicion?: boolean;
+  proyectoConHistorico?: boolean;
+  datosDelProyecto?: unknown;
+  investigacion?: unknown;
 }): Promise<{
   veredicto: string;
   prioridad: "Alta" | "Media" | "Baja";
@@ -89,6 +96,7 @@ export async function fetchTriage(input: {
   comoCobrarlo: string;
   horasSemanalesEstimadas: number | null;
   nivel: VincereNivel;
+  evidencia: EvidenciaDeEntrada | null;
 }> {
   const res = await fetch("/api/vincere/triage", {
     method: "POST",
@@ -104,11 +112,10 @@ export async function fetchTriage(input: {
   const VINCULOS: VincereVinculoTipo[] = ["propio", "socio", "cliente", "evaluando", "ninguno"];
   const horas = typeof r.horasSemanalesEstimadas === "number" ? Math.round(r.horasSemanalesEstimadas) : null;
 
-  // Techo duro por cantidad de data. El prompt lo pide, pero un prompt no es
-  // una garantía: si el modelo devuelve un 4 sobre data baja, se corrige acá.
-  const techo: Record<VincereCantidadData, VincereNivel> = { baja: 2, media: 3, alta: 4 };
-  const nivelCrudo = clampNivel(r.nivel);
-  const nivelAcotado = Math.min(nivelCrudo, techo[input.dataDisponible]) as VincereNivel;
+  // El servidor ya recortó el nivel con el techo que calculó contando el
+  // material. Acá solo se sanea el rango: duplicar la regla del techo en dos
+  // lados es cómo terminan diciendo cosas distintas.
+  const evidencia: EvidenciaDeEntrada | null = body?.evidencia ?? null;
 
   return {
     veredicto: r.veredicto ?? "",
@@ -119,7 +126,8 @@ export async function fetchTriage(input: {
       : "evaluando",
     comoCobrarlo: r.comoCobrarlo ?? "",
     horasSemanalesEstimadas: horas != null ? Math.min(60, Math.max(0, horas)) : null,
-    nivel: nivelAcotado,
+    nivel: clampNivel(r.nivel),
+    evidencia,
   };
 }
 

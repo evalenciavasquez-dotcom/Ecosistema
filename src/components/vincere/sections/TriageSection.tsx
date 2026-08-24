@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
 import {
-  VincereCantidadData,
   VincereQAEntry,
-  VINCERE_CANTIDAD_DATA_DESC,
-  VINCERE_CANTIDAD_DATA_LABEL,
   VINCERE_DATA_QUE_SIRVE,
   VINCERE_VINCULO_LABEL,
 } from "@/lib/vincere/types";
-import { fetchAsk, fetchTriage } from "@/lib/vincere/ai-client";
+import { evidenciaDeEntrada, hechosDelProyecto } from "@/lib/vincere/entrada";
+import EvidenciaDeEntradaPanel from "../EvidenciaDeEntradaPanel";
+import { fetchAsk, fetchResearch, fetchTriage } from "@/lib/vincere/ai-client";
 import { genId } from "@/lib/id";
 import { SectionHeader, Panel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
@@ -18,7 +17,20 @@ import QuestionBox from "../QuestionBox";
 
 const FASES = ["Emergente", "Consolidación", "Establecido", "No lo sé aún"];
 
-const CANTIDADES: VincereCantidadData[] = ["baja", "media", "alta"];
+function leerArchivo(file: File): Promise<{ data: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      resolve({
+        data: result.includes(",") ? result.slice(result.indexOf(",") + 1) : result,
+        mediaType: file.type,
+      });
+    };
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+    reader.readAsDataURL(file);
+  });
+}
 
 const PRIORIDAD_COLOR: Record<string, string> = {
   Alta: "#e0483a",
@@ -32,19 +44,88 @@ export default function TriageSection() {
   const updateVeredicto = useVincereStore((s) => s.updateTriageCasoVeredicto);
   const deleteTriageCaso = useVincereStore((s) => s.deleteTriageCaso);
 
+  const proyectos = useVincereStore((s) => s.proyectos);
+
   const [form, setForm] = useState<{
     nombre: string;
     genero: string;
     fase: string;
     descripcion: string;
-    dataDisponible: VincereCantidadData;
-  }>({ nombre: "", genero: "", fase: "Emergente", descripcion: "", dataDisponible: "baja" });
+  }>({ nombre: "", genero: "", fase: "Emergente", descripcion: "" });
+  const [archivo, setArchivo] = useState<File | null>(null);
+  // Cuando el caso es sobre un artista que YA está en el sistema, el veredicto
+  // deja de apoyarse en lo que Eduardo recuerde y pasa a leer sus números.
+  const [proyectoId, setProyectoId] = useState<string>("");
+  // Lo que la web dijo de este caso, antes de emitir veredicto. Es lo único
+  // que en un caso nuevo no viene del interesado.
+  const [webHallazgos, setWebHallazgos] = useState<{ resumen: string; hallazgos: string[] } | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qaLog, setQaLog] = useState<VincereQAEntry[]>([]);
 
+  const proyectoElegido = proyectos.find((p) => p.id === proyectoId) ?? null;
+
+  // El techo se calcula mientras escribe, con la MISMA función que usa el
+  // servidor. Verlo antes de pedir el veredicto es lo que convierte "falta
+  // data" en algo accionable: se ve qué sube el techo y cuánto.
+  const evidencia = useMemo(
+    () =>
+      evidenciaDeEntrada({
+        descripcion: form.descripcion,
+        tieneArchivo: !!archivo,
+        investigoWeb: !!webHallazgos,
+        ...hechosDelProyecto(proyectoElegido),
+      }),
+    [form.descripcion, archivo, proyectoElegido, webHallazgos]
+  );
+
+  // Lo que el sistema YA sabe del artista, cuando está cargado. Van los
+  // números medidos y no el proyecto entero: el veredicto necesita saber
+  // cuánto y desde cuándo, no leerse el catálogo completo.
+  function datosDelProyecto() {
+    if (!proyectoElegido) return null;
+    const r = proyectoElegido.resumen;
+    const fechas = (proyectoElegido.historial ?? []).map((h) => h.fecha).sort();
+    return {
+      artista: proyectoElegido.nombre,
+      genero: proyectoElegido.genero,
+      fase: proyectoElegido.fase,
+      streamsMes: r.streamsMes,
+      oyentesMes: r.oyentesMes ?? null,
+      seguidores: r.seguidores,
+      cambioStreamsPct: r.streamsCambioPct,
+      canciones: (proyectoElegido.canciones ?? []).length,
+      fotosDesde: fechas[0] ?? null,
+      fotosHasta: fechas[fechas.length - 1] ?? null,
+    };
+  }
+
+  async function buscarEnWeb() {
+    const nombre = form.nombre.trim();
+    if (buscando || !nombre) return;
+    setBuscando(true);
+    setError(null);
+    try {
+      const { investigacion } = await fetchResearch({
+        tipo: "artista",
+        consulta: `${nombre}${form.genero.trim() ? ` — ${form.genero.trim()}` : ""}: qué se sabe públicamente, qué tan real es su tracción y qué señales hay de su mercado`,
+        artista: { nombre, genero: form.genero.trim(), fase: form.fase },
+      });
+      setWebHallazgos({
+        resumen: investigacion.resumen,
+        hallazgos: investigacion.hallazgos.map((h) => h.texto),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo buscar en la web");
+    } finally {
+      setBuscando(false);
+    }
+  }
+
   async function run() {
-    if (loading || !form.nombre.trim() || !form.descripcion.trim()) return;
+    if (loading || !form.nombre.trim() || !evidencia.suficienteParaVeredicto) return;
     setLoading(true);
     setError(null);
     const id = addTriageCaso({
@@ -52,18 +133,29 @@ export default function TriageSection() {
       genero: form.genero.trim(),
       fase: form.fase,
       descripcion: form.descripcion.trim(),
-      dataDisponible: form.dataDisponible,
+      // El campo sigue en el tipo por la data ya guardada; ahora se deriva del
+      // techo calculado en vez de pedírselo a nadie.
+      dataDisponible: evidencia.techo >= 4 ? "alta" : evidencia.techo === 3 ? "media" : "baja",
     });
     try {
+      const adjunto = archivo ? await leerArchivo(archivo) : null;
       const r = await fetchTriage({
         nombre: form.nombre.trim(),
         genero: form.genero.trim(),
         fase: form.fase,
         descripcion: form.descripcion.trim(),
-        dataDisponible: form.dataDisponible,
+        ...(adjunto ? { data: adjunto.data, mediaType: adjunto.mediaType } : {}),
+        ...hechosDelProyecto(proyectoElegido),
+        investigoWeb: !!webHallazgos,
+        datosDelProyecto: datosDelProyecto(),
+        investigacion: webHallazgos,
       });
       updateVeredicto(id, r);
-      setForm({ nombre: "", genero: "", fase: "Emergente", descripcion: "", dataDisponible: "baja" });
+      setForm({ nombre: "", genero: "", fase: "Emergente", descripcion: "" });
+      setArchivo(null);
+      setProyectoId("");
+      setWebHallazgos(null);
+      if (inputRef.current) inputRef.current.value = "";
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo analizar el caso");
       deleteTriageCaso(id);
@@ -95,7 +187,7 @@ export default function TriageSection() {
       <SectionHeader
         eyebrow="Triage"
         title="Triage de casos nuevos"
-        subtitle="Describe un caso nuevo y recibe un veredicto de prioridad y motor de entrada al sistema."
+        subtitle="La puerta de entrada: qué caso vale la pena y por dónde empieza. Lee el material que le adjuntes y, si el artista ya está cargado, sus números — el alcance del veredicto sale de lo que haya de verdad, no de lo que declares."
       />
 
       <div className="space-y-5">
@@ -130,33 +222,99 @@ export default function TriageSection() {
               className="vin-input resize-none"
             />
 
-            {/* Cuánta data hay. Es lo que decide hasta dónde puede llegar el
-                veredicto: el techo de nivel se aplica también en el cliente. */}
-            <div>
-              <p className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">Cantidad de data disponible</p>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {CANTIDADES.map((c) => {
-                  const activa = form.dataDisponible === c;
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setForm({ ...form, dataDisponible: c })}
-                      className="rounded-xl border p-2.5 text-left transition-colors"
-                      style={{
-                        borderColor: activa ? "var(--vin-accent)" : "var(--vin-border)",
-                        background: activa ? "var(--vin-surface-2)" : "transparent",
-                      }}
-                    >
-                      <span className="block vin-t-sm font-medium">{VINCERE_CANTIDAD_DATA_LABEL[c]}</span>
-                      <span className="vin-faint mt-1 block vin-t-xs leading-relaxed">
-                        {VINCERE_CANTIDAD_DATA_DESC[c]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* El material. Es lo que separa un veredicto de una opinión:
+                sin nada adjunto, el motor solo puede juzgar lo que le
+                contaron. */}
+            <div
+              onClick={() => inputRef.current?.click()}
+              className="cursor-pointer rounded-xl p-4 text-center transition-colors"
+              style={{ border: "1px dashed var(--vin-border-strong)" }}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+              />
+              {archivo ? (
+                <>
+                  <div className="vin-t-sm">{archivo.name}</div>
+                  <div className="vin-faint vin-t-xs mt-1">
+                    {Math.round(archivo.size / 1024)} KB · haz clic para cambiarlo
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="vin-t-sm">Adjunta lo que tengas del caso</div>
+                  <div className="vin-faint vin-t-xs mt-1">
+                    Una captura de Spotify for Artists, un dossier, un PDF. Sube el techo del veredicto de 1 a 3.
+                  </div>
+                </>
+              )}
             </div>
+
+            {/* Si el artista ya está en el sistema, el veredicto lee sus
+                números en vez de pedirle a nadie que los recuerde. */}
+            {proyectos.length > 0 && (
+              <label className="flex flex-col gap-1.5">
+                <span className="vin-faint vin-t-xs uppercase tracking-[0.08em]">
+                  ¿Es un artista que ya está en el sistema?
+                </span>
+                <select value={proyectoId} onChange={(e) => setProyectoId(e.target.value)} className="vin-input">
+                  <option value="">No — es un caso nuevo</option>
+                  {proyectos.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {/* La única fuente de un caso nuevo que NO viene del interesado.
+                Por eso vale un nivel entero de evidencia. */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={buscarEnWeb}
+                disabled={buscando || !form.nombre.trim()}
+                className="vin-btn-ghost"
+                style={buscando || !form.nombre.trim() ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
+              >
+                {buscando ? "Buscando…" : webHallazgos ? "Buscar de nuevo" : "Buscar en la web"}
+              </button>
+              {!form.nombre.trim() && <span className="vin-faint vin-t-xs">hace falta el nombre para buscar</span>}
+              {webHallazgos && (
+                <button
+                  type="button"
+                  onClick={() => setWebHallazgos(null)}
+                  className="vin-faint vin-t-xs hover:underline"
+                >
+                  descartar lo encontrado
+                </button>
+              )}
+            </div>
+
+            {webHallazgos && (
+              <div className="rounded-xl p-4" style={{ border: "1px solid var(--vin-border)" }}>
+                <div className="vin-faint vin-t-xs mb-2 uppercase tracking-[0.08em]">Lo que dice la web</div>
+                <p className="vin-t-sm leading-relaxed" style={{ maxWidth: "70ch" }}>
+                  {webHallazgos.resumen}
+                </p>
+                {webHallazgos.hallazgos.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {webHallazgos.hallazgos.slice(0, 4).map((h, i) => (
+                      <li key={i} className="vin-muted vin-t-sm leading-relaxed" style={{ maxWidth: "70ch" }}>
+                        · {h}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            <EvidenciaDeEntradaPanel evidencia={evidencia} />
 
             <details className="rounded-xl" style={{ border: "1px solid var(--vin-border)" }}>
               <summary className="vin-muted cursor-pointer px-3 py-2 vin-t-sm">
@@ -174,9 +332,30 @@ export default function TriageSection() {
               </p>
             </details>
 
-            {error && <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>{error}</p>}
-            <button onClick={run} disabled={loading} className="vin-btn-primary justify-self-start">
-              {loading ? "Analizando…" : "Analizar caso"}
+            {error && (
+              <p className="vin-t-sm leading-relaxed" style={{ maxWidth: "70ch", color: "var(--vin-risk)" }}>
+                {error}
+              </p>
+            )}
+            {/* Sin nombre o sin nada que leer no se puede emitir veredicto, y
+                el botón lo dice en vez de fallar después. */}
+            <button
+              onClick={run}
+              disabled={loading || !form.nombre.trim() || !evidencia.suficienteParaVeredicto}
+              className="vin-btn-primary justify-self-start"
+              style={
+                loading || !form.nombre.trim() || !evidencia.suficienteParaVeredicto
+                  ? { opacity: 0.45, cursor: "not-allowed" }
+                  : undefined
+              }
+            >
+              {loading
+                ? "Leyendo el caso…"
+                : !form.nombre.trim()
+                  ? "Falta el nombre"
+                  : !evidencia.suficienteParaVeredicto
+                    ? "Falta material que leer"
+                    : "Analizar caso"}
             </button>
           </div>
         </Panel>
@@ -190,10 +369,8 @@ export default function TriageSection() {
                     <span className="vin-t-base font-medium">{c.nombre}</span>
                     {c.genero && <span className="vin-faint ml-2 vin-t-xs">{c.genero}</span>}
                     <span className="vin-faint ml-2 vin-t-xs">· {c.fase}</span>
-                    {c.dataDisponible && (
-                      <span className="vin-faint ml-2 vin-t-xs">
-                        · data {VINCERE_CANTIDAD_DATA_LABEL[c.dataDisponible].toLowerCase()}
-                      </span>
+                    {c.nivel != null && (
+                      <span className="vin-faint ml-2 vin-t-xs">· nivel {c.nivel}</span>
                     )}
                   </div>
                   <button onClick={() => deleteTriageCaso(c.id)} className="vin-faint vin-t-xs hover:underline">
