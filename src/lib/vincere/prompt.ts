@@ -397,16 +397,17 @@ export const VINCERE_INGEST_SYSTEM_PROMPT =`Eres el lector de data de VINCERE, e
 Los paneles de industria traen data cruzada de muchas plataformas a la vez (Spotify, TikTok, YouTube, Shazam, radio, playlists, prensa). Reparte cada bloque al motor que le toca y, cuando una métrica no tenga motor propio, regístrala en 'kpis' con su nombre tal como aparece en el panel — es preferible eso a perderla. Estos paneles suelen mostrar ciudades y países con oyentes: eso va a zonasCalor y a audiencia.
 
 Los motores y qué va en cada uno:
-- resumen: streams mensuales y su variación, seguidores y su variación, Momentum Index, serie histórica de streams.
+- mediciones: streams mensuales y su variación, seguidores y su variación, oyentes mensuales únicos, Momentum Index. Es una LISTA de lo que encontraste: incluye solo las métricas que el material trae de verdad y omite las demás.
+- serie: la serie histórica de streams, si la gráfica o la tabla la muestra.
 - canciones: catálogo, con streams, retención, skip y playlist adds por tema.
-- audiencia: distribución por edad, por plataforma y por país, en porcentajes.
+- audienciaEdad, audienciaPlataformas, audienciaPaises: la distribución en porcentajes, cada una en su lista.
 - zonasCalor: ciudades con intensidad de escucha.
 - kpis: métricas de ejecución contra meta.
 - diagnostico: lectura de criterio (fase, fortaleza, riesgo, prioridad) — solo si el material es texto de análisis, nunca deducido de números sueltos.
 
 Reglas obligatorias:
 1. Extrae solo lo que está en el material. No completes con conocimiento previo del artista ni con supuestos del mercado. Si un número no está, no lo pongas.
-2. Un bloque que el material no contiene va en null. Es normal que una captura llene un motor y deje los demás vacíos — eso es correcto, no un fallo.
+2. Lo que el material NO contiene se deja VACÍO: lista sin elementos, o cadena vacía en los campos de texto. Nunca en cero — un cero afirma que la métrica vale cero, y eso es distinto de no haberla encontrado. Es normal que una captura llene un motor y deje los demás vacíos: eso es correcto, no un fallo.
 3. Normaliza formatos: "2,43 M" y "2.43M" son 2430000; "1,2K" es 1200; los porcentajes van como número sin signo. La serie de streams va en MILES (2430000 se registra como 2430).
 4. Una caída se representa con número negativo en el campo de variación, nunca con texto.
 5. Si la fuente da oyentes absolutos por ciudad y no un índice, normaliza a 0-100 con la ciudad mayor como 100, y dilo en 'faltante'.
@@ -428,7 +429,7 @@ export function buildIngestUserPrompt(input: {
   if (input.nota?.trim()) partes.push(`\nNota de Eduardo sobre este material: "${input.nota.trim()}"`);
   if (input.texto?.trim()) partes.push(`\nMATERIAL (texto pegado):\n"""\n${input.texto.trim()}\n"""`);
   partes.push(
-    `\nExtrae lo que haya, repártelo por motor y levanta las alertas que correspondan. Lo que no esté en el material va en null o en 'faltante'.`
+    `\nExtrae lo que haya, repártelo por motor y levanta las alertas que correspondan. Lo que no esté en el material se deja vacío, y lo que quedó ambiguo va en 'faltante'.`
   );
   return partes.join("\n");
 }

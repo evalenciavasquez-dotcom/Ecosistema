@@ -4,6 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { ingestResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_INGEST_SYSTEM_PROMPT, buildIngestUserPrompt } from "@/lib/vincere/prompt";
 import { exigirLlaveDeIA, hayLlaveDeIA, dondeCorre, DONDE_SE_ARREGLA } from "@/lib/vincere/llave";
+import { normalizarIngesta } from "@/lib/vincere/ingesta";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
@@ -89,7 +90,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se pudo extraer data de este material" }, { status: 502 });
     }
 
-    return NextResponse.json({ result: response.parsed_output });
+    // Del formato plano del cable al que espera la app: vacío vuelve a ser
+    // null y la lista de mediciones vuelve a ser el resumen.
+    return NextResponse.json({ result: normalizarIngesta(response.parsed_output) });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error llamando a Claude";
     return NextResponse.json({ error: message }, { status: 502 });

@@ -86,79 +86,103 @@ const segmentoSchema = z.object({
   pct: z.number().describe("Porcentaje, número sin el signo"),
 });
 
+// Lo que la ingesta devuelve por el cable.
+//
+// PLANO Y SIN UNIONES A PROPÓSITO. La salida estructurada compila el esquema a
+// una gramática, y cada `.nullable()` es una unión: la versión anterior tenía
+// veintiuna y once niveles de profundidad —el resto de los motores del sistema
+// anda entre cero y cinco uniones— y la API la rechazaba entera con "the
+// compiled grammar is too large". La ingesta no funcionó nunca por eso.
+//
+// Dos cambios quitan las veintiuna:
+//
+// 1. Lo ausente se expresa VACÍO, no null. Una lista sin elementos y una
+//    cadena vacía dicen "no venía en el material" igual de bien que un null,
+//    y no abren una rama en la gramática.
+// 2. Las métricas generales dejan de ser un formulario de seis casillas
+//    anulables y pasan a ser la lista de lo que se encontró. Además de costar
+//    cero uniones, describe mejor lo que realmente es: qué se pudo leer, no
+//    qué campos existen.
+//
+// La forma expresiva —con sus null por bloque— se reconstruye en
+// `normalizarIngesta`, así que nada de lo que consume el resultado cambia.
+
+const CAMPOS_MEDIBLES = [
+  "streamsMes",
+  "streamsCambioPct",
+  "seguidores",
+  "seguidoresCambioPct",
+  "oyentesMes",
+  "momentumIndex",
+] as const;
+
 export const ingestResponseSchema = z.object({
   fuente: z
     .string()
     .describe("Qué es este material, reconocido por su apariencia. Ej. 'Captura de Spotify for Artists — Audiencia', 'Exportación CSV de canciones', 'Texto pegado con notas de campaña'"),
   lectura: z.string().describe("Una o dos frases sobre qué contiene el material y de qué periodo parece ser"),
   confianza: nivelSchema.describe("Qué tan legible y completo era el material en conjunto"),
-  propuesta: z
+
+  mediciones: z
+    .array(
+      z.object({
+        campo: z.enum(CAMPOS_MEDIBLES),
+        valor: z.number().describe("El número tal cual, sin separadores. Negativo si es una caída"),
+      })
+    )
+    .describe(
+      "SOLO las métricas que el material trae de verdad. Lo que no esté, se omite — no lo pongas en cero. " +
+        "oyentesMes son oyentes ÚNICOS ('oyentes mensuales' / 'monthly listeners'), NO reproducciones: si el material solo trae streams, omite oyentesMes. Confundirlos arruina el fan rate. " +
+        "momentumIndex solo si la fuente lo trae explícito; nunca lo calcules."
+    ),
+
+  serie: z
+    .array(z.object({ mes: z.string().describe("Mes abreviado, ej. 'Jul'"), valor: z.number().describe("Streams en MILES") }))
+    .describe("Serie histórica de streams si la gráfica o la tabla la muestra. Lista vacía si no hay"),
+
+  diagnostico: z
     .object({
-      resumen: z
-        .object({
-          streamsMes: z.number().nullable().describe("Streams mensuales, número entero sin separadores"),
-          streamsCambioPct: z.number().nullable().describe("Variación porcentual de streams; negativa si cayó"),
-          seguidores: z.number().nullable(),
-          seguidoresCambioPct: z.number().nullable(),
-          oyentesMes: z
-            .number()
-            .nullable()
-            .describe(
-              "Oyentes mensuales ÚNICOS. En Spotify for Artists aparece como 'oyentes mensuales' o 'monthly listeners'. NO es lo mismo que streams: si el material solo trae reproducciones, esto va en null. Confundirlos arruina el fan rate"
-            ),
-          momentumIndex: z.number().nullable().describe("Solo si la fuente lo trae explícito; nunca lo calcules tú"),
-          serie: z
-            .array(z.object({ mes: z.string().describe("Mes abreviado, ej. 'Jul'"), valor: z.number().describe("Streams en MILES") }))
-            .nullable()
-            .describe("Serie histórica de streams si la gráfica o la tabla la muestra"),
-        })
-        .nullable()
-        .describe("Métricas generales de carrera. null si el material no trae nada de esto"),
-      diagnostico: z
-        .object({
-          faseActual: z.string().nullable(),
-          fortalezaNucleo: z.string().nullable(),
-          riesgoPrincipal: z.string().nullable(),
-          prioridad: z.string().nullable(),
-        })
-        .nullable()
-        .describe("Solo si el material es un texto de criterio (notas, informe de un tercero), no lo inventes desde números"),
-      canciones: z
-        .array(
-          z.object({
-            nombre: z.string(),
-            streams: z.number(),
-            retencionPct: z.number().describe("0 si la fuente no lo trae"),
-            skipPct: z.number().describe("0 si la fuente no lo trae"),
-            playlistAdds: z.number().describe("0 si la fuente no lo trae"),
-          })
-        )
-        .nullable()
-        .describe("Catálogo detectado, una entrada por canción"),
-      audiencia: z
-        .object({
-          edad: z.array(segmentoSchema).nullable(),
-          plataformas: z.array(segmentoSchema).nullable(),
-          paises: z.array(segmentoSchema).nullable(),
-        })
-        .nullable(),
-      zonasCalor: z
-        .array(z.object({ ciudad: z.string(), calor: z.number().describe("Intensidad 0-100") }))
-        .nullable()
-        .describe("Ciudades con intensidad de escucha. Si la fuente da oyentes absolutos, normaliza a 0-100 tomando la ciudad mayor como 100"),
-      kpis: z
-        .array(
-          z.object({
-            label: z.string(),
-            actual: z.number(),
-            meta: z.number().describe("Si la fuente no declara meta, repite el valor actual"),
-            unidad: z.string().describe("'M', '%' o cadena vacía"),
-            nota: z.string().describe("Contexto corto; cadena vacía si no hay"),
-          })
-        )
-        .nullable(),
+      faseActual: z.string(),
+      fortalezaNucleo: z.string(),
+      riesgoPrincipal: z.string(),
+      prioridad: z.string(),
     })
-    .describe("Los datos extraídos, repartidos al motor al que pertenecen. Cada bloque va en null si el material no lo contiene"),
+    .describe(
+      "Solo si el material es un texto de criterio (notas, informe de un tercero); no lo deduzcas de números. Cadena vacía en cada campo que no venga"
+    ),
+
+  canciones: z
+    .array(
+      z.object({
+        nombre: z.string(),
+        streams: z.number(),
+        retencionPct: z.number().describe("0 si la fuente no lo trae"),
+        skipPct: z.number().describe("0 si la fuente no lo trae"),
+        playlistAdds: z.number().describe("0 si la fuente no lo trae"),
+      })
+    )
+    .describe("Catálogo detectado, una entrada por canción. Lista vacía si el material no trae canciones"),
+
+  audienciaEdad: z.array(segmentoSchema).describe("Reparto por edad. Lista vacía si no viene"),
+  audienciaPlataformas: z.array(segmentoSchema).describe("Reparto por plataforma. Lista vacía si no viene"),
+  audienciaPaises: z.array(segmentoSchema).describe("Reparto por país. Lista vacía si no viene"),
+
+  zonasCalor: z
+    .array(z.object({ ciudad: z.string(), calor: z.number().describe("Intensidad 0-100") }))
+    .describe("Ciudades con intensidad de escucha. Si la fuente da oyentes absolutos, normaliza a 0-100 tomando la ciudad mayor como 100. Lista vacía si no viene"),
+
+  kpis: z
+    .array(
+      z.object({
+        label: z.string(),
+        actual: z.number(),
+        meta: z.number().describe("Si la fuente no declara meta, repite el valor actual"),
+        unidad: z.string().describe("'M', '%' o cadena vacía"),
+        nota: z.string().describe("Contexto corto; cadena vacía si no hay"),
+      })
+    )
+    .describe("Lista vacía si el material no trae indicadores"),
+
   alertas: z
     .array(
       z.object({
@@ -166,15 +190,17 @@ export const ingestResponseSchema = z.object({
         severidad: z
           .enum(["critica", "atencion", "oportunidad"])
           .describe("critica: amenaza el momentum o la caja. atencion: hay que mirarlo. oportunidad: algo que no se está aprovechando"),
+        // "ninguna" en vez de null: un valor más en el enum no cuesta nada en
+        // la gramática, y un nullable sí.
         seccion: z
-          .enum(["resumen", "diagnostico", "song", "audiencia", "calor", "management", "kpis"])
-          .nullable()
-          .describe("Motor al que pertenece la alerta"),
+          .enum(["resumen", "diagnostico", "song", "audiencia", "calor", "management", "kpis", "ninguna"])
+          .describe("Motor al que pertenece la alerta, o 'ninguna' si no cae en uno solo"),
         nivel: nivelSchema,
       })
     )
     .max(5)
     .describe("Lo que salta a la vista en este material y merece atención. Vacío si no hay nada destacable — no inventes alarmas"),
+
   faltante: z
     .array(z.string())
     .max(5)
