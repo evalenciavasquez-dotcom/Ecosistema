@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   VincereIngestaPropuesta,
   VincereIngestaResultado,
@@ -69,8 +69,27 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [resultado, setResultado] = useState<VincereIngestaResultado | null>(null);
   const [aceptados, setAceptados] = useState<Record<string, boolean>>({});
   const [acabaDeAplicar, setAcabaDeAplicar] = useState(false);
+  // null mientras se pregunta. Se consulta al abrir la pantalla y no al apretar
+  // el botón: enterarse de que falta la llave con el archivo ya cargado hace
+  // parecer roto lo que solo está sin configurar.
+  const [iaConfigurada, setIaConfigurada] = useState<boolean | null>(null);
   const setSeccion = useVincereStore((s) => s.setSeccion);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/vincere/ingest")
+      .then((r) => r.json())
+      .then((d) => {
+        if (vivo) setIaConfigurada(!!d?.iaConfigurada);
+      })
+      // Si ni siquiera responde, no se afirma que esté bien: se deja en null y
+      // el aviso no aparece. Mentir de más es peor que no avisar.
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const contexto = {
     nombre: proyecto.nombre,
@@ -159,6 +178,28 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
       />
 
       <div className="space-y-5">
+        {/* Arriba de todo y antes de cargar nada. Sin llave el sistema no está
+            roto —los indicadores se calculan igual— pero esta pantalla no
+            puede funcionar, y decirlo antes ahorra subir un archivo para nada. */}
+        {iaConfigurada === false && (
+          <div
+            className="rounded-xl px-5 py-4"
+            style={{
+              color: "var(--vin-warn)",
+              background: "rgba(229,169,60,0.09)",
+              border: "1px solid rgba(229,169,60,0.28)",
+            }}
+          >
+            <div className="vin-t-base font-medium">La IA no está configurada en este despliegue</div>
+            <p className="vin-t-sm mt-1.5 leading-relaxed" style={{ maxWidth: "72ch" }}>
+              Falta la variable <code>ANTHROPIC_API_KEY</code>. Sin ella esta pantalla no puede leer archivos y
+              tampoco se pueden generar las lecturas. Todo lo que el sistema <em>calcula</em> —cuello de botella, fan
+              rate, concentración del catálogo, plazas, presupuesto— sigue funcionando: eso no pasa por la IA. La data
+              se puede cargar a mano mientras tanto, en «Editar data» dentro de Resumen.
+            </p>
+          </div>
+        )}
+
         <AlertasPanel proyecto={proyecto} />
 
         {/* Cargar sin interpretar deja la data muerta. El siguiente paso se
@@ -270,10 +311,24 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
               )}
             </div>
 
+            {/* Un fallo acá es el final del camino para quien viene a cargar
+                data: si no se lee, no pasa nada más. Estaba en letra diminuta y
+                debajo del pliegue, así que el sistema se veía mudo en vez de
+                roto — que es peor, porque no da nada que hacer. */}
             {error && (
-              <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>
-                {error}
-              </p>
+              <div
+                className="rounded-xl px-4 py-3.5"
+                style={{
+                  color: "var(--vin-risk)",
+                  background: "rgba(240,90,72,0.09)",
+                  border: "1px solid rgba(240,90,72,0.3)",
+                }}
+              >
+                <div className="vin-t-sm font-medium">No se pudo leer el material</div>
+                <p className="vin-t-sm mt-1 leading-relaxed" style={{ maxWidth: "70ch" }}>
+                  {error}
+                </p>
+              </div>
             )}
           </>
         )}

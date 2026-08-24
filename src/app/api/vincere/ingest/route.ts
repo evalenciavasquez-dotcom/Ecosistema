@@ -8,10 +8,25 @@ const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
 type ImageMediaType = (typeof IMAGE_TYPES)[number];
 
+// Si la IA está configurada o no. Se consulta ANTES de que alguien suba un
+// archivo, no después: descubrir que falta la llave recién al apretar el botón
+// —con el material ya cargado y la expectativa puesta— hace parecer roto lo
+// que solo está sin configurar. Devuelve un booleano y nada más: la llave
+// nunca sale del servidor.
+export async function GET() {
+  return NextResponse.json({ iaConfigurada: !!process.env.ANTHROPIC_API_KEY });
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "Falta la llave de la IA (ANTHROPIC_API_KEY). Sin ella el sistema calcula todos los indicadores pero no puede leer archivos ni redactar lecturas. Se configura en las variables de entorno del despliegue.",
+      },
+      { status: 500 }
+    );
   }
 
   const body = await request.json().catch(() => null);
