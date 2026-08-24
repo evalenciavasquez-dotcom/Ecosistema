@@ -26,6 +26,32 @@ export function hayLlaveDeIA(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;
 }
 
+// Dónde se está ejecutando esto.
+//
+// Nació de perder una tarde: la variable estaba bien puesta en Vercel para
+// Production y Preview, y la app seguía diciendo que faltaba — porque las
+// pruebas eran en local, donde las variables de Vercel no aplican. Desde
+// afuera los dos casos se ven idénticos, y sin saber en cuál estás no se
+// puede saber dónde arreglarlo.
+//
+// Vercel define VERCEL_ENV en sus despliegues; si no está, esto corre en la
+// máquina de alguien.
+export function dondeCorre(): "production" | "preview" | "local" {
+  const env = process.env.VERCEL_ENV;
+  if (env === "production") return "production";
+  if (env === "preview") return "preview";
+  return "local";
+}
+
+export const DONDE_SE_ARREGLA: Record<ReturnType<typeof dondeCorre>, string> = {
+  production:
+    "Corriendo en producción de Vercel. La variable va en Settings → Environment Variables con Production marcado, y hay que redesplegar después de guardarla.",
+  preview:
+    "Corriendo en un preview de Vercel. La variable va en Settings → Environment Variables con Preview marcado — tenerla solo en Production no alcanza acá — y hay que redesplegar la rama.",
+  local:
+    "Corriendo en local, no en Vercel: las variables del panel de Vercel NO aplican acá. Va en un archivo .env.local en la raíz del proyecto, con la línea ANTHROPIC_API_KEY=sk-ant-… y reiniciando el servidor.",
+};
+
 // Devuelve la llave, o la respuesta de error ya armada si no está. Se usa así:
 //
 //   const llave = exigirLlaveDeIA();
@@ -36,7 +62,10 @@ export function hayLlaveDeIA(): boolean {
 export function exigirLlaveDeIA(): string | NextResponse {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: FALTA_LLAVE }, { status: 500 });
+    return NextResponse.json(
+      { error: `${FALTA_LLAVE} ${DONDE_SE_ARREGLA[dondeCorre()]}` },
+      { status: 500 }
+    );
   }
   return apiKey;
 }

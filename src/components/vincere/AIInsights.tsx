@@ -119,7 +119,8 @@ function APrediccion({
 export default function AIInsights({ title, insights, onGenerate, emptyHint, proyectoId, seccion }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const iaConfigurada = useIaConfigurada();
+  const ia = useIaConfigurada();
+  const sinLlave = ia !== null && !ia.configurada;
 
   async function handleGenerate() {
     if (loading) return;
@@ -147,10 +148,10 @@ export default function AIInsights({ title, insights, onGenerate, emptyHint, pro
             pantalla sin explicación de por qué no está lo que debería estar. */}
         <button
           onClick={handleGenerate}
-          disabled={loading || iaConfigurada === false}
+          disabled={loading || sinLlave}
           className="vin-btn-ghost whitespace-nowrap !py-1.5 vin-t-sm"
-          style={iaConfigurada === false ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
-          title={iaConfigurada === false ? "Falta configurar la llave de la IA" : undefined}
+          style={sinLlave ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
+          title={sinLlave ? "Falta configurar la llave de la IA" : undefined}
         >
           {loading ? "Interpretando…" : has ? "Actualizar lectura" : "Generar lectura VINCERE"}
         </button>
@@ -158,9 +159,9 @@ export default function AIInsights({ title, insights, onGenerate, emptyHint, pro
 
       {/* Antes de apretar, no después. Es el mismo aviso en todas las secciones
           porque la causa es una sola. */}
-      {iaConfigurada === false && (
-        <p
-          className="mb-3 rounded-xl px-3.5 py-2.5 vin-t-sm leading-relaxed"
+      {sinLlave && (
+        <div
+          className="mb-3 rounded-xl px-3.5 py-2.5"
           style={{
             maxWidth: "70ch",
             color: "var(--vin-warn)",
@@ -168,9 +169,14 @@ export default function AIInsights({ title, insights, onGenerate, emptyHint, pro
             border: "1px solid rgba(229,169,60,0.24)",
           }}
         >
-          La IA no está configurada en este despliegue: falta <code>ANTHROPIC_API_KEY</code>. Los indicadores que el
-          sistema calcula siguen funcionando — lo que no se puede es redactar la lectura.
-        </p>
+          <p className="vin-t-sm leading-relaxed">
+            Falta <code>ANTHROPIC_API_KEY</code>. Los indicadores que el sistema calcula siguen funcionando — lo que no
+            se puede es redactar la lectura.
+          </p>
+          <p className="vin-t-sm mt-1.5 leading-relaxed" style={{ opacity: 0.85 }}>
+            {ia.comoSeArregla}
+          </p>
+        </div>
       )}
 
       {error && (

@@ -70,7 +70,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [resultado, setResultado] = useState<VincereIngestaResultado | null>(null);
   const [aceptados, setAceptados] = useState<Record<string, boolean>>({});
   const [acabaDeAplicar, setAcabaDeAplicar] = useState(false);
-  const iaConfigurada = useIaConfigurada();
+  const ia = useIaConfigurada();
+  const sinLlave = ia !== null && !ia.configurada;
   const setSeccion = useVincereStore((s) => s.setSeccion);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -164,7 +165,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
         {/* Arriba de todo y antes de cargar nada. Sin llave el sistema no está
             roto —los indicadores se calculan igual— pero esta pantalla no
             puede funcionar, y decirlo antes ahorra subir un archivo para nada. */}
-        {iaConfigurada === false && (
+        {sinLlave && (
           <div
             className="rounded-xl px-5 py-4"
             style={{
@@ -179,6 +180,11 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
               tampoco se pueden generar las lecturas. Todo lo que el sistema <em>calcula</em> —cuello de botella, fan
               rate, concentración del catálogo, plazas, presupuesto— sigue funcionando: eso no pasa por la IA. La data
               se puede cargar a mano mientras tanto, en «Editar data» dentro de Resumen.
+            </p>
+            {/* Dónde corre y dónde se toca. Sin esto, el mismo aviso en local y
+                en producción manda a arreglar en el lugar equivocado. */}
+            <p className="vin-t-sm mt-2 leading-relaxed" style={{ maxWidth: "72ch", opacity: 0.85 }}>
+              {ia.comoSeArregla}
             </p>
           </div>
         )}

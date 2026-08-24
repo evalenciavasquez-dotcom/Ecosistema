@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { ingestResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_INGEST_SYSTEM_PROMPT, buildIngestUserPrompt } from "@/lib/vincere/prompt";
-import { exigirLlaveDeIA, hayLlaveDeIA } from "@/lib/vincere/llave";
+import { exigirLlaveDeIA, hayLlaveDeIA, dondeCorre, DONDE_SE_ARREGLA } from "@/lib/vincere/llave";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
@@ -18,7 +18,15 @@ type ImageMediaType = (typeof IMAGE_TYPES)[number];
 // Vive en esta ruta y no en una propia porque cualquier pantalla que use IA
 // puede preguntarle: la respuesta es la misma para todas.
 export async function GET() {
-  return NextResponse.json({ iaConfigurada: hayLlaveDeIA() });
+  const donde = dondeCorre();
+  return NextResponse.json({
+    iaConfigurada: hayLlaveDeIA(),
+    // Dónde corre y dónde se arregla. Sin esto, "falta la llave" en local y
+    // "falta la llave" en producción se ven igual y se arreglan en lugares
+    // distintos — que es exactamente la tarde que costó descubrirlo.
+    donde,
+    comoSeArregla: DONDE_SE_ARREGLA[donde],
+  });
 }
 
 export async function POST(request: Request) {

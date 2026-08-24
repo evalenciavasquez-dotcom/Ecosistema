@@ -13,7 +13,16 @@ import { useSyncExternalStore } from "react";
 // un aviso de "falta configurar", y pintarlo mientras la respuesta viaja haría
 // parpadear una alarma falsa en cada carga.
 
-type Estado = boolean | null;
+export interface EstadoIa {
+  configurada: boolean;
+  // "production" | "preview" | "local". Sin esto, "falta la llave" en local y
+  // "falta la llave" en producción se ven igual en pantalla y se arreglan en
+  // lugares distintos.
+  donde: string;
+  comoSeArregla: string;
+}
+
+type Estado = EstadoIa | null;
 
 let cache: Estado = null;
 let consultado = false;
@@ -29,7 +38,11 @@ function consultar() {
   fetch("/api/vincere/ingest")
     .then((r) => r.json())
     .then((d) => {
-      cache = !!d?.iaConfigurada;
+      cache = {
+        configurada: !!d?.iaConfigurada,
+        donde: typeof d?.donde === "string" ? d.donde : "local",
+        comoSeArregla: typeof d?.comoSeArregla === "string" ? d.comoSeArregla : "",
+      };
       avisar();
     })
     // Si la consulta ni siquiera responde, queda en null y no se pinta nada.
