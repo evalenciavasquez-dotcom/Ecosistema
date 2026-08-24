@@ -37,7 +37,7 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <PanelLabel>Evolución</PanelLabel>
-            <p className="vin-muted vin-t-sm">
+            <p className="vin-muted vin-t-sm" style={{ maxWidth: "70ch" }}>
               {historial.length === 0
                 ? "Sin fotos guardadas todavía. Cada carga de data guarda una automáticamente."
                 : "Hay una sola foto. Con la próxima carga aparece la trayectoria y la IA podrá leer la evolución, no solo el estado de hoy."}
@@ -47,6 +47,9 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
             Guardar foto de hoy
           </button>
         </div>
+        {/* Acá es donde más falta hace: con una sola foto, conversión y alcance
+            quedan ciegos justo el día que hay que decidir. */}
+        <FotoAnterior proyecto={proyecto} destacado />
       </Panel>
     );
   }
@@ -142,7 +145,128 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
           ))}
         </ul>
       )}
+
+      <FotoAnterior proyecto={proyecto} />
     </Panel>
+  );
+}
+
+// Cargar a mano una foto de un mes pasado.
+//
+// El sistema guarda fotos de HOY, y eso funciona cuando lleva meses corriendo.
+// Con una artista que entra hoy, la primera foto es la única que hay — y sin
+// dos puntos no se puede leer ni la conversión (cómo convierte la audiencia
+// que entró) ni el alcance (si sube o está frenado). Justo las dos etapas que
+// deciden si conviene pautar.
+//
+// El dato existe: Spotify for Artists muestra los oyentes de cualquier período
+// pasado. Lo único que faltaba era dónde escribirlo.
+function FotoAnterior({ proyecto, destacado = false }: { proyecto: VincereProyecto; destacado?: boolean }) {
+  const capturar = useVincereStore((s) => s.capturarSnapshot);
+  const [abierto, setAbierto] = useState(false);
+  const [fecha, setFecha] = useState("");
+  const [streams, setStreams] = useState("");
+  const [oyentes, setOyentes] = useState("");
+  const [seguidores, setSeguidores] = useState("");
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const yaExiste = (proyecto.historial ?? []).some((h) => h.fecha === fecha);
+  // Streams y seguidores son el mínimo: sin ellos la foto no compara nada.
+  const listo = fecha !== "" && fecha < hoy && Number(streams) > 0 && Number(seguidores) > 0;
+
+  function guardar() {
+    capturar(proyecto.id, "Cargada a mano", {
+      fecha,
+      streamsMes: Number(streams),
+      seguidores: Number(seguidores),
+      ...(Number(oyentes) > 0 ? { oyentesMes: Number(oyentes) } : {}),
+    });
+    setAbierto(false);
+    setFecha("");
+    setStreams("");
+    setOyentes("");
+    setSeguidores("");
+  }
+
+  if (!abierto) {
+    return (
+      <div className={destacado ? "mt-4 border-t pt-4" : "mt-3"} style={destacado ? { borderColor: "var(--vin-border)" } : undefined}>
+        <button onClick={() => setAbierto(true)} className="vin-faint vin-t-xs hover:underline">
+          + Cargar una foto de un mes pasado
+        </button>
+        {destacado && (
+          <p className="vin-faint vin-t-xs mt-1.5 leading-relaxed" style={{ maxWidth: "70ch" }}>
+            Con una sola foto no se puede leer ni la conversión ni el alcance. Spotify for Artists muestra los oyentes
+            de cualquier período anterior: cargar uno acá da los dos puntos que faltan, hoy mismo.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--vin-border)" }}>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <span className="vin-t-sm font-medium">Foto de un mes pasado</span>
+        <button onClick={() => setAbierto(false)} className="vin-faint vin-t-xs hover:underline">
+          cancelar
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Campo label="Fecha" tipo="date" value={fecha} onChange={setFecha} max={hoy} />
+        <Campo label="Streams del mes" value={streams} onChange={setStreams} />
+        <Campo label="Oyentes del mes" value={oyentes} onChange={setOyentes} />
+        <Campo label="Seguidores" value={seguidores} onChange={setSeguidores} />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button onClick={guardar} disabled={!listo} className="vin-btn-ghost" style={{ opacity: listo ? 1 : 0.45 }}>
+          Guardar la foto
+        </button>
+        {fecha !== "" && fecha >= hoy && (
+          <span className="vin-t-xs" style={{ color: "var(--vin-warn)" }}>
+            Tiene que ser una fecha anterior a hoy — para la de hoy está el otro botón.
+          </span>
+        )}
+        {yaExiste && (
+          <span className="vin-t-xs" style={{ color: "var(--vin-warn)" }}>
+            Ya hay una foto de ese día: esta la reemplaza.
+          </span>
+        )}
+        {!oyentes && (
+          <span className="vin-faint vin-t-xs">
+            Sin oyentes del mes la foto sirve para el alcance, pero no para la conversión.
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Campo({
+  label,
+  value,
+  onChange,
+  tipo = "number",
+  max,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  tipo?: string;
+  max?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="vin-faint vin-t-xs uppercase tracking-wide">{label}</span>
+      <input
+        type={tipo}
+        max={max}
+        value={value}
+        placeholder={tipo === "number" ? "—" : undefined}
+        onChange={(e) => onChange(e.target.value)}
+        className="vin-input"
+      />
+    </label>
   );
 }
 

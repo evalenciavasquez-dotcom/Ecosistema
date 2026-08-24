@@ -4,15 +4,14 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { triageResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_TRIAGE_SYSTEM_PROMPT, buildTriageUserPrompt } from "@/lib/vincere/prompt";
 import { VincereCantidadData } from "@/lib/vincere/types";
+import { exigirLlaveDeIA } from "@/lib/vincere/llave";
 
 // Si el cliente no la declara, se asume la peor: es la que menos deja afirmar.
 const CANTIDADES: VincereCantidadData[] = ["baja", "media", "alta"];
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   if (!body?.nombre || !body?.descripcion) {

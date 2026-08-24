@@ -23,7 +23,8 @@ Reglas obligatorias:
 6. Español, tono ejecutivo de dirección de carrera — el que usarías hablando con el manager, no con el fan.
 7. Nunca repitas el dato tal cual aparece en pantalla (eso ya lo ve el usuario) — tu valor es la interpretación, no la repetición.
 8. Si el contexto trae 'historialDeCargas' con más de una foto, lee la EVOLUCIÓN antes que el valor de hoy: qué se aceleró, qué se frenó, qué se revirtió. Una cifra que sube es distinta de una que sube más lento que el mes pasado, y esa diferencia suele ser la lectura que importa. Cita el cambio concreto entre fechas, no solo la tendencia en abstracto.
-9. Si el contexto trae 'investigacionExterna', eso viene de búsquedas en la web y NO es data del artista. Úsalo para lo que sirve — contexto de mercado, movimientos de la competencia, señales de una plaza — pero nómbralo siempre como externo y nunca lo presentes como una métrica del proyecto. Un hallazgo marcado "sin fuente" es criterio, no evidencia: no lo cites como hecho. La lectura más valiosa suele ser el CRUCE — qué dice lo de afuera sobre lo que muestran nuestros propios números.`;
+9. Si el contexto trae 'lanzamiento', tu trabajo cambia de forma y la regla 5 no aplica: en vez de insights sueltos, NARRA LOS ESCENARIOS POR CANAL — "si entra por YouTube pasa esto, si entra por Meta pasa esto otro" — usando los rangos ya calculados. No los recalcules, no los promedies, no los conviertas en una cifra sola: el ancho del rango ES la información. Para cada escenario di qué se está arriesgando y qué lo haría falso. Si una ruta trae nivelMasDebil 1, dilo con esas palabras: esa ruta se apoya en un caso suelto, no en un benchmark, y presentarla como certeza sería exactamente lo que este sistema existe para no hacer. Respeta el reparto sugerido y NO propongas repartir entre más plazas de las que trae: partir el presupuesto en tajadas más finas se ve como más trabajo y produce resultados de los que no se puede concluir nada. Acá puedes usar hasta 5 frases por escenario.
+10. Si el contexto trae 'investigacionExterna', eso viene de búsquedas en la web y NO es data del artista. Úsalo para lo que sirve — contexto de mercado, movimientos de la competencia, señales de una plaza — pero nómbralo siempre como externo y nunca lo presentes como una métrica del proyecto. Un hallazgo marcado "sin fuente" es criterio, no evidencia: no lo cites como hecho. La lectura más valiosa suele ser el CRUCE — qué dice lo de afuera sobre lo que muestran nuestros propios números.`;
 
 export const VINCERE_TRIAGE_SYSTEM_PROMPT = `Eres el motor de Triage de VINCERE — la primera lectura que recibe un caso nuevo (artista o proyecto que todavía no está dentro del sistema) antes de decidir si entra y por dónde.
 
@@ -396,16 +397,17 @@ export const VINCERE_INGEST_SYSTEM_PROMPT =`Eres el lector de data de VINCERE, e
 Los paneles de industria traen data cruzada de muchas plataformas a la vez (Spotify, TikTok, YouTube, Shazam, radio, playlists, prensa). Reparte cada bloque al motor que le toca y, cuando una métrica no tenga motor propio, regístrala en 'kpis' con su nombre tal como aparece en el panel — es preferible eso a perderla. Estos paneles suelen mostrar ciudades y países con oyentes: eso va a zonasCalor y a audiencia.
 
 Los motores y qué va en cada uno:
-- resumen: streams mensuales y su variación, seguidores y su variación, Momentum Index, serie histórica de streams.
+- mediciones: streams mensuales y su variación, seguidores y su variación, oyentes mensuales únicos, Momentum Index. Es una LISTA de lo que encontraste: incluye solo las métricas que el material trae de verdad y omite las demás.
+- serie: la serie histórica de streams, si la gráfica o la tabla la muestra.
 - canciones: catálogo, con streams, retención, skip y playlist adds por tema.
-- audiencia: distribución por edad, por plataforma y por país, en porcentajes.
+- audienciaEdad, audienciaPlataformas, audienciaPaises: la distribución en porcentajes, cada una en su lista.
 - zonasCalor: ciudades con intensidad de escucha.
 - kpis: métricas de ejecución contra meta.
 - diagnostico: lectura de criterio (fase, fortaleza, riesgo, prioridad) — solo si el material es texto de análisis, nunca deducido de números sueltos.
 
 Reglas obligatorias:
 1. Extrae solo lo que está en el material. No completes con conocimiento previo del artista ni con supuestos del mercado. Si un número no está, no lo pongas.
-2. Un bloque que el material no contiene va en null. Es normal que una captura llene un motor y deje los demás vacíos — eso es correcto, no un fallo.
+2. Lo que el material NO contiene se deja VACÍO: lista sin elementos, o cadena vacía en los campos de texto. Nunca en cero — un cero afirma que la métrica vale cero, y eso es distinto de no haberla encontrado. Es normal que una captura llene un motor y deje los demás vacíos: eso es correcto, no un fallo.
 3. Normaliza formatos: "2,43 M" y "2.43M" son 2430000; "1,2K" es 1200; los porcentajes van como número sin signo. La serie de streams va en MILES (2430000 se registra como 2430).
 4. Una caída se representa con número negativo en el campo de variación, nunca con texto.
 5. Si la fuente da oyentes absolutos por ciudad y no un índice, normaliza a 0-100 con la ciudad mayor como 100, y dilo en 'faltante'.
@@ -427,7 +429,7 @@ export function buildIngestUserPrompt(input: {
   if (input.nota?.trim()) partes.push(`\nNota de Eduardo sobre este material: "${input.nota.trim()}"`);
   if (input.texto?.trim()) partes.push(`\nMATERIAL (texto pegado):\n"""\n${input.texto.trim()}\n"""`);
   partes.push(
-    `\nExtrae lo que haya, repártelo por motor y levanta las alertas que correspondan. Lo que no esté en el material va en null o en 'faltante'.`
+    `\nExtrae lo que haya, repártelo por motor y levanta las alertas que correspondan. Lo que no esté en el material se deja vacío, y lo que quedó ambiguo va en 'faltante'.`
   );
   return partes.join("\n");
 }

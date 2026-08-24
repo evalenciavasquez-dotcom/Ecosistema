@@ -3,16 +3,36 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { ingestResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_INGEST_SYSTEM_PROMPT, buildIngestUserPrompt } from "@/lib/vincere/prompt";
+import { exigirLlaveDeIA, hayLlaveDeIA, dondeCorre, DONDE_SE_ARREGLA } from "@/lib/vincere/llave";
+import { normalizarIngesta } from "@/lib/vincere/ingesta";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
 type ImageMediaType = (typeof IMAGE_TYPES)[number];
 
+// Si la IA está configurada o no. Se consulta ANTES de que alguien suba un
+// archivo, no después: descubrir que falta la llave recién al apretar el botón
+// —con el material ya cargado y la expectativa puesta— hace parecer roto lo
+// que solo está sin configurar. Devuelve un booleano y nada más: la llave
+// nunca sale del servidor.
+//
+// Vive en esta ruta y no en una propia porque cualquier pantalla que use IA
+// puede preguntarle: la respuesta es la misma para todas.
+export async function GET() {
+  const donde = dondeCorre();
+  return NextResponse.json({
+    iaConfigurada: hayLlaveDeIA(),
+    // Dónde corre y dónde se arregla. Sin esto, "falta la llave" en local y
+    // "falta la llave" en producción se ven igual y se arreglan en lugares
+    // distintos — que es exactamente la tarde que costó descubrirlo.
+    donde,
+    comoSeArregla: DONDE_SE_ARREGLA[donde],
+  });
+}
+
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   const { data, mediaType, texto, nota, artista } = body ?? {};
@@ -70,7 +90,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No se pudo extraer data de este material" }, { status: 502 });
     }
 
-    return NextResponse.json({ result: response.parsed_output });
+    // Del formato plano del cable al que espera la app: vacío vuelve a ser
+    // null y la lista de mediciones vuelve a ser el resumen.
+    return NextResponse.json({ result: normalizarIngesta(response.parsed_output) });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error llamando a Claude";
     return NextResponse.json({ error: message }, { status: 502 });

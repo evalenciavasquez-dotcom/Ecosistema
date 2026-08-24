@@ -3,12 +3,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { touringResponseSchema } from "@/lib/vincere/schema";
 import { VINCERE_TOURING_SYSTEM_PROMPT, buildTouringUserPrompt } from "@/lib/vincere/prompt";
+import { exigirLlaveDeIA } from "@/lib/vincere/llave";
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   const { artista, nota } = body ?? {};

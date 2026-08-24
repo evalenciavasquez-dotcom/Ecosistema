@@ -25,12 +25,16 @@ export default function FanRatePanel({ proyecto }: { proyecto: VincereProyecto }
   }
 
   const m = f.marginal;
-  const mejor = m && !m.audienciaBajo && m.oyentesGanados > 0 && m.pct > f.actual.pct;
-  const colorMarginal = m?.audienciaBajo
+  // El marginal solo es una TASA cuando la audiencia creció y no entraron más
+  // seguidores que oyentes nuevos. Fuera de eso el número existe pero no es
+  // conversión, y pintarlo como cifra grande invita a leerlo como si lo fuera.
+  const esTasa = !!m && m.movimiento === "creció" && !m.imposibleComoConversion;
+  const mejor = esTasa && m!.pct > f.actual.pct;
+  const colorMarginal = !esTasa
     ? "var(--vin-muted)"
     : mejor
       ? "var(--vin-ok)"
-      : m && m.pct < f.actual.pct * 0.6
+      : m!.pct < f.actual.pct * 0.6
         ? "var(--vin-risk)"
         : "var(--vin-text)";
 
@@ -52,10 +56,12 @@ export default function FanRatePanel({ proyecto }: { proyecto: VincereProyecto }
         {m && (
           <div>
             <div className="vin-serif vin-stat tabular-nums" style={{ color: colorMarginal }}>
-              {m.audienciaBajo ? "—" : `${m.pct}%`}
+              {esTasa ? `${m.pct}%` : "—"}
             </div>
             <div className="vin-faint vin-t-sm mt-1.5">
-              de la audiencia nueva · desde {m.desde}
+              {/* La ventana va explícita: «de la audiencia nueva» sin decir
+                  sobre cuántos días no significa nada. */}
+              de la audiencia nueva · últimos {m.dias} día{m.dias === 1 ? "" : "s"}
             </div>
           </div>
         )}

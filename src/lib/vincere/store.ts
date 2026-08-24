@@ -223,7 +223,14 @@ interface VincereState {
   eliminarInvestigacion: (proyectoId: string, investigacionId: string) => void;
   aplicarSenalesPlaza: (proyectoId: string, investigacionId: string, senales: VincereSenalPlaza[]) => void;
 
-  capturarSnapshot: (proyectoId: string, etiqueta: string) => void;
+  // Sin `datos` guarda la foto de hoy con lo que hay cargado. Con `datos`
+  // registra una foto de una fecha pasada — la única forma de que un artista
+  // recién cargado tenga dos puntos y se puedan leer conversión y alcance.
+  capturarSnapshot: (
+    proyectoId: string,
+    etiqueta: string,
+    datos?: { fecha?: string; streamsMes?: number; seguidores?: number; oyentesMes?: number }
+  ) => void;
   eliminarSnapshot: (proyectoId: string, snapshotId: string) => void;
   restaurarInformeArchivado: (proyectoId: string, generadoEn: string) => void;
   eliminarInformeArchivado: (proyectoId: string, generadoEn: string) => void;
@@ -939,23 +946,34 @@ export const useVincereStore = create<VincereState>()(
       // Guarda una foto de los indicadores. Se descarta la del mismo día para
       // que cargar tres veces en una tarde no llene el histórico de ruido:
       // interesa la evolución, no cada pulsación.
-      capturarSnapshot: (proyectoId, etiqueta) =>
+      capturarSnapshot: (proyectoId, etiqueta, datos) =>
         set((s) => ({
           proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
-            const fecha = new Date().toISOString().slice(0, 10);
+            const fecha = datos?.fecha ?? new Date().toISOString().slice(0, 10);
             const snapshot: VincereSnapshot = {
               id: genId("snap"),
               fecha,
               etiqueta,
-              streamsMes: p.resumen.streamsMes,
-              seguidores: p.resumen.seguidores,
-              ...(p.resumen.oyentesMes ? { oyentesMes: p.resumen.oyentesMes } : {}),
+              // Con datos propios es una foto de un mes pasado que se está
+              // cargando a mano; sin ellos, la foto de hoy. Sin esta puerta,
+              // un artista nuevo solo puede tener UNA foto, y sin dos fotos
+              // la conversión y el alcance quedan ciegos justo el día que se
+              // necesita decidir. El dato de hace tres meses sí existe —
+              // está en Spotify for Artists— solo que no había dónde meterlo.
+              streamsMes: datos?.streamsMes ?? p.resumen.streamsMes,
+              seguidores: datos?.seguidores ?? p.resumen.seguidores,
+              ...(datos?.oyentesMes ?? p.resumen.oyentesMes
+                ? { oyentesMes: datos?.oyentesMes ?? p.resumen.oyentesMes }
+                : {}),
               momentumIndex: p.resumen.momentumIndex,
               cancionesTotal: p.canciones.length,
               creadoEn: new Date().toISOString(),
             };
             const previos = (p.historial ?? []).filter((h) => h.fecha !== fecha);
-            return { ...p, historial: [...previos, snapshot].slice(-60) };
+            // Ordenado por fecha: una foto vieja cargada después de una nueva
+            // tiene que quedar antes, o la evolución se lee al revés.
+            const historial = [...previos, snapshot].sort((a, b) => a.fecha.localeCompare(b.fecha));
+            return { ...p, historial: historial.slice(-60) };
           }),
         })),
 

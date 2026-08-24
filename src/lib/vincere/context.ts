@@ -12,6 +12,9 @@ import { describirTextura } from "./audio";
 import type { LoMio, ResumenDinero } from "./dinero";
 import { formatFollowers, formatStreams } from "./format";
 import { calcularFanRate } from "./fanrate";
+import { profundidadDeEscucha, lecturaDeOrigen, UMBRAL_STREAMS_POR_OYENTE, ALARMA_PLAYLIST } from "./calidadAudiencia";
+import { concentracionDeCatalogo, MINIMO_PARA_VEREDICTO, TURNOS_DESCUENTO } from "./catalogo";
+import { cuelloDeBotella } from "./cuello";
 import { ACCION_QUE_HACER, mapaDePlazas } from "./plazas";
 import { ADVERTENCIA_COSTOS, PLATAFORMA_LABEL, plataformasPorCosto } from "./costos";
 import { compararFirma, referenciasSugeridas } from "./firma";
@@ -602,20 +605,152 @@ function bloqueFanRate(p: VincereProyecto) {
       seguidores: f.actual.seguidores,
       oyentesMensuales: f.actual.oyentes,
       nota: "Qué proporción de quien escucha terminó siguiendo. Arrastra toda la historia del artista.",
-      ...(f.marginal && !f.marginal.audienciaBajo
+      // El marginal solo entra como PORCENTAJE DE CONVERSIÓN cuando de verdad
+      // lo es. Si la audiencia no creció, o si entraron más seguidores que
+      // oyentes nuevos, el número existe pero no es una tasa — y entregárselo
+      // al modelo con esa etiqueta es pedirle que construya una frase falsa.
+      ...(f.marginal && f.marginal.movimiento === "creció" && !f.marginal.imposibleComoConversion
         ? {
             deLaAudienciaNuevaPct: f.marginal.pct,
             oyentesGanados: f.marginal.oyentesGanados,
             seguidoresGanados: f.marginal.seguidoresGanados,
             desde: f.marginal.desde,
+            ventanaDias: f.marginal.dias,
             notaMarginal:
-              "De los oyentes ganados desde esa fecha, cuántos se volvieron seguidores. Es el que dice si lo que se está haciendo AHORA atrae gente que se queda. Un marginal muy por debajo del acumulado es tráfico prestado: playlist editorial o pauta mal apuntada.",
+              "De los oyentes ganados en ESE tramo —el más reciente, no todo el historial—, cuántos se volvieron seguidores. Es el que dice si lo que se está haciendo AHORA atrae gente que se queda. Un marginal muy por debajo del acumulado es tráfico prestado: playlist editorial o pauta mal apuntada.",
           }
         : {}),
-      ...(f.marginal?.audienciaBajo
-        ? { avisoMarginal: "Los oyentes bajaron respecto a la primera foto: el marginal no se puede leer como conversión." }
+      ...(f.marginal && f.marginal.movimiento !== "creció"
+        ? {
+            avisoMarginal:
+              f.marginal.movimiento === "cayó"
+                ? `Los oyentes cayeron ${Math.abs(f.marginal.oyentesGanados)} desde la última carga: no hay conversión que medir, hay pérdida de audiencia. NO lo presentes como una tasa.`
+                : "Los oyentes quedaron igual desde la última carga: no hay audiencia nueva sobre la cual medir conversión. No es una caída — no pasó nada.",
+          }
+        : {}),
+      ...(f.marginal?.imposibleComoConversion
+        ? {
+            avisoMarginal: `Entraron ${f.marginal.seguidoresGanados} seguidores contra ${f.marginal.oyentesGanados} oyentes nuevos. Eso da ${f.marginal.pct}%, que como tasa de conversión es imposible: significa que están llegando seguidores por fuera del streaming (video, show, feature). NO lo llames fan rate ni lo presentes como conversión.`,
+          }
+        : {}),
+      ...(f.desdeElInicio && f.desdeElInicio.movimiento === "creció" && !f.desdeElInicio.imposibleComoConversion
+        ? {
+            desdeElInicioPct: f.desdeElInicio.pct,
+            desdeElInicioDias: f.desdeElInicio.dias,
+            notaDesdeElInicio:
+              "Lo mismo pero sobre TODO el historial cargado, no solo el último tramo. Comparar los dos dice si la conversión mejoró o empeoró con el tiempo.",
+          }
         : {}),
       ...(f.falta ? { loQueFalta: f.falta } : {}),
+    },
+  };
+}
+
+
+// Cuánto vuelve cada persona y de dónde viene el tráfico. A diferencia del fan
+// rate, acá SÍ hay umbrales publicados, así que el modelo puede decir "por
+// debajo de la línea" sin inventarse una referencia.
+function bloqueCalidadAudiencia(p: VincereProyecto) {
+  const prof = profundidadDeEscucha(p);
+  const origen = lecturaDeOrigen(p);
+  if (!prof && !origen) return {};
+
+  return {
+    calidadDeAudiencia: {
+      ...(prof
+        ? {
+            streamsPorOyente: prof.ratio,
+            umbralAlgoritmico: UMBRAL_STREAMS_POR_OYENTE,
+            sobreElUmbral: prof.sobreUmbral,
+            notaProfundidad: `Cuántas veces al mes te pone cada persona. Por encima de ${UMBRAL_STREAMS_POR_OYENTE} los temas disparan colocación algorítmica: el algoritmo pesa la re-escucha muy por encima del volumen bruto. Seguir es un toque barato; volver a poner una canción no se finge.`,
+          }
+        : { profundidad: "Faltan streams u oyentes del mes: no se puede calcular cuánto vuelve cada persona." }),
+      ...(origen
+        ? {
+            origenDeStreams: {
+              playlistPct: origen.playlistPct,
+              algoritmicoPct: origen.algoritmicoPct,
+              perfilPct: origen.perfilPct,
+              externoPct: origen.externoPct,
+              sinClasificarPct: origen.sinClasificarPct,
+              estado: origen.estado,
+              lectura: origen.lectura,
+              queHacer: origen.queHacer,
+              regla: `Por encima de ${ALARMA_PLAYLIST}% de streams desde playlists el crecimiento es PRESTADO: se acaba cuando el curador rote la lista. Sano es playlist bajo 60% con algorítmico sobre 40%. Esta clasificación la calcula el sistema — respétala, no la recalcules.`,
+            },
+          }
+        : { origenDeStreams: "No se ha cargado el desglose de fuentes de Spotify for Artists, así que no se puede distinguir audiencia propia de audiencia alquilada." }),
+    },
+  };
+}
+
+
+// El cuello de botella. Va PRIMERO en el contexto a propósito: es lo que
+// ordena todo lo demás. El modelo narra el cuello encontrado — no elige otro,
+// porque elegir cuál de seis problemas es EL problema es exactamente la
+// decisión que no puede cambiar entre corridas.
+function bloqueDelCuello(p: VincereProyecto) {
+  const c = cuelloDeBotella(p);
+
+  return {
+    cuelloDeBotella: {
+      titular: c.titular,
+      ...(c.cuello
+        ? {
+            etapa: c.cuello.etapa,
+            evidencia: c.cuello.evidencia,
+            porQue: c.cuello.porQue,
+          }
+        : { etapa: null }),
+      queHacer: c.queHacer,
+      cadenaEnOrdenDeArreglo: c.etapas.map((e) => ({
+        etapa: e.etapa,
+        pregunta: e.pregunta,
+        estado: e.estado,
+        evidencia: e.evidencia,
+        ...(e.falta ? { falta: e.falta } : {}),
+      })),
+      ...(c.advertencia ? { advertencia: c.advertencia } : {}),
+      nivel: c.nivel,
+      regla:
+        `El cuello lo calcula el sistema: NO elijas otro y NO lo recalcules. ` +
+        `El orden de arreglo es obra → conversión → retención → propiedad → monetización → ALCANCE, y el alcance va último ` +
+        `porque es la única etapa que se puede comprar: recomendar pauta cuando hay una etapa rota antes es el error caro ` +
+        `que este motor existe para evitar. ` +
+        `Una etapa en "noSeSabe" NO está sana: es invisible, y decir que está bien es inventar. ` +
+        `Si hay advertencia, nómbrala — significa que el cuello encontrado podría no ser el cuello.`,
+    },
+  };
+}
+
+
+// De cuántas canciones depende la carrera. El veredicto y los cortes van
+// resueltos: el modelo narra, no clasifica. Y va con su límite pegado, porque
+// es el número del sistema que más se parece a una medición sin serlo —
+// los cortes de la industria son de ingreso y acá se mide en streams.
+function bloqueDeCatalogo(p: VincereProyecto) {
+  const c = concentracionDeCatalogo(p);
+  if (!c) return {};
+
+  return {
+    concentracionDeCatalogo: {
+      cancionesCargadas: c.canciones,
+      cancionesQueTienenLaMitadDeLosStreams: c.cancionesParaLaMitad,
+      masFuerte: { nombre: c.top[0].nombre, pct: c.top1Pct },
+      dosMasFuertesPct: c.top2Pct,
+      repartoParejoPct: c.parejoPct,
+      estado: c.estado,
+      lectura: c.lectura,
+      queHacer: c.queHacer,
+      nivel: c.nivel,
+      limite: c.limite,
+      regla:
+        `El estado lo calcula el sistema: respétalo y no lo recalcules. ` +
+        `Un catálogo de menos de ${MINIMO_PARA_VEREDICTO} canciones NO recibe veredicto de dependencia — con pocas canciones ` +
+        `la más fuerte pasa la mitad por aritmética, no por fragilidad. ` +
+        `NO conviertas esto en una valuación: el descuento de ${TURNOS_DESCUENTO.bajo} a ${TURNOS_DESCUENTO.alto} turnos ` +
+        `es el corte de la industria, no un precio de este catálogo. ` +
+        `Y NO afirmes que el artista depende de una canción sin decir que se mide sobre streams acumulados.`,
     },
   };
 }
@@ -686,6 +821,22 @@ function bloqueDeLanzamiento(p: VincereProyecto) {
         riesgos: r.riesgos,
         ...(r.noEjecutable ? { noEjecutable: r.noEjecutable } : {}),
       })),
+      repartoSugerido: plan.reparto.pedazos.length
+        ? {
+            titular: plan.reparto.titular,
+            pedazos: plan.reparto.pedazos.map((x) => ({
+              plaza: x.plaza,
+              canal: x.canalLabel,
+              montoUsd: x.montoUsd,
+              porQue: x.porQue,
+              oyentesEsperados: `${x.oyentesBajo}–${x.oyentesAlto}`,
+            })),
+            sumaOyentes: `${plan.reparto.oyentesBajoTotal}–${plan.reparto.oyentesAltoTotal}`,
+            ...(plan.reparto.porQueNoMas ? { porQueNoMasPlazas: plan.reparto.porQueNoMas } : {}),
+            regla:
+              "El monto de cada plaza sigue a su calor, y una plaza que se está abriendo recibe la mitad de lo que le tocaría porque es una apuesta. Ninguna plaza entra si el presupuesto no alcanza para que su pedazo produzca ~100 clics en el peor escenario: por debajo de eso la campaña gasta y no deja un dato con el que calibrar. NO propongas repartir entre más plazas de las que están acá — se ve como más trabajo y produce resultados de los que no se puede concluir nada.",
+          }
+        : plan.reparto.titular,
       dondeNoSePauta: plan.descartadas.map((d) => `${d.ciudad}: ${d.porQue}`),
       paraCalibrar: plan.paraCalibrar,
       advertencia:
@@ -798,6 +949,9 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         momentumIndex: p.resumen.momentumIndex,
         serieStreamsMiles: p.resumen.serie,
         ...bloqueFanRate(p),
+        ...bloqueCalidadAudiencia(p),
+        ...bloqueDelCuello(p),
+        ...bloqueDeCatalogo(p),
     ...bloqueDePlazas(p),
     ...bloqueDeCostos(p),
         ...(evolucion ? { historialDeCargas: evolucion } : {}),
@@ -891,6 +1045,9 @@ export function buildSectionContext(p: VincereProyecto, seccion: VincereSeccion)
         ...base,
         ...bloqueDeLanzamiento(p),
         ...bloqueFanRate(p),
+        ...bloqueCalidadAudiencia(p),
+        ...bloqueDelCuello(p),
+        ...bloqueDeCatalogo(p),
         ...bloqueDePlazas(p),
         ...bloqueDeFirmas(p),
         ...conExterno("plazas"),

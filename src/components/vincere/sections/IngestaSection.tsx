@@ -8,6 +8,7 @@ import {
   VINCERE_SECCION_LABEL,
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
+import { useIaConfigurada } from "@/lib/vincere/useIaConfigurada";
 import { fetchIngest } from "@/lib/vincere/ai-client";
 import { formatStreams } from "@/lib/vincere/format";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
@@ -69,6 +70,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [resultado, setResultado] = useState<VincereIngestaResultado | null>(null);
   const [aceptados, setAceptados] = useState<Record<string, boolean>>({});
   const [acabaDeAplicar, setAcabaDeAplicar] = useState(false);
+  const ia = useIaConfigurada();
+  const sinLlave = ia !== null && !ia.configurada;
   const setSeccion = useVincereStore((s) => s.setSeccion);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -159,6 +162,33 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
       />
 
       <div className="space-y-5">
+        {/* Arriba de todo y antes de cargar nada. Sin llave el sistema no está
+            roto —los indicadores se calculan igual— pero esta pantalla no
+            puede funcionar, y decirlo antes ahorra subir un archivo para nada. */}
+        {sinLlave && (
+          <div
+            className="rounded-xl px-5 py-4"
+            style={{
+              color: "var(--vin-warn)",
+              background: "rgba(229,169,60,0.09)",
+              border: "1px solid rgba(229,169,60,0.28)",
+            }}
+          >
+            <div className="vin-t-base font-medium">La IA no está configurada en este despliegue</div>
+            <p className="vin-t-sm mt-1.5 leading-relaxed" style={{ maxWidth: "72ch" }}>
+              Falta la variable <code>ANTHROPIC_API_KEY</code>. Sin ella esta pantalla no puede leer archivos y
+              tampoco se pueden generar las lecturas. Todo lo que el sistema <em>calcula</em> —cuello de botella, fan
+              rate, concentración del catálogo, plazas, presupuesto— sigue funcionando: eso no pasa por la IA. La data
+              se puede cargar a mano mientras tanto, en «Editar data» dentro de Resumen.
+            </p>
+            {/* Dónde corre y dónde se toca. Sin esto, el mismo aviso en local y
+                en producción manda a arreglar en el lugar equivocado. */}
+            <p className="vin-t-sm mt-2 leading-relaxed" style={{ maxWidth: "72ch", opacity: 0.85 }}>
+              {ia.comoSeArregla}
+            </p>
+          </div>
+        )}
+
         <AlertasPanel proyecto={proyecto} />
 
         {/* Cargar sin interpretar deja la data muerta. El siguiente paso se
@@ -270,10 +300,24 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
               )}
             </div>
 
+            {/* Un fallo acá es el final del camino para quien viene a cargar
+                data: si no se lee, no pasa nada más. Estaba en letra diminuta y
+                debajo del pliegue, así que el sistema se veía mudo en vez de
+                roto — que es peor, porque no da nada que hacer. */}
             {error && (
-              <p className="vin-t-xs" style={{ color: "var(--vin-accent)" }}>
-                {error}
-              </p>
+              <div
+                className="rounded-xl px-4 py-3.5"
+                style={{
+                  color: "var(--vin-risk)",
+                  background: "rgba(240,90,72,0.09)",
+                  border: "1px solid rgba(240,90,72,0.3)",
+                }}
+              >
+                <div className="vin-t-sm font-medium">No se pudo leer el material</div>
+                <p className="vin-t-sm mt-1 leading-relaxed" style={{ maxWidth: "70ch" }}>
+                  {error}
+                </p>
+              </div>
             )}
           </>
         )}
