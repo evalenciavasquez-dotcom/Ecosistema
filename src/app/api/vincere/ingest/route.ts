@@ -6,6 +6,38 @@ import { VINCERE_INGEST_SYSTEM_PROMPT, buildIngestUserPrompt } from "@/lib/vince
 import { exigirLlaveDeIA, hayLlaveDeIA, dondeCorre, DONDE_SE_ARREGLA } from "@/lib/vincere/llave";
 import { normalizarIngesta } from "@/lib/vincere/ingesta";
 
+// Por qué no se pudo interpretar la respuesta.
+//
+// "No se pudo extraer data de este material" era el único mensaje para tres
+// causas distintas, y encima suena a que el material no servía — cuando la más
+// común es que la respuesta no cupo. Quien lo lee se pone a buscar otro
+// archivo en vez de dividir el que tiene.
+function porQueNoSePudo(response: { stop_reason?: string | null; content?: unknown }): string {
+  if (response.stop_reason === "max_tokens") {
+    return (
+      "La lectura se cortó por longitud: el material trae más data de la que cabe en una sola respuesta, así que el " +
+      "resultado llegó incompleto y no se pudo interpretar. No es que el archivo esté mal — es que es muy grande de " +
+      "una vez. Divídelo (por ejemplo, las páginas de audiencia por un lado y las de catálogo por otro) y súbelo en dos tandas."
+    );
+  }
+
+  // Cuánto texto llegó a devolver. Un cero indica que ni siquiera empezó, que
+  // es un problema distinto de haber devuelto algo que no se pudo leer.
+  const bloques = Array.isArray(response.content) ? response.content : [];
+  const texto = bloques
+    .map((b) => (b && typeof b === "object" && "text" in b ? String((b as { text: unknown }).text) : ""))
+    .join("");
+
+  if (!texto.trim()) {
+    return (
+      "La lectura volvió vacía: el modelo no devolvió nada que interpretar. Suele pasar cuando el PDF es solo imágenes " +
+      "sin texto legible, o cuando está protegido. Prueba con una captura de pantalla de la página que interesa."
+    );
+  }
+
+  return `La respuesta llegó pero no se pudo interpretar (motivo: ${response.stop_reason ?? "desconocido"}). Empezaba así: «${texto.slice(0, 160)}…»`;
+}
+
 const MAX_BYTES = 8 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
 type ImageMediaType = (typeof IMAGE_TYPES)[number];
@@ -77,7 +109,12 @@ export async function POST(request: Request) {
   try {
     const response = await client.messages.parse({
       model: "claude-sonnet-5",
-      max_tokens: 4000,
+      // Un PDF de panel trae catálogo, ciudades, audiencia y KPIs a la vez, y
+      // todo eso sale como JSON. Con 4.000 la respuesta se cortaba a media
+      // frase: el JSON quedaba roto, el parseo devolvía null y el sistema solo
+      // sabía decir "no se pudo extraer data" — que suena a que el material no
+      // servía, cuando lo que pasó fue que no cupo la respuesta.
+      max_tokens: 16000,
       output_config: { format: zodOutputFormat(ingestResponseSchema) },
       system: VINCERE_INGEST_SYSTEM_PROMPT,
       messages: [{ role: "user", content: contenido }],
@@ -86,8 +123,11 @@ export async function POST(request: Request) {
     if (response.stop_reason === "refusal") {
       return NextResponse.json({ error: "El sistema no pudo leer este material." }, { status: 502 });
     }
+
+    // Cuando no se pudo parsear, la razón importa: cada una se arregla
+    // distinto y antes las tres caían en el mismo mensaje mudo.
     if (response.parsed_output == null) {
-      return NextResponse.json({ error: "No se pudo extraer data de este material" }, { status: 502 });
+      return NextResponse.json({ error: porQueNoSePudo(response) }, { status: 502 });
     }
 
     // Del formato plano del cable al que espera la app: vacío vuelve a ser
