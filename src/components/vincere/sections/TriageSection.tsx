@@ -56,10 +56,12 @@ export default function TriageSection() {
   // Cuando el caso es sobre un artista que YA está en el sistema, el veredicto
   // deja de apoyarse en lo que Eduardo recuerde y pasa a leer sus números.
   const [proyectoId, setProyectoId] = useState<string>("");
-  // Lo que la web dijo de este caso, antes de emitir veredicto. Es lo único
-  // que en un caso nuevo no viene del interesado.
-  const [webHallazgos, setWebHallazgos] = useState<{ resumen: string; hallazgos: string[] } | null>(null);
-  const [buscando, setBuscando] = useState(false);
+  // Buscar en la web es parte del ANÁLISIS, no un paso previo. Antes era un
+  // botón que había que apretar antes; pero el usuario no quiere hacer una
+  // búsqueda, quiere un veredicto — y lo que la web diga es parte del sustento
+  // de ese veredicto, no un trámite que se hace aparte y se lee suelto.
+  const [conWeb, setConWeb] = useState(true);
+  const [fase, setFase] = useState<"" | "buscando" | "analizando">("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +77,12 @@ export default function TriageSection() {
       evidenciaDeEntrada({
         descripcion: form.descripcion,
         tieneArchivo: !!archivo,
-        investigoWeb: !!webHallazgos,
+        // El análisis es atómico: si la casilla está marcada, la búsqueda va a
+        // correr, así que el techo que se muestra es el que va a tener.
+        investigoWeb: conWeb,
         ...hechosDelProyecto(proyectoElegido),
       }),
-    [form.descripcion, archivo, proyectoElegido, webHallazgos]
+    [form.descripcion, archivo, proyectoElegido, conWeb]
   );
 
   // Lo que el sistema YA sabe del artista, cuando está cargado. Van los
@@ -102,32 +106,11 @@ export default function TriageSection() {
     };
   }
 
-  async function buscarEnWeb() {
-    const nombre = form.nombre.trim();
-    if (buscando || !nombre) return;
-    setBuscando(true);
-    setError(null);
-    try {
-      const { investigacion } = await fetchResearch({
-        tipo: "artista",
-        consulta: `${nombre}${form.genero.trim() ? ` — ${form.genero.trim()}` : ""}: qué se sabe públicamente, qué tan real es su tracción y qué señales hay de su mercado`,
-        artista: { nombre, genero: form.genero.trim(), fase: form.fase },
-      });
-      setWebHallazgos({
-        resumen: investigacion.resumen,
-        hallazgos: investigacion.hallazgos.map((h) => h.texto),
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo buscar en la web");
-    } finally {
-      setBuscando(false);
-    }
-  }
-
   async function run() {
     if (loading || !form.nombre.trim() || !evidencia.suficienteParaVeredicto) return;
     setLoading(true);
     setError(null);
+    const nombre = form.nombre.trim();
     const id = addTriageCaso({
       nombre: form.nombre.trim(),
       genero: form.genero.trim(),
@@ -138,6 +121,29 @@ export default function TriageSection() {
       dataDisponible: evidencia.techo >= 4 ? "alta" : evidencia.techo === 3 ? "media" : "baja",
     });
     try {
+      // La web primero, para que sus hallazgos entren al veredicto. Si falla,
+      // el análisis sigue sin ella: quedarse sin veredicto porque la búsqueda
+      // no respondió sería perder lo importante por lo accesorio.
+      let web: { resumen: string; hallazgos: string[] } | null = null;
+      if (conWeb) {
+        setFase("buscando");
+        try {
+          const { investigacion } = await fetchResearch({
+            tipo: "artista",
+            consulta: `${nombre}${form.genero.trim() ? ` — ${form.genero.trim()}` : ""}: qué se sabe públicamente, qué tan real es su tracción y qué señales hay de su mercado`,
+            artista: { nombre, genero: form.genero.trim(), fase: form.fase },
+          });
+          web = {
+            resumen: investigacion.resumen,
+            hallazgos: investigacion.hallazgos.map((h) => h.texto),
+          };
+        } catch {
+          // Se anota en el veredicto por su ausencia: el techo baja solo.
+          web = null;
+        }
+      }
+
+      setFase("analizando");
       const adjunto = archivo ? await leerArchivo(archivo) : null;
       const r = await fetchTriage({
         nombre: form.nombre.trim(),
@@ -146,21 +152,21 @@ export default function TriageSection() {
         descripcion: form.descripcion.trim(),
         ...(adjunto ? { data: adjunto.data, mediaType: adjunto.mediaType } : {}),
         ...hechosDelProyecto(proyectoElegido),
-        investigoWeb: !!webHallazgos,
+        investigoWeb: !!web,
         datosDelProyecto: datosDelProyecto(),
-        investigacion: webHallazgos,
+        investigacion: web,
       });
-      updateVeredicto(id, r);
+      updateVeredicto(id, { ...r, web });
       setForm({ nombre: "", genero: "", fase: "Emergente", descripcion: "" });
       setArchivo(null);
       setProyectoId("");
-      setWebHallazgos(null);
       if (inputRef.current) inputRef.current.value = "";
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo analizar el caso");
       deleteTriageCaso(id);
     } finally {
       setLoading(false);
+      setFase("");
     }
   }
 
@@ -272,47 +278,25 @@ export default function TriageSection() {
               </label>
             )}
 
-            {/* La única fuente de un caso nuevo que NO viene del interesado.
-                Por eso vale un nivel entero de evidencia. */}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={buscarEnWeb}
-                disabled={buscando || !form.nombre.trim()}
-                className="vin-btn-ghost"
-                style={buscando || !form.nombre.trim() ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
-              >
-                {buscando ? "Buscando…" : webHallazgos ? "Buscar de nuevo" : "Buscar en la web"}
-              </button>
-              {!form.nombre.trim() && <span className="vin-faint vin-t-xs">hace falta el nombre para buscar</span>}
-              {webHallazgos && (
-                <button
-                  type="button"
-                  onClick={() => setWebHallazgos(null)}
-                  className="vin-faint vin-t-xs hover:underline"
-                >
-                  descartar lo encontrado
-                </button>
-              )}
-            </div>
-
-            {webHallazgos && (
-              <div className="rounded-xl p-4" style={{ border: "1px solid var(--vin-border)" }}>
-                <div className="vin-faint vin-t-xs mb-2 uppercase tracking-[0.08em]">Lo que dice la web</div>
-                <p className="vin-t-sm leading-relaxed" style={{ maxWidth: "70ch" }}>
-                  {webHallazgos.resumen}
-                </p>
-                {webHallazgos.hallazgos.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {webHallazgos.hallazgos.slice(0, 4).map((h, i) => (
-                      <li key={i} className="vin-muted vin-t-sm leading-relaxed" style={{ maxWidth: "70ch" }}>
-                        · {h}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+            {/* La búsqueda web es una OPCIÓN DEL ANÁLISIS, no un paso previo.
+                Nadie quiere hacer una búsqueda: quiere un veredicto. Lo que la
+                web diga entra como sustento de ese veredicto y se guarda con
+                él. Viene marcada porque es lo más barato que sube el techo. */}
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={conWeb}
+                onChange={(e) => setConWeb(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <span className="vin-t-sm">Buscar también en la web al analizar</span>
+                <span className="vin-faint vin-t-xs mt-0.5 block leading-relaxed">
+                  Es la única fuente de un caso nuevo que no viene del interesado, y por eso vale un nivel entero de
+                  evidencia. Si la búsqueda falla, el veredicto sale igual — sin ella y con el techo más bajo.
+                </span>
+              </span>
+            </label>
 
             <EvidenciaDeEntradaPanel evidencia={evidencia} />
 
@@ -349,7 +333,11 @@ export default function TriageSection() {
                   : undefined
               }
             >
-              {loading
+              {fase === "buscando"
+                ? "Buscando en la web…"
+                : fase === "analizando"
+                  ? "Leyendo el caso…"
+                  : loading
                 ? "Leyendo el caso…"
                 : !form.nombre.trim()
                   ? "Falta el nombre"
@@ -396,6 +384,30 @@ export default function TriageSection() {
                       {c.nivel && <EvidenceTag nivel={c.nivel} />}
                     </div>
                     <p className="vin-t-sm leading-relaxed">{c.veredicto}</p>
+
+                    {/* Lo que la web aportó, DENTRO del veredicto. Separarlo
+                        dejaría el veredicto sin la mitad de su sustento cuando
+                        se relea en un mes y nadie recuerde qué se consultó. */}
+                    {c.web && (
+                      <div
+                        className="mt-3 rounded-xl p-3"
+                        style={{ border: "1px solid var(--vin-border)", background: "var(--vin-surface-2)" }}
+                      >
+                        <div className="vin-faint vin-t-xs mb-1.5 uppercase tracking-[0.08em]">
+                          Lo que dice la web · fuente externa
+                        </div>
+                        <p className="vin-t-sm leading-relaxed">{c.web.resumen}</p>
+                        {c.web.hallazgos.length > 0 && (
+                          <ul className="mt-1.5 space-y-1">
+                            {c.web.hallazgos.slice(0, 4).map((h, i) => (
+                              <li key={i} className="vin-muted vin-t-sm leading-relaxed">
+                                · {h}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
 
                     {/* El encuadre comercial: cómo entrar y qué cuesta en
                         tiempo. Es una propuesta para confirmar, no un acuerdo. */}

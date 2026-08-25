@@ -67,7 +67,12 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [arrastrando, setArrastrando] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<VincereIngestaResultado | null>(null);
+  // La propuesta vive en el store y no acá: salir de la pantalla borraba una
+  // lectura que costó una llamada a la API. Ahora sobrevive a navegar y a
+  // recargar, hasta que se aplique o se descarte a propósito.
+  const pendiente = useVincereStore((s) => s.ingestaPendiente[proyecto.id] ?? null);
+  const guardarPendiente = useVincereStore((s) => s.guardarIngestaPendiente);
+  const descartarPendiente = useVincereStore((s) => s.descartarIngestaPendiente);
   const [aceptados, setAceptados] = useState<Record<string, boolean>>({});
   const [acabaDeAplicar, setAcabaDeAplicar] = useState(false);
   const ia = useIaConfigurada();
@@ -87,7 +92,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
     if (cargando || (!archivo && !texto.trim())) return;
     setCargando(true);
     setError(null);
-    setResultado(null);
+    descartarPendiente(proyecto.id);
     try {
       const payload: Parameters<typeof fetchIngest>[0] = { artista: contexto, nota, texto };
       if (archivo) {
@@ -96,7 +101,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
         payload.mediaType = mediaType;
       }
       const r = await fetchIngest(payload);
-      setResultado(r);
+      guardarPendiente(proyecto.id, r);
       // Todo lo que trajo llega marcado para aplicar; se desmarca lo que no sirva.
       const marcados: Record<string, boolean> = {};
       (Object.keys(r.propuesta) as BloqueKey[]).forEach((k) => {
@@ -111,6 +116,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   }
 
   function aplicar() {
+    const resultado = pendiente;
     if (!resultado) return;
     const filtrada: VincereIngestaPropuesta = {};
     (Object.keys(resultado.propuesta) as BloqueKey[]).forEach((k) => {
@@ -141,7 +147,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
         : "No se aplicó ningún motor"
     );
 
-    setResultado(null);
+    descartarPendiente(proyecto.id);
     setArchivo(null);
     setTexto("");
     setNota("");
@@ -193,7 +199,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
 
         {/* Cargar sin interpretar deja la data muerta. El siguiente paso se
             ofrece justo después de aplicar, que es cuando tiene sentido. */}
-        {acabaDeAplicar && !resultado && (
+        {acabaDeAplicar && !pendiente && (
           <div
             className="rounded-xl p-5"
             style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.3)" }}
@@ -217,7 +223,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
           </div>
         )}
 
-        {!resultado && (
+        {!pendiente && (
           <>
             <div
               onDragOver={(e) => {
@@ -322,13 +328,13 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
           </>
         )}
 
-        {resultado && (
+        {pendiente && (
           <Revision
-            resultado={resultado}
+            resultado={pendiente}
             aceptados={aceptados}
             onToggle={(k) => setAceptados((a) => ({ ...a, [k]: !a[k] }))}
             onAplicar={aplicar}
-            onDescartar={() => setResultado(null)}
+            onDescartar={() => descartarPendiente(proyecto.id)}
           />
         )}
       </div>

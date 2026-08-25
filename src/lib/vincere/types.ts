@@ -1314,10 +1314,14 @@ export interface VincereTriageCaso {
   prioridad: "Alta" | "Media" | "Baja" | null;
   motorRecomendado: string | null;
   nivel: VincereNivel | null;
-  // Cuánta data hay realmente sobre este caso. Lo declara Eduardo, y limita
-  // cuánto puede concluir el análisis: con data baja, un veredicto de alta
-  // evidencia sería falso por construcción.
+  // Cuánta data había sobre el caso. Ya no se declara a mano: se deriva del
+  // techo que calcula el sistema contando el material. Se conserva el campo
+  // porque los casos guardados antes lo traen.
   dataDisponible: VincereCantidadData | null;
+  // Lo que la web dijo del caso, cuando el análisis la consultó. Se guarda CON
+  // el veredicto y no aparte: es parte de sobre qué se decidió, y separarlo
+  // dejaría el veredicto sin la mitad de su sustento cuando se relea en un mes.
+  web: { resumen: string; hallazgos: string[] } | null;
   // Propuesta de encuadre comercial desde el primer contacto. Es una sugerencia
   // para confirmar, no un acuerdo: por eso vive en el caso de triage y no en un
   // vínculo, que solo existe cuando el proyecto entra al sistema.
