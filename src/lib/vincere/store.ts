@@ -11,6 +11,7 @@ import {
   VincereCancionAnalisis,
   VincereComparacion,
   VincereIngestaPropuesta,
+  VincereIngestaResultado,
   VincereDecisionEstado,
   VincereDiagnostico,
   VincereFase,
@@ -105,6 +106,20 @@ interface VincereState {
   toast: string | null;
 
   setSeccion: (s: VincereSeccion) => void;
+
+  // La lectura de un archivo que todavía no se aprobó.
+  //
+  // Vivía en el estado del componente, así que salir de la pantalla la
+  // borraba: se pagaba una llamada a la API, se navegaba a otra sección para
+  // consultar algo, y al volver no había nada. Perder por navegar lo que costó
+  // plata es de las peores cosas que puede hacer una herramienta.
+  //
+  // Va por proyecto porque la propuesta pertenece al artista que se estaba
+  // cargando, no a la sesión: cambiar de artista y volver no debe mezclarlas.
+  ingestaPendiente: Record<string, VincereIngestaResultado>;
+  guardarIngestaPendiente: (proyectoId: string, r: VincereIngestaResultado) => void;
+  descartarIngestaPendiente: (proyectoId: string) => void;
+
   // La consulta de Investigación vive en el store, no en la sección. Así otra
   // pantalla puede dejarla escrita — es lo que cierra la cadena: un servicio
   // externo dice a qué artistas se parece la canción y desde el panel de la
@@ -254,6 +269,9 @@ interface VincereState {
       comoCobrarlo: string;
       horasSemanalesEstimadas: number | null;
       nivel: 1 | 2 | 3 | 4;
+      // Lo que la web aportó al veredicto, si el análisis la consultó. Va con
+      // el veredicto porque es parte de sobre qué se decidió.
+      web?: { resumen: string; hallazgos: string[] } | null;
     }
   ) => void;
   deleteTriageCaso: (id: string) => void;
@@ -1034,6 +1052,18 @@ export const useVincereStore = create<VincereState>()(
       // Escribe en los motores lo que Eduardo aprobó de una carga. Los bloques
       // ausentes o vacíos no tocan nada: un pantallazo de streams no debe
       // borrar el catálogo ni la audiencia ya cargados.
+      ingestaPendiente: {},
+
+      guardarIngestaPendiente: (proyectoId, r) =>
+        set((s) => ({ ingestaPendiente: { ...s.ingestaPendiente, [proyectoId]: r } })),
+
+      descartarIngestaPendiente: (proyectoId) =>
+        set((s) => {
+          const resto = { ...s.ingestaPendiente };
+          delete resto[proyectoId];
+          return { ingestaPendiente: resto };
+        }),
+
       aplicarIngesta: (proyectoId, propuesta) =>
         set((s) => ({
           proyectos: mapProyecto(s.proyectos, proyectoId, (p) => {
@@ -1148,6 +1178,7 @@ export const useVincereStore = create<VincereState>()(
           vinculoSugerido: null,
           comoCobrarlo: null,
           horasSemanalesEstimadas: null,
+          web: null,
           creadoEn: new Date().toISOString().slice(0, 10),
         };
         set((s) => ({ triageCasos: [nuevo, ...s.triageCasos] }));
