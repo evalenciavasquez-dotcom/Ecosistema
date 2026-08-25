@@ -5,6 +5,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import ProyectoManager from "./ProyectoManager";
 import VincereHeader from "./VincereHeader";
 import VincereNav from "./VincereNav";
+import SiguientePasoBanner from "./SiguientePasoBanner";
 import ResumenSection from "./sections/ResumenSection";
 import DiagnosticoSection from "./sections/DiagnosticoSection";
 import MarcaSection from "./sections/MarcaSection";
@@ -50,7 +51,13 @@ export default function VincereApp() {
         </div>
 
         <main className="min-w-0 flex-1 overflow-y-auto px-5 py-8 md:px-14 md:py-11">
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto flex max-w-4xl flex-col gap-7">
+            {/* Antes de cualquier pantalla: qué toca hacer con este artista.
+                La pregunta se hace ANTES de elegir sección, así que la
+                respuesta tiene que estar antes también. No aparece en
+                Comparación —ahí se están mirando dos artistas y el paso es de
+                uno solo— ni sin proyecto, donde no hay nada que dirigir. */}
+            {proyecto && !compareOn && <SiguientePasoBanner proyecto={proyecto} />}
             {!proyecto ? (
               <SinProyectos />
             ) : compareOn && compareTarget ? (

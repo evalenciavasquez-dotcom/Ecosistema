@@ -3,20 +3,37 @@
 import { useVincereStore } from "@/lib/vincere/store";
 import { VincereSeccion, VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 
-// La navegación sigue el recorrido del método, no una lista de funciones. El
-// orden es el argumento: primero entra la data, después se lee dónde está el
-// artista, después la obra y el público, después el negocio, y solo al final se
-// decide y se sale afuera. Una lista plana de dieciocho motores obliga a cada
-// persona a inventarse ese orden en la cabeza.
+// La navegación es el método, y el orden es el argumento.
+//
+// La versión anterior agrupaba por TEMA —"la obra y el público", "el
+// negocio"—, y los temas son cómo se archivan las cosas, no cómo se trabaja.
+// El resultado fue que Triage, que es la PRIMERA decisión —¿entro a este
+// caso?—, quedó en el séptimo grupo, debajo de doce pantallas de análisis que
+// solo tienen sentido cuando ya decidiste entrar. Quien abría la app por
+// primera vez creaba el proyecto, cargaba data, y recién entonces encontraba
+// la pantalla que servía para decidir si valía la pena hacer todo eso.
+//
+// Ahora el orden es la secuencia real de un caso, y va numerado porque el
+// número es lo único que no se puede malinterpretar:
+//
+//   1. ¿Entro?        decidir si el caso vale la pena
+//   2. Qué tengo      la data entra y se ve dónde está parado
+//   3. La obra        qué hay para trabajar
+//   4. Qué hago       las decisiones que salen del diagnóstico
+//   5. El negocio     convertirlo en caja
+//   6. Afuera         lo que sale del sistema hacia terceros
+//   7. El marcador    si esto acierta o no
+//
+// Los grupos 1 y 2 son los que casi siempre se usan. Del 3 en adelante es
+// profundidad, y está bien que quede abajo.
 const GRUPOS: { titulo: string; secciones: VincereSeccion[] }[] = [
-  { titulo: "Todo junto", secciones: ["global"] },
-  { titulo: "Entra la data", secciones: ["ingesta", "investigacion"] },
-  { titulo: "Dónde está hoy", secciones: ["resumen", "diagnostico", "marca"] },
-  { titulo: "La obra y el público", secciones: ["song", "ar", "audiencia", "calor", "touring"] },
-  { titulo: "Sacar la canción", secciones: ["lanzamiento"] },
-  { titulo: "El negocio", secciones: ["monetizacion", "oportunidad", "kpis"] },
-  { titulo: "Decidir y salir afuera", secciones: ["management", "stress", "pitch", "triage"] },
-  { titulo: "El marcador", secciones: ["predicciones"] },
+  { titulo: "1 · ¿Entro al caso?", secciones: ["triage", "investigacion"] },
+  { titulo: "2 · Qué tengo", secciones: ["ingesta", "resumen", "diagnostico"] },
+  { titulo: "3 · La obra y el público", secciones: ["song", "marca", "audiencia", "calor"] },
+  { titulo: "4 · Qué hago", secciones: ["lanzamiento", "ar", "touring", "stress"] },
+  { titulo: "5 · El negocio", secciones: ["monetizacion", "oportunidad", "kpis", "management"] },
+  { titulo: "6 · Hacia afuera", secciones: ["pitch"] },
+  { titulo: "7 · El marcador", secciones: ["predicciones", "global"] },
 ];
 
 // Secciones P1 del PRD — se activan una a una en fases posteriores.
