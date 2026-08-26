@@ -16,24 +16,31 @@ import { VincereSeccion, VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 // Ahora el orden es la secuencia real de un caso, y va numerado porque el
 // número es lo único que no se puede malinterpretar:
 //
-//   1. ¿Entro?        decidir si el caso vale la pena
-//   2. Qué tengo      la data entra y se ve dónde está parado
-//   3. La obra        qué hay para trabajar
-//   4. Qué hago       las decisiones que salen del diagnóstico
-//   5. El negocio     convertirlo en caja
-//   6. Afuera         lo que sale del sistema hacia terceros
-//   7. El marcador    si esto acierta o no
+//   1. Cargar data    entra el material, y ahí se decide a dónde va
+//   2. ¿Entro?        el veredicto sobre casos que todavía no son proyecto
+//   3. Qué tengo      dónde está parado el artista
+//   4. La obra        qué hay para trabajar
+//   5. Qué hago       las decisiones que salen del diagnóstico
+//   6. El negocio     convertirlo en caja
+//   7. Afuera         lo que sale del sistema hacia terceros
+//   8. El marcador    si esto acierta o no
 //
-// Los grupos 1 y 2 son los que casi siempre se usan. Del 3 en adelante es
-// profundidad, y está bien que quede abajo.
+// «Cargar data» va sola y primero porque es el único gesto que se repite
+// siempre: todo lo demás depende de que haya entrado material. Antes estaba en
+// el segundo grupo, debajo de Triage, y Triage tenía su propio adjuntador de
+// archivos — dos puertas para el mismo gesto. Ahora el destino se elige DENTRO
+// de la carga, así que hay una sola.
+//
+// Del grupo 4 en adelante es profundidad, y está bien que quede abajo.
 const GRUPOS: { titulo: string; secciones: VincereSeccion[] }[] = [
-  { titulo: "1 · ¿Entro al caso?", secciones: ["triage", "investigacion"] },
-  { titulo: "2 · Qué tengo", secciones: ["ingesta", "resumen", "diagnostico"] },
-  { titulo: "3 · La obra y el público", secciones: ["song", "marca", "audiencia", "calor"] },
-  { titulo: "4 · Qué hago", secciones: ["lanzamiento", "ar", "touring", "stress"] },
-  { titulo: "5 · El negocio", secciones: ["monetizacion", "oportunidad", "kpis", "management"] },
-  { titulo: "6 · Hacia afuera", secciones: ["pitch"] },
-  { titulo: "7 · El marcador", secciones: ["predicciones", "global"] },
+  { titulo: "1 · Cargar data", secciones: ["ingesta"] },
+  { titulo: "2 · ¿Entro al caso?", secciones: ["triage", "investigacion"] },
+  { titulo: "3 · Qué tengo", secciones: ["resumen", "diagnostico"] },
+  { titulo: "4 · La obra y el público", secciones: ["song", "marca", "audiencia", "calor"] },
+  { titulo: "5 · Qué hago", secciones: ["lanzamiento", "ar", "touring", "stress"] },
+  { titulo: "6 · El negocio", secciones: ["monetizacion", "oportunidad", "kpis", "management"] },
+  { titulo: "7 · Hacia afuera", secciones: ["pitch"] },
+  { titulo: "8 · El marcador", secciones: ["predicciones", "global"] },
 ];
 
 // Secciones P1 del PRD — se activan una a una en fases posteriores.
@@ -144,8 +151,10 @@ export default function VincereNav() {
       </div>
       <div className="hidden md:block">
         {PROXIMAMENTE.map((label) => (
+          // El rótulo del grupo ya dice "Próximamente": repetir "· pronto" en
+          // cada línea solo servía para que todas se partieran en dos.
           <div key={label} className="px-3 py-1.5 vin-t-sm" style={{ color: "var(--vin-dim)" }}>
-            {label} · pronto
+            {label}
           </div>
         ))}
       </div>

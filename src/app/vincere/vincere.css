@@ -17,10 +17,17 @@
      tarjeta oscura sin necesidad de sombra. */
   --vin-edge: rgba(255, 255, 255, 0.06);
 
-  --vin-text: #f5f1ea;
-  --vin-muted: #a8a196;
-  --vin-faint: #7a746a;
-  --vin-dim: #565049;
+  /* Los grises subieron un escalón entero.
+     El texto secundario estaba en #a8a196 y el terciario en #7a746a, que sobre
+     este fondo da 4,0:1 — el mínimo justo de la norma, y el mínimo justo es
+     donde se lee "puedo distinguirlo si me esfuerzo", no "lo leo". Como casi
+     todo el contenido real de la app vive en esos dos grises, la impresión de
+     conjunto era la de un texto apagado que da pereza mirar. Ahora el
+     secundario queda en ~8,5:1 y el terciario en ~5,6:1. */
+  --vin-text: #f7f3ec;
+  --vin-muted: #bab3a7;
+  --vin-faint: #928b7f;
+  --vin-dim: #6b655c;
 
   --vin-accent: #e0483a;
   --vin-accent-soft: rgba(224, 72, 58, 0.13);
@@ -36,11 +43,15 @@
   /* Escala tipográfica de seis pasos. Antes había quince tamaños arbitrarios
      entre 9.5px y 32px, y esa es la razón de que la interfaz se leyera sin
      jerarquía: con quince pesos visuales, ninguno manda. */
-  --t-xs: 11.5px;
-  --t-sm: 13px;
-  --t-base: 15px;
-  --t-lg: 17px;
-  --t-xl: 24px;
+  /* Los tres pasos de abajo crecieron. 11,5px y 13px son tamaños de pie de
+     página, y acá cargaban párrafos enteros de análisis: la densidad se leía
+     como un volcado de log. Subirlos ~1px no cambia el sistema, cambia si el
+     texto se lee o se saltea. */
+  --t-xs: 12.5px;
+  --t-sm: 14px;
+  --t-base: 16px;
+  --t-lg: 18px;
+  --t-xl: 25px;
   --t-display: 34px;
   --t-stat: 30px;
 

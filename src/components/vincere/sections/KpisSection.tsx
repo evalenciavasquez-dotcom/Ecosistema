@@ -5,6 +5,7 @@ import { VincereProyecto } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import SectionShell from "../SectionShell";
 import { Panel } from "../primitives";
+import { metaSignificativa, valorConUnidad } from "@/lib/vincere/format";
 
 export default function KpisSection({ proyecto }: { proyecto: VincereProyecto }) {
   const addKpi = useVincereStore((s) => s.addKpi);
@@ -62,27 +63,40 @@ export default function KpisSection({ proyecto }: { proyecto: VincereProyecto })
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {kpis.map((k) => {
-            const pct = k.meta ? Math.min(100, Math.round((k.actual / k.meta) * 100)) : 0;
+            // Una meta igual al valor actual —o en cero— no es una meta: es un
+            // hueco que alguien rellenó copiando la cifra, cosa que hace la
+            // lectura automática cuando el material no la traía. Dibujarla
+            // igual produce "795.444 de 795.444" y una barra al 100% en todos
+            // los indicadores a la vez, que es la forma más rápida de que un
+            // tablero deje de informar.
+            const conMeta = metaSignificativa(k.actual, k.meta);
+            const pct = conMeta ? Math.min(100, Math.round((k.actual / k.meta) * 100)) : 0;
             return (
               <Panel key={k.id}>
-                <div className="mb-2.5 flex items-start justify-between gap-2">
+                <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="vin-muted vin-t-sm">{k.label}</div>
-                  <button onClick={() => deleteKpi(proyecto.id, k.id)} className="vin-faint vin-t-xs hover:underline">✕</button>
+                  <button onClick={() => deleteKpi(proyecto.id, k.id)} className="vin-faint vin-t-sm hover:underline">✕</button>
                 </div>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <span className="vin-serif vin-t-xl">
-                    {k.actual}
-                    {k.unidad}
-                  </span>
-                  <span className="vin-faint vin-t-xs">
-                    meta {k.meta}
-                    {k.unidad}
-                  </span>
+                <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                  <span className="vin-serif vin-t-xl tabular-nums">{valorConUnidad(k.actual, k.unidad)}</span>
+                  {conMeta ? (
+                    <span className="vin-faint vin-t-sm shrink-0 tabular-nums">
+                      meta {valorConUnidad(k.meta, k.unidad)}
+                      {/* Cuando el indicador YA está en porcentaje, el avance
+                          contra la meta repite la misma cifra: "72% · meta
+                          100% · 72%". El bar de abajo lo dice igual. */}
+                      {k.unidad?.trim() === "%" ? "" : ` · ${pct}%`}
+                    </span>
+                  ) : (
+                    <span className="vin-faint vin-t-sm shrink-0">sin meta fijada</span>
+                  )}
                 </div>
-                <div className="vin-bar-track mb-2.5 h-2">
-                  <div className="vin-bar-fill h-full" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="vin-faint vin-t-sm leading-relaxed">{k.nota}</div>
+                {conMeta && (
+                  <div className="vin-bar-track mb-3 h-2">
+                    <div className="vin-bar-fill h-full" style={{ width: `${pct}%` }} />
+                  </div>
+                )}
+                {k.nota && <div className="vin-faint vin-t-sm leading-relaxed">{k.nota}</div>}
               </Panel>
             );
           })}
