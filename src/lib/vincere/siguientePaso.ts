@@ -63,7 +63,11 @@ export interface SiguientePaso {
 // Dónde se trabaja cada etapa de la cadena. Sin este mapa, saber que el cuello
 // está en "conversión" deja al usuario buscando en qué pantalla se arregla eso
 // — que es exactamente el problema que este módulo existe para quitar.
-const DONDE_SE_TRABAJA: Record<Etapa, VincereSeccion> = {
+//
+// Se exporta porque el panel del cuello necesita el mismo destino: el diagnóstico
+// y el botón que lleva a arreglarlo tienen que apuntar al mismo sitio, y con dos
+// copias del mapa tarde o temprano dejan de hacerlo.
+export const DONDE_SE_TRABAJA: Record<Etapa, VincereSeccion> = {
   // La obra no aguanta: se mira el catálogo, tema por tema.
   obra: "song",
   // El que escucha no se queda: es identidad y perfil, no pauta.
@@ -80,7 +84,7 @@ const DONDE_SE_TRABAJA: Record<Etapa, VincereSeccion> = {
 };
 
 // Qué cargar para dejar de estar ciego en cada etapa, y dónde.
-const DONDE_SE_CARGA: Record<Etapa, { seccion: VincereSeccion; que: string }> = {
+export const DONDE_SE_CARGA: Record<Etapa, { seccion: VincereSeccion; que: string }> = {
   obra: { seccion: "ingesta", que: "el catálogo con los streams de cada canción" },
   conversion: { seccion: "resumen", que: "los oyentes mensuales, y una segunda foto para poder comparar" },
   retencion: { seccion: "resumen", que: "los oyentes mensuales del mes junto con los streams" },
