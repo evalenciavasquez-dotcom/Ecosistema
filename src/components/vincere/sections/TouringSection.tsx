@@ -17,19 +17,19 @@ import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
 const VEREDICTO_COLOR: Record<VincereVeredictoPlaza, string> = {
-  ir: "#5cc98e",
-  probar: "#2dd4bf",
-  esperar: "#e0a83a",
-  no: "#e0483a",
+  ir: "var(--vin-ok)",
+  probar: "var(--vin-accent)",
+  esperar: "var(--vin-warn)",
+  no: "var(--vin-risk)",
 };
 
 // Media sala llena se ve peor que una sala chica agotada, y el umbral donde
 // eso empieza a notarse está alrededor del 70%.
 function conversionColor(pct: number): string {
-  if (pct >= 90) return "#5cc98e";
-  if (pct >= 70) return "#2dd4bf";
-  if (pct >= 50) return "#e0a83a";
-  return "#e0483a";
+  if (pct >= 90) return "var(--vin-ok)";
+  if (pct >= 70) return "var(--vin-accent)";
+  if (pct >= 50) return "var(--vin-warn)";
+  return "var(--vin-risk)";
 }
 
 const HOY = new Date().toISOString().slice(0, 10);
@@ -339,9 +339,9 @@ function DiagnosticoTouring({
               <span
                 className="rounded-xl px-2.5 py-1 vin-t-sm font-medium"
                 style={{
-                  color: diag.listoParaGira ? "#5cc98e" : "#e0a83a",
-                  border: `1px solid ${diag.listoParaGira ? "#5cc98e" : "#e0a83a"}66`,
-                  background: diag.listoParaGira ? "rgba(92,201,142,0.10)" : "rgba(224,168,58,0.10)",
+                  color: diag.listoParaGira ? "var(--vin-ok)" : "var(--vin-warn)",
+                  border: `1px solid ${diag.listoParaGira ? "var(--vin-ok)" : "var(--vin-warn)"}66`,
+                  background: diag.listoParaGira ? "var(--vin-ok-wash)" : "rgba(224,168,58,0.10)",
                 }}
               >
                 {diag.listoParaGira ? "Listo para salir" : "Todavía no para una gira"}
@@ -431,7 +431,7 @@ function DiagnosticoTouring({
       {diag.trampas.length > 0 && (
         <div
           className="rounded-xl p-5"
-          style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
+          style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
         >
           <PanelLabel>
             <span style={{ color: "var(--vin-accent)" }}>Plazas trampa</span>
@@ -467,7 +467,7 @@ function DiagnosticoTouring({
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>

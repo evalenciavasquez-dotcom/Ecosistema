@@ -108,7 +108,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
               className="rounded-xl p-3 text-left transition-colors"
               style={{
                 border: `1px solid ${destino === d ? "var(--vin-accent)" : "var(--vin-border)"}`,
-                background: destino === d ? "rgba(224,72,58,0.08)" : "transparent",
+                background: destino === d ? "var(--vin-accent-soft)" : "transparent",
               }}
             >
               <div
@@ -210,9 +210,9 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
               onClick={() => setAbierto(x.id)}
               className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
               style={{
-                background: activo?.id === x.id ? "rgba(224,72,58,0.14)" : "transparent",
+                background: activo?.id === x.id ? "var(--vin-accent-soft)" : "transparent",
                 color: activo?.id === x.id ? "var(--vin-text)" : "var(--vin-muted)",
-                border: `1px solid ${activo?.id === x.id ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
+                border: `1px solid ${activo?.id === x.id ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
               }}
             >
               {VINCERE_PITCH_DESTINO_LABEL[x.destino]}
@@ -273,12 +273,12 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
         >
           <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
             <PanelLabel>
-              <span style={{ color: "#2dd4bf" }}>Para pegar en Spotify for Artists</span>
+              <span style={{ color: "var(--vin-accent)" }}>Para pegar en Spotify for Artists</span>
             </PanelLabel>
             <div className="flex items-center gap-3">
               <span
                 className="vin-faint vin-t-xs tabular-nums"
-                style={{ color: pitch.pitchCorto.length > 480 ? "#e0a83a" : undefined }}
+                style={{ color: pitch.pitchCorto.length > 480 ? "var(--vin-warn)" : undefined }}
               >
                 {pitch.pitchCorto.length}/500
               </span>
@@ -317,7 +317,7 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
           style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.3)" }}
         >
           <PanelLabel>
-            <span style={{ color: "#e0a83a" }}>Aforo que aguanta esta plaza hoy</span>
+            <span style={{ color: "var(--vin-warn)" }}>Aforo que aguanta esta plaza hoy</span>
           </PanelLabel>
           <p className="vin-serif mb-2 vin-t-display tabular-nums leading-none">
             {pitch.aforoSugerido.toLocaleString("es-CO")}
@@ -363,13 +363,13 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>El riesgo, dicho por nosotros</span>
         </PanelLabel>
         <p className="mb-3 vin-t-base leading-relaxed">{pitch.riesgoQueNombramos}</p>
-        <div className="border-t pt-3" style={{ borderColor: "rgba(224,72,58,0.22)" }}>
+        <div className="border-t pt-3" style={{ borderColor: "var(--vin-accent-glow)" }}>
           <div className="vin-faint mb-1.5 vin-t-xs uppercase tracking-[0.08em]">Y por qué igual funciona</div>
           <p className="vin-t-base leading-relaxed">{pitch.porQueIgualFunciona}</p>
         </div>
@@ -434,10 +434,10 @@ function PitchRender({ pitch, onEliminar }: { pitch: VincerePitch; onEliminar: (
       {pitch.siguientePaso && (
         <div
           className="rounded-xl p-5"
-          style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.28)" }}
+          style={{ background: "var(--vin-ok-wash)", border: "1px solid var(--vin-ok-line)" }}
         >
           <PanelLabel>
-            <span style={{ color: "#5cc98e" }}>Siguiente paso</span>
+            <span style={{ color: "var(--vin-ok)" }}>Siguiente paso</span>
           </PanelLabel>
           <p className="vin-t-base leading-relaxed">{pitch.siguientePaso}</p>
         </div>

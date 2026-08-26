@@ -14,11 +14,11 @@ import { Panel, PanelLabel } from "./primitives";
 const TIPOS: VincereVinculoTipo[] = ["propio", "socio", "cliente", "evaluando", "ninguno"];
 
 const TIPO_COLOR: Record<VincereVinculoTipo, string> = {
-  propio: "#5cc98e",
-  socio: "#2dd4bf",
-  cliente: "#e0a83a",
-  evaluando: "#a39c92",
-  ninguno: "#6b645c",
+  propio: "var(--vin-ok)",
+  socio: "var(--vin-accent)",
+  cliente: "var(--vin-warn)",
+  evaluando: "var(--vin-faint)",
+  ninguno: "var(--vin-dim)",
 };
 
 // Semana de trabajo de referencia para leer la carga. No es un límite duro:
@@ -153,14 +153,14 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <span className="vin-faint vin-t-xs uppercase tracking-[0.08em]">Tu carga semanal, todos los proyectos</span>
           <span className="vin-t-sm tabular-nums">
-            <span style={{ color: libres <= 0 ? "#e0483a" : libres <= 8 ? "#e0a83a" : "#5cc98e" }}>
+            <span style={{ color: libres <= 0 ? "var(--vin-risk)" : libres <= 8 ? "var(--vin-warn)" : "var(--vin-ok)" }}>
               {comprometidas}h
             </span>
             <span className="vin-faint"> comprometidas de ~{HORAS_SEMANA_REFERENCIA}h</span>
           </span>
         </div>
         <div className="vin-bar-track flex h-2 overflow-hidden">
-          <div style={{ width: `${pctComprometido}%`, background: "#2dd4bf" }} />
+          <div style={{ width: `${pctComprometido}%`, background: "var(--vin-accent)" }} />
           <div style={{ width: `${pctEvaluando}%`, background: "rgba(224,168,58,0.55)" }} />
         </div>
         <p className="vin-faint mt-2 vin-t-sm leading-relaxed">
@@ -172,7 +172,7 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
       </div>
 
       {participaDelNegocio(proyecto.vinculo) && !v.confirmado && (
-        <p className="vin-faint mt-3 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
+        <p className="vin-faint mt-3 vin-t-sm leading-relaxed" style={{ color: "var(--vin-warn)" }}>
           Marcado como no confirmado: los análisis van a tratar esta participación como hipótesis, no como ingreso.
         </p>
       )}

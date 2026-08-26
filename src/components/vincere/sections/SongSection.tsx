@@ -20,10 +20,10 @@ import FirmaPanel from "../FirmaPanel";
 import EvidenceTag from "../EvidenceTag";
 
 const POTENCIAL_COLOR: Record<VincerePotencialCancion, string> = {
-  single: "#5cc98e",
-  album: "#2dd4bf",
-  relleno: "#e0483a",
-  incierto: "#a39c92",
+  single: "var(--vin-ok)",
+  album: "var(--vin-accent)",
+  relleno: "var(--vin-risk)",
+  incierto: "var(--vin-faint)",
 };
 
 function PotencialBadge({ tipo }: { tipo: VincerePotencialCancion }) {
@@ -129,8 +129,8 @@ export default function SongSection({ proyecto }: { proyecto: VincereProyecto })
                 onClick={() => setSelectedId(song.id)}
                 className="grid cursor-pointer grid-cols-2 items-center gap-3 rounded-xl p-4 md:grid-cols-[1.4fr_2fr_0.7fr_0.7fr_0.7fr_0.9fr_auto]"
                 style={{
-                  background: active ? "rgba(224,72,58,0.08)" : "transparent",
-                  border: `1px solid ${active ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
+                  background: active ? "var(--vin-accent-soft)" : "transparent",
+                  border: `1px solid ${active ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
                 }}
               >
                 <div className="flex items-center gap-2 vin-t-base">
@@ -377,7 +377,7 @@ function SongDetail({
 
           <div
             className="mt-4 rounded-xl p-4"
-            style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.25)" }}
+            style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
           >
             <div className="vin-label mb-1.5" style={{ color: "var(--vin-accent)" }}>
               La decisión

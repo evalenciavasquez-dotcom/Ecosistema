@@ -44,6 +44,7 @@ import {
   VincereQAEntry,
   VincereResumen,
   VincereSeccion,
+  VincereTema,
   VincereSnapshot,
   VincereStressTest,
   VincereTriageCaso,
@@ -104,6 +105,13 @@ interface VincereState {
   compareOn: boolean;
   seccion: VincereSeccion;
   toast: string | null;
+
+  // Papel o consola. Es el mismo sistema visual sobre dos fondos, no dos
+  // diseños: cambia la superficie, no la retícula ni el formato de los datos.
+  // Arranca en papel porque la mayor parte del trabajo acá es leer prosa
+  // analítica y comparar columnas de cifras, y eso se hace mejor sobre claro.
+  tema: VincereTema;
+  setTema: (t: VincereTema) => void;
 
   setSeccion: (s: VincereSeccion) => void;
 
@@ -348,6 +356,9 @@ export const useVincereStore = create<VincereState>()(
       compareOn: false,
       seccion: "resumen",
       toast: null,
+
+      tema: "papel",
+      setTema: (tema) => set({ tema }),
 
       setSeccion: (seccion) => set({ seccion, compareOn: false }),
       investigacionConsulta: "",

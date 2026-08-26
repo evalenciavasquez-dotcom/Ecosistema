@@ -216,8 +216,8 @@ export default function CasoNuevoForm({
           className="rounded-xl px-4 py-3.5"
           style={{
             color: "var(--vin-risk)",
-            background: "rgba(240,90,72,0.09)",
-            border: "1px solid rgba(240,90,72,0.3)",
+            background: "var(--vin-risk-wash)",
+            border: "1px solid var(--vin-risk-line)",
           }}
         >
           <div className="vin-t-sm font-medium">No se pudo analizar el caso</div>

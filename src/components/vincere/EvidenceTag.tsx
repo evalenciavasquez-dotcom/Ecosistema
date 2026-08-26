@@ -1,10 +1,10 @@
 import { VincereNivel, VINCERE_NIVEL_LABEL } from "@/lib/vincere/types";
 
 const NIVEL_COLOR: Record<VincereNivel, string> = {
-  4: "#5cc98e",
-  3: "#2dd4bf",
-  2: "#e0a83a",
-  1: "#e0483a",
+  4: "var(--vin-ok)",
+  3: "var(--vin-accent)",
+  2: "var(--vin-warn)",
+  1: "var(--vin-risk)",
 };
 
 export default function EvidenceTag({ nivel }: { nivel: VincereNivel }) {

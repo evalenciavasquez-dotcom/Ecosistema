@@ -20,17 +20,17 @@ import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
 const VEREDICTO_COLOR: Record<VincereVeredictoColab, string> = {
-  perseguir: "#5cc98e",
-  explorar: "#2dd4bf",
-  esperar: "#e0a83a",
-  descartar: "#e0483a",
+  perseguir: "var(--vin-ok)",
+  explorar: "var(--vin-accent)",
+  esperar: "var(--vin-warn)",
+  descartar: "var(--vin-risk)",
 };
 
 const ESTADO_COLOR: Record<VincereCandidatoEstado, string> = {
-  propuesto: "#a39c92",
-  conversando: "#2dd4bf",
-  cerrado: "#5cc98e",
-  descartado: "#e0483a",
+  propuesto: "var(--vin-faint)",
+  conversando: "var(--vin-accent)",
+  cerrado: "var(--vin-ok)",
+  descartado: "var(--vin-risk)",
 };
 
 const TIPOS: VincereCandidatoTipo[] = ["artista", "productor", "compositor"];
@@ -84,7 +84,7 @@ export default function ARSection({ proyecto }: { proyecto: VincereProyecto }) {
           style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.3)" }}
         >
           <p className="vin-t-base leading-relaxed">
-            <span style={{ color: "#e0a83a" }}>Sin marca declarada.</span> Este motor juzga sobre todo contra el
+            <span style={{ color: "var(--vin-warn)" }}>Sin marca declarada.</span> Este motor juzga sobre todo contra el
             antipatrón — lo que el artista dijo que <em>no</em> es. Sin eso, un nombre grande que rompa la identidad no
             se puede señalar con solidez. Declárala en <strong>Marca</strong> primero.
           </p>
@@ -198,7 +198,7 @@ function FormularioCandidato({
                 style={{
                   color: f.tipo === t ? "var(--vin-text)" : "var(--vin-dim)",
                   borderColor: f.tipo === t ? "var(--vin-accent)" : "var(--vin-border)",
-                  background: f.tipo === t ? "rgba(224,72,58,0.12)" : "transparent",
+                  background: f.tipo === t ? "var(--vin-accent-soft)" : "transparent",
                 }}
               >
                 {VINCERE_CANDIDATO_TIPO_LABEL[t]}
@@ -326,10 +326,10 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
       {diag.primeroPerseguir && (
         <div
           className="rounded-xl p-5"
-          style={{ background: "rgba(92,201,142,0.07)", border: "1px solid rgba(92,201,142,0.28)" }}
+          style={{ background: "var(--vin-ok-wash)", border: "1px solid var(--vin-ok-line)" }}
         >
           <PanelLabel>
-            <span style={{ color: "#5cc98e" }}>A quién ir primero</span>
+            <span style={{ color: "var(--vin-ok)" }}>A quién ir primero</span>
           </PanelLabel>
           <p className="vin-t-base leading-relaxed">{diag.primeroPerseguir}</p>
         </div>
@@ -382,7 +382,7 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
       {diag.senalesDeAlerta.length > 0 && (
         <div
           className="rounded-xl p-5"
-          style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
+          style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
         >
           <PanelLabel>
             <span style={{ color: "var(--vin-accent)" }}>Señales de alerta</span>
@@ -430,7 +430,7 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
@@ -453,7 +453,7 @@ function Celda({ label, texto, destacado = false }: { label: string; texto: stri
       className="rounded-xl p-3"
       style={
         destacado
-          ? { background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.22)" }
+          ? { background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }
           : { background: "var(--vin-surface)" }
       }
     >

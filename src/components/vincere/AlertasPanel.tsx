@@ -10,9 +10,9 @@ import { useVincereStore } from "@/lib/vincere/store";
 import EvidenceTag from "./EvidenceTag";
 
 const SEVERIDAD_COLOR: Record<VincereAlertaSeveridad, string> = {
-  critica: "#e0483a",
-  atencion: "#e0a83a",
-  oportunidad: "#5cc98e",
+  critica: "var(--vin-risk)",
+  atencion: "var(--vin-warn)",
+  oportunidad: "var(--vin-ok)",
 };
 
 // Orden de atención: lo que amenaza primero, la oportunidad al final.

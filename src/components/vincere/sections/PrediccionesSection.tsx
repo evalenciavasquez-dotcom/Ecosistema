@@ -114,7 +114,7 @@ export default function PrediccionesSection({ proyecto }: { proyecto: VincerePro
 }
 
 function Marcador({ m }: { m: ReturnType<typeof calcularMarcador> }) {
-  const color = m.pctAcierto == null ? "var(--vin-muted)" : m.pctAcierto >= 60 ? "#5cc98e" : m.pctAcierto >= 40 ? "#e0a83a" : "#e0483a";
+  const color = m.pctAcierto == null ? "var(--vin-muted)" : m.pctAcierto >= 60 ? "var(--vin-ok)" : m.pctAcierto >= 40 ? "var(--vin-warn)" : "var(--vin-risk)";
 
   return (
     <div className="space-y-4">
@@ -279,7 +279,7 @@ function Fila({
   return (
     <div
       className="vin-card border-l-2 p-4"
-      style={{ borderLeftColor: vencida ? "#e0a83a" : color }}
+      style={{ borderLeftColor: vencida ? "var(--vin-warn)" : color }}
     >
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <p className="min-w-0 flex-1 vin-t-base leading-relaxed">{p.afirmacion}</p>
@@ -310,7 +310,7 @@ function Fila({
 
       <div className="vin-faint flex flex-wrap gap-3 vin-t-xs tabular-nums">
         {p.motor && <span>{VINCERE_SECCION_LABEL[p.motor as VincereSeccion]}</span>}
-        <span style={vencida ? { color: "#e0a83a" } : undefined}>
+        <span style={vencida ? { color: "var(--vin-warn)" } : undefined}>
           {p.estado === "abierta" ? (vencida ? `venció el ${p.venceEn}` : `vence el ${p.venceEn}`) : `plazo ${p.venceEn}`}
         </span>
         {p.verificadoEn && <span>verificada el {p.verificadoEn}</span>}
@@ -461,7 +461,7 @@ function Formulario({
                 style={{
                   color: f.nivelAlEmitir === n ? "var(--vin-text)" : "var(--vin-dim)",
                   borderColor: f.nivelAlEmitir === n ? "var(--vin-accent)" : "var(--vin-border)",
-                  background: f.nivelAlEmitir === n ? "rgba(224,72,58,0.12)" : "transparent",
+                  background: f.nivelAlEmitir === n ? "var(--vin-accent-soft)" : "transparent",
                 }}
               >
                 {n}

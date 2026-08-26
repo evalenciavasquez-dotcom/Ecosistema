@@ -165,8 +165,8 @@ export default function AIInsights({ title, insights, onGenerate, emptyHint, pro
           style={{
             maxWidth: "70ch",
             color: "var(--vin-warn)",
-            background: "rgba(229,169,60,0.09)",
-            border: "1px solid rgba(229,169,60,0.24)",
+            background: "var(--vin-warn-wash)",
+            border: "1px solid var(--vin-warn-line)",
           }}
         >
           <p className="vin-t-sm leading-relaxed">

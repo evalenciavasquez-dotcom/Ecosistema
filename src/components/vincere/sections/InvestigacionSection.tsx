@@ -109,9 +109,9 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
                 onClick={() => setTipo(t)}
                 className="rounded-xl px-3 py-1.5 vin-t-sm transition-colors"
                 style={{
-                  background: tipo === t ? "rgba(224,72,58,0.14)" : "transparent",
+                  background: tipo === t ? "var(--vin-accent-soft)" : "transparent",
                   color: tipo === t ? "var(--vin-text)" : "var(--vin-muted)",
-                  border: `1px solid ${tipo === t ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
+                  border: `1px solid ${tipo === t ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
                 }}
               >
                 {VINCERE_INVESTIGACION_LABEL[t]}
@@ -177,9 +177,9 @@ export default function InvestigacionSection({ proyecto }: { proyecto: VincerePr
                 onClick={() => setAbierta(i.id)}
                 className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
                 style={{
-                  background: activa?.id === i.id ? "rgba(224,72,58,0.14)" : "transparent",
+                  background: activa?.id === i.id ? "var(--vin-accent-soft)" : "transparent",
                   color: activa?.id === i.id ? "var(--vin-text)" : "var(--vin-muted)",
-                  border: `1px solid ${activa?.id === i.id ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
+                  border: `1px solid ${activa?.id === i.id ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
                 }}
               >
                 {i.titulo}

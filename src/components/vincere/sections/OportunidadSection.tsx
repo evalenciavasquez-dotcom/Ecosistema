@@ -147,15 +147,15 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
         {op.loQueLoSube.length > 0 && (
           <div
             className="rounded-xl p-5"
-            style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.25)" }}
+            style={{ background: "var(--vin-ok-wash)", border: "1px solid var(--vin-ok-line)" }}
           >
             <PanelLabel>
-              <span style={{ color: "#5cc98e" }}>Lo que lo sube</span>
+              <span style={{ color: "var(--vin-ok)" }}>Lo que lo sube</span>
             </PanelLabel>
             <ul className="space-y-2">
               {op.loQueLoSube.map((s, i) => (
                 <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
-                  <span style={{ color: "#5cc98e" }}>↑</span>
+                  <span style={{ color: "var(--vin-ok)" }}>↑</span>
                   <span>{s}</span>
                 </li>
               ))}
@@ -165,7 +165,7 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
         {op.loQueLoBaja.length > 0 && (
           <div
             className="rounded-xl p-5"
-            style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
+            style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
           >
             <PanelLabel>
               <span style={{ color: "var(--vin-accent)" }}>Lo que lo baja</span>
@@ -185,7 +185,7 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
       {op.viaRecomendada && (
         <div
           className="rounded-xl p-5"
-          style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+          style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
         >
           <PanelLabel>
             <span style={{ color: "var(--vin-accent)" }}>Cómo entrar</span>
@@ -277,7 +277,7 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
         {op.senalesDeAlerta.length > 0 && (
           <div
             className="rounded-xl p-5"
-            style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
+            style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
           >
             <PanelLabel>
               <span style={{ color: "var(--vin-accent)" }}>Señales de alerta</span>
@@ -329,9 +329,9 @@ function EscalaPuntaje({ puntaje }: { puntaje: number }) {
   return (
     <div className="w-full max-w-[280px]">
       <div className="relative h-1.5 overflow-hidden rounded-full" style={{ background: "var(--vin-surface-2)" }}>
-        <div className="absolute inset-y-0 left-0 w-[40%]" style={{ background: "rgba(224,72,58,0.45)" }} />
+        <div className="absolute inset-y-0 left-0 w-[40%]" style={{ background: "var(--vin-accent-glow)" }} />
         <div className="absolute inset-y-0 left-[40%] w-[30%]" style={{ background: "rgba(224,168,58,0.45)" }} />
-        <div className="absolute inset-y-0 left-[70%] right-0" style={{ background: "rgba(92,201,142,0.45)" }} />
+        <div className="absolute inset-y-0 left-[70%] right-0" style={{ background: "var(--vin-ok-line)" }} />
         <div
           className="absolute top-1/2 h-3 w-0.5 -translate-y-1/2"
           style={{ left: `${puntaje}%`, background: "var(--vin-text)" }}
@@ -357,7 +357,7 @@ function Via({ via }: { via: VincereViaDeEntrada }) {
         </div>
         <span
           className="rounded-xl px-2.5 py-1 vin-t-sm font-medium tabular-nums"
-          style={{ color: "var(--vin-accent)", border: "1px solid rgba(224,72,58,0.35)" }}
+          style={{ color: "var(--vin-accent)", border: "1px solid var(--vin-accent-glow)" }}
         >
           {via.participacion}
         </span>
@@ -386,14 +386,14 @@ function Via({ via }: { via: VincereViaDeEntrada }) {
           className="rounded-xl p-3"
           style={{ background: "rgba(45,212,191,0.06)", border: "1px solid rgba(45,212,191,0.25)" }}
         >
-          <div className="mb-1 vin-t-xs uppercase tracking-[0.08em]" style={{ color: "#2dd4bf" }}>
+          <div className="mb-1 vin-t-xs uppercase tracking-[0.08em]" style={{ color: "var(--vin-accent)" }}>
             Cómo se revisa o se sale
           </div>
           <p className="vin-t-sm leading-relaxed">{via.clausulaDeRevision}</p>
         </div>
         <div
           className="rounded-xl p-3"
-          style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.22)" }}
+          style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
         >
           <div className="mb-1 vin-t-xs uppercase tracking-[0.08em]" style={{ color: "var(--vin-accent)" }}>
             Riesgo de esta vía

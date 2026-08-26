@@ -12,6 +12,11 @@ export const VINCERE_NIVEL_LABEL: Record<VincereNivel, string> = {
   4: "Alta evidencia",
 };
 
+// Las dos superficies del mismo sistema visual. «Papel» es claro y es el
+// predeterminado: casi todo el trabajo acá es leer prosa analítica y comparar
+// columnas de cifras. «Consola» es el oscuro, para trabajar de noche.
+export type VincereTema = "papel" | "consola";
+
 export type VincereSeccion =
   | "global"
   | "resumen"

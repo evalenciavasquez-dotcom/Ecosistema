@@ -156,7 +156,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                     className="rounded-full border px-2 py-0.5 vin-t-xs"
                     style={{
                       color: p.tipo === "propio" ? "var(--vin-accent)" : "var(--vin-muted)",
-                      borderColor: p.tipo === "propio" ? "rgba(224,72,58,0.4)" : "var(--vin-border-strong)",
+                      borderColor: p.tipo === "propio" ? "var(--vin-accent-glow)" : "var(--vin-border-strong)",
                     }}
                   >
                     {p.tipo === "propio" ? "Propio" : "Referencia"}
@@ -219,7 +219,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
                 {confirmarVaciado === p.id && (
-                  <p className="mt-2 vin-t-xs leading-relaxed" style={{ color: "#e0a83a" }}>
+                  <p className="mt-2 vin-t-xs leading-relaxed" style={{ color: "var(--vin-warn)" }}>
                     Se borra la data de {p.nombre} —cifras, canciones, shows, lecturas, informes e histórico— pero el
                     proyecto se conserva con su nombre, género y fase. No se puede deshacer.
                   </p>
@@ -254,7 +254,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
             {confirmarTodo ? (
               <div
                 className="rounded-xl p-4"
-                style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.3)" }}
+                style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
               >
                 <p className="mb-3 vin-t-sm leading-relaxed">
                   Se borran los {proyectos.length} proyectos con toda su data, los casos de triage y las

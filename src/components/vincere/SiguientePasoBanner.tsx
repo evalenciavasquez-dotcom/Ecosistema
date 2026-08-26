@@ -22,10 +22,10 @@ export default function SiguientePasoBanner({ proyecto }: { proyecto: VincerePro
 
   const color = paso.urgente ? "var(--vin-risk)" : paso.alDia ? "var(--vin-ok)" : "var(--vin-accent)";
   const fondo = paso.urgente
-    ? "rgba(240,90,72,0.09)"
+    ? "var(--vin-risk-wash)"
     : paso.alDia
       ? "rgba(78,201,138,0.07)"
-      : "rgba(224,72,58,0.07)";
+      : "var(--vin-accent-soft)";
 
   return (
     <div

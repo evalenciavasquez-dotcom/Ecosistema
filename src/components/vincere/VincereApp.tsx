@@ -37,12 +37,19 @@ export default function VincereApp() {
   const compareOn = useVincereStore((s) => s.compareOn);
   const seccion = useVincereStore((s) => s.seccion);
   const toast = useVincereStore((s) => s.toast);
+  const tema = useVincereStore((s) => s.tema);
 
   const proyecto = proyectos.find((p) => p.id === selectedId) ?? proyectos.find((p) => p.tipo === "propio");
   const compareTarget = proyectos.find((p) => p.id === compareId);
 
   return (
-    <div className="vincere-scope flex min-h-screen flex-col">
+    // El tema es un atributo del contenedor, no una clase: toda la paleta se
+    // redefine en un solo selector y ningún componente tiene que saber en qué
+    // superficie está dibujando.
+    <div
+      className="vincere-scope flex min-h-screen flex-col"
+      data-tema={tema === "consola" ? "oscuro" : undefined}
+    >
       <VincereHeader />
 
       <div className="flex flex-1 flex-col md:flex-row" style={{ minHeight: 0 }}>
@@ -82,7 +89,7 @@ export default function VincereApp() {
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-50 rounded-xl px-4 py-3 vin-t-sm"
-          style={{ background: "var(--vin-surface-2)", border: "1px solid rgba(224,72,58,0.4)", color: "var(--vin-text)" }}
+          style={{ background: "var(--vin-surface-2)", border: "1px solid var(--vin-accent-glow)", color: "var(--vin-text)" }}
         >
           {toast}
         </div>

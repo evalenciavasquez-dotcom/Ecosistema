@@ -16,9 +16,9 @@ import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
 const COHERENCIA_COLOR: Record<VincereCoherencia, string> = {
-  alineado: "#5cc98e",
-  tibio: "#e0a83a",
-  desalineado: "#e0483a",
+  alineado: "var(--vin-ok)",
+  tibio: "var(--vin-warn)",
+  desalineado: "var(--vin-risk)",
 };
 
 const COHERENCIAS: VincereCoherencia[] = ["alineado", "tibio", "desalineado"];
@@ -45,9 +45,9 @@ const CAMPOS: { key: keyof Pick<VincereMarca, "posicionamiento" | "promesa" | "t
 ];
 
 function puntuacionColor(n: number): string {
-  if (n >= 70) return "#5cc98e";
-  if (n >= 40) return "#e0a83a";
-  return "#e0483a";
+  if (n >= 70) return "var(--vin-ok)";
+  if (n >= 40) return "var(--vin-warn)";
+  return "var(--vin-risk)";
 }
 
 export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }) {
@@ -335,7 +335,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
                   </div>
                   <div
                     className="rounded-xl p-3"
-                    style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.22)" }}
+                    style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
                   >
                     <div className="mb-1 vin-t-xs uppercase tracking-[0.08em]" style={{ color: "var(--vin-accent)" }}>
                       Recibe
@@ -379,7 +379,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
         {diag.riesgos.length > 0 && (
           <div
             className="rounded-xl p-5"
-            style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
+            style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
           >
             <PanelLabel>
               <span style={{ color: "var(--vin-accent)" }}>Riesgos de marca</span>
@@ -412,7 +412,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>

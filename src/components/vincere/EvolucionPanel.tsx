@@ -63,7 +63,7 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
   const ultimo = historial[historial.length - 1];
   const delta = ultimo[metrica] - primero[metrica];
   const deltaPct = primero[metrica] > 0 ? Math.round((delta / primero[metrica]) * 100) : null;
-  const colorDelta = delta > 0 ? "#5cc98e" : delta < 0 ? "#e0483a" : "var(--vin-muted)";
+  const colorDelta = delta > 0 ? "var(--vin-ok)" : delta < 0 ? "var(--vin-risk)" : "var(--vin-muted)";
 
   const puntos = historial.map((h, i) => {
     const x = (i / (historial.length - 1)) * 100;
@@ -84,9 +84,9 @@ export default function EvolucionPanel({ proyecto }: { proyecto: VincereProyecto
               onClick={() => setMetrica(m.key)}
               className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
               style={{
-                background: metrica === m.key ? "rgba(224,72,58,0.14)" : "transparent",
+                background: metrica === m.key ? "var(--vin-accent-soft)" : "transparent",
                 color: metrica === m.key ? "var(--vin-text)" : "var(--vin-muted)",
-                border: `1px solid ${metrica === m.key ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
+                border: `1px solid ${metrica === m.key ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
               }}
             >
               {m.label}

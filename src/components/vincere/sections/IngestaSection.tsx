@@ -210,8 +210,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
             className="rounded-xl px-5 py-4"
             style={{
               color: "var(--vin-warn)",
-              background: "rgba(229,169,60,0.09)",
-              border: "1px solid rgba(229,169,60,0.28)",
+              background: "var(--vin-warn-wash)",
+              border: "1px solid var(--vin-warn-line)",
             }}
           >
             <div className="vin-t-base font-medium">La IA no está configurada en este despliegue</div>
@@ -269,7 +269,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                 className="cursor-pointer rounded-xl p-8 text-center transition-colors"
                 style={{
                   border: `1px dashed ${arrastrando ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
-                  background: arrastrando ? "rgba(224,72,58,0.06)" : "var(--vin-surface-2)",
+                  background: arrastrando ? "var(--vin-accent-soft)" : "var(--vin-surface-2)",
                 }}
               >
                 <input
@@ -420,8 +420,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                     className="mt-4 rounded-xl px-4 py-3.5"
                     style={{
                       color: "var(--vin-risk)",
-                      background: "rgba(240,90,72,0.09)",
-                      border: "1px solid rgba(240,90,72,0.3)",
+                      background: "var(--vin-risk-wash)",
+                      border: "1px solid var(--vin-risk-line)",
                     }}
                   >
                     <div className="vin-t-sm font-medium">No se pudo leer el material</div>
@@ -531,9 +531,9 @@ function DataAplicada({
     <div
       ref={ref}
       className="rounded-xl p-6"
-      style={{ background: "rgba(92,201,142,0.06)", border: "1px solid rgba(92,201,142,0.3)" }}
+      style={{ background: "var(--vin-ok-wash)", border: "1px solid var(--vin-ok-line)" }}
     >
-      <div className="vin-t-lg font-medium" style={{ color: "#5cc98e" }}>
+      <div className="vin-t-lg font-medium" style={{ color: "var(--vin-ok)" }}>
         {bloques > 0
           ? `Data aplicada a ${bloques} ${bloques === 1 ? "motor" : "motores"}${proyecto ? ` de ${proyecto.nombre}` : ""}`
           : "Se guardaron las alertas, sin cambiar ningún motor"}
@@ -723,8 +723,8 @@ function BloquePropuesto({
     <div
       className="rounded-xl p-4"
       style={{
-        border: `1px solid ${aceptado ? "rgba(224,72,58,0.35)" : "var(--vin-border)"}`,
-        background: aceptado ? "rgba(224,72,58,0.05)" : "var(--vin-surface)",
+        border: `1px solid ${aceptado ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
+        background: aceptado ? "var(--vin-accent-soft)" : "var(--vin-surface)",
       }}
     >
       <label className="flex cursor-pointer flex-wrap items-baseline gap-x-2.5 gap-y-1">

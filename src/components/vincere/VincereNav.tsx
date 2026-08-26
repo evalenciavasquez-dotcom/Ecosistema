@@ -71,7 +71,7 @@ function Item({
       className="shrink-0 whitespace-nowrap rounded-r-sm px-3 py-2 text-left vin-t-base transition-colors"
       style={{
         borderLeft: activo ? "2px solid var(--vin-accent)" : "2px solid transparent",
-        background: activo ? "rgba(224,72,58,0.12)" : "transparent",
+        background: activo ? "var(--vin-accent-soft)" : "transparent",
         color: activo ? "var(--vin-text)" : "var(--vin-muted)",
         ...style,
       }}

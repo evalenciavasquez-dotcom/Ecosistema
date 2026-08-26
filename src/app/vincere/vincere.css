@@ -1,52 +1,80 @@
-/* Sistema visual propio de VINCERE — superficie de marca distinta al resto de
-   C.C.O. E.V. La plataforma se compromete con un look editorial oscuro (el
-   "instrumento" del PRD), independiente del tema claro/oscuro global. Se aplica
-   solo dentro de .vincere-scope para no contaminar el resto de la app. */
+/* ═══════════════════════════════════════════════════════════════════════════
+   VINCERE · sistema visual
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Un solo sistema con dos fondos: papel (claro, por defecto) y consola
+   (oscuro). No son dos diseños — es la misma retícula, la misma tipografía y
+   el mismo formato de datos sobre dos superficies.
+
+   Qué cambió respecto a la versión anterior, y por qué:
+
+   1. EL ACENTO YA NO ES ROJO. Antes el rojo de marca (#e0483a) y el de riesgo
+      (#f05a48) eran prácticamente el mismo color, así que un título y una
+      alerta se leían igual y nada urgente parecía urgente. Ahora el acento es
+      tinta índigo en claro y azul acero en oscuro: sirve solo para lo que se
+      puede tocar. Rojo, ámbar y verde quedan libres para significar.
+
+   2. SE ACABARON LAS TARJETAS FLOTANTES. Todo era una caja redondeada sobre
+      casi negro con bordes al 7% de blanco; sin separación real, veinte
+      bloques distintos se leían como una sola masa. Ahora la estructura la
+      hacen los filetes y las columnas, como en un estado financiero: radios
+      de 2-3px, sin sombras, sin resplandores.
+
+   3. LOS DATOS TIENEN COLUMNAS. Nombre a la izquierda, cifra a la derecha en
+      versalita monoespaciada. El ojo puede bajar por una columna de números
+      en vez de leer frase por frase.
+
+   4. TRES TIPOGRAFÍAS CON OFICIO. Archivo para el cromo de la interfaz
+      —rótulos, botones, encabezados de tabla—, Source Serif para la prosa
+      analítica, IBM Plex Mono para toda cifra. Ninguna herramienta de la
+      industria se lee así, y ese era el punto.
+
+   Se aplica solo dentro de .vincere-scope para no contaminar el resto de
+   C.C.O. E.V.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .vincere-scope {
-  /* Superficies con separación real. Antes bg y surface se distinguían por
-     ocho puntos de luminancia y todo se veía plano; el borde tenía que hacer
-     todo el trabajo de separar, y por eso cada dato terminaba encajonado. */
-  --vin-bg: #0a0907;
-  --vin-surface: #16130f;
-  --vin-surface-2: #211d17;
-  --vin-surface-3: #2b2620;
-  --vin-border: rgba(255, 255, 255, 0.07);
-  --vin-border-strong: rgba(255, 255, 255, 0.13);
-  /* Luz desde arriba: el borde superior más claro es lo que da volumen a una
-     tarjeta oscura sin necesidad de sombra. */
-  --vin-edge: rgba(255, 255, 255, 0.06);
+  /* ── PAPEL · el tema por defecto ────────────────────────────────────────
+     Blanco de trabajo sobre un gris frío. El neutro tiene sesgo hacia el
+     índigo del acento: un gris puro se ve sin elegir. */
+  --vin-bg: #eceef1;
+  --vin-surface: #ffffff;
+  --vin-surface-2: #f4f6f8;
+  --vin-surface-3: #e8ebef;
+  --vin-border: #dce0e6;
+  --vin-border-strong: #bfc6ce;
+  --vin-edge: #ffffff;
 
-  /* Los grises subieron un escalón entero.
-     El texto secundario estaba en #a8a196 y el terciario en #7a746a, que sobre
-     este fondo da 4,0:1 — el mínimo justo de la norma, y el mínimo justo es
-     donde se lee "puedo distinguirlo si me esfuerzo", no "lo leo". Como casi
-     todo el contenido real de la app vive en esos dos grises, la impresión de
-     conjunto era la de un texto apagado que da pereza mirar. Ahora el
-     secundario queda en ~8,5:1 y el terciario en ~5,6:1. */
-  --vin-text: #f7f3ec;
-  --vin-muted: #bab3a7;
-  --vin-faint: #928b7f;
-  --vin-dim: #6b655c;
+  --vin-text: #111a24;
+  --vin-muted: #4b5665;
+  --vin-faint: #6d7885;
+  --vin-dim: #929ba7;
 
-  --vin-accent: #e0483a;
-  --vin-accent-soft: rgba(224, 72, 58, 0.13);
-  --vin-accent-glow: rgba(224, 72, 58, 0.28);
+  /* Tinta índigo. Es lo tocable: enlaces, estado activo, botón principal. */
+  --vin-accent: #243b53;
+  --vin-accent-soft: rgba(36, 59, 83, 0.08);
+  --vin-accent-glow: rgba(36, 59, 83, 0.2);
+  --vin-accent-ink: #ffffff;
 
-  /* Semáforo. Vive aparte del acento aunque el rojo se parezca: uno es marca,
-     el otro es estado, y mezclarlos hace que una alerta y un título se lean
-     igual. */
-  --vin-ok: #4ec98a;
-  --vin-warn: #e5a93c;
-  --vin-risk: #f05a48;
+  /* Semáforo apagado a propósito: en un documento serio el rojo se gasta
+     rápido, y si grita en cada pantalla deja de querer decir nada. */
+  --vin-ok: #2f6b4f;
+  --vin-warn: #8a6a1f;
+  --vin-risk: #9c3b2e;
+  /* Tintes sólidos, no alfas.
+     Un ocre oscuro al 10% sobre blanco no da un amarillo pálido: da caqui
+     sucio, porque el alfa arrastra el gris del fondo. Sobre claro el tinte se
+     mezcla a mano y queda limpio. */
+  --vin-ok-wash: #eef5f1;
+  --vin-warn-wash: #fbf6e9;
+  --vin-risk-wash: #fbf1ef;
+  /* El filete del semáforo, para cuando un bloque entero está en un estado. */
+  --vin-ok-line: rgba(47, 107, 79, 0.32);
+  --vin-warn-line: rgba(138, 106, 31, 0.34);
+  --vin-risk-line: rgba(156, 59, 46, 0.32);
 
-  /* Escala tipográfica de seis pasos. Antes había quince tamaños arbitrarios
-     entre 9.5px y 32px, y esa es la razón de que la interfaz se leyera sin
-     jerarquía: con quince pesos visuales, ninguno manda. */
-  /* Los tres pasos de abajo crecieron. 11,5px y 13px son tamaños de pie de
-     página, y acá cargaban párrafos enteros de análisis: la densidad se leía
-     como un volcado de log. Subirlos ~1px no cambia el sistema, cambia si el
-     texto se lee o se saltea. */
+  /* Escala tipográfica de seis pasos. Cualquier tamaño fuera de esta lista
+     es un error de dibujo, no una decisión. */
   --t-xs: 12.5px;
   --t-sm: 14px;
   --t-base: 16px;
@@ -55,91 +83,239 @@
   --t-display: 34px;
   --t-stat: 30px;
 
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 18px;
+  /* Radios casi rectos. El radio grande es lo que hacía que cada bloque se
+     leyera como una tarjeta de app en vez de como una sección de documento. */
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+
+  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-prose: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --font-figure: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   background: var(--vin-bg);
   color: var(--vin-text);
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  /* La prosa manda por defecto: la mayor parte del texto de esta app son
+     lecturas y veredictos, no etiquetas de formulario. El cromo se pasa a
+     Archivo abajo, control por control. */
+  font-family: var(--font-prose);
   font-size: var(--t-base);
 }
 
-/* Los seis pasos, como clases. Cualquier tamaño fuera de esta lista es un
-   error de dibujo, no una decisión.
-   Van con .vincere-scope delante a propósito: así ganan por especificidad a
-   .vin-input y .vin-btn-*, que también fijan tamaño. Sin eso haría falta
-   !important en cada uso, y el modificador ! de Tailwind no aplica a clases
-   que no son suyas. */
-.vincere-scope .vin-t-xs { font-size: var(--t-xs); line-height: 1.45; }
-.vincere-scope .vin-t-sm { font-size: var(--t-sm); line-height: 1.55; }
-.vincere-scope .vin-t-base { font-size: var(--t-base); line-height: 1.6; }
-.vincere-scope .vin-t-lg { font-size: var(--t-lg); line-height: 1.5; }
-.vincere-scope .vin-t-xl { font-size: var(--t-xl); line-height: 1.28; }
-.vincere-scope .vin-t-display {
-  font-size: var(--t-display);
-  line-height: 1.12;
-  letter-spacing: -0.015em;
+/* ── CONSOLA · el tema oscuro ──────────────────────────────────────────────
+   Negro azulado, no marrón. El marrón cálido de antes hacía que superficie y
+   fondo se distinguieran por ocho puntos de luminancia y todo se viera plano. */
+.vincere-scope[data-tema="oscuro"] {
+  --vin-bg: #0c0f14;
+  --vin-surface: #141922;
+  --vin-surface-2: #1b2230;
+  --vin-surface-3: #232b38;
+  --vin-border: #232b38;
+  --vin-border-strong: #354051;
+  --vin-edge: rgba(255, 255, 255, 0.05);
+
+  --vin-text: #dfe5ee;
+  --vin-muted: #a3aec0;
+  --vin-faint: #7d8a9c;
+  --vin-dim: #5c6879;
+
+  --vin-accent: #6f9ad6;
+  --vin-accent-soft: rgba(111, 154, 214, 0.13);
+  --vin-accent-glow: rgba(111, 154, 214, 0.3);
+  --vin-accent-ink: #0c0f14;
+
+  --vin-ok: #7bd88f;
+  --vin-warn: #e8b04b;
+  --vin-risk: #ff6b5b;
+  --vin-ok-wash: rgba(123, 216, 143, 0.1);
+  --vin-warn-wash: rgba(232, 176, 75, 0.1);
+  --vin-risk-wash: rgba(255, 107, 91, 0.1);
+  --vin-ok-line: rgba(123, 216, 143, 0.34);
+  --vin-warn-line: rgba(232, 176, 75, 0.34);
+  --vin-risk-line: rgba(255, 107, 91, 0.34);
 }
 
-/* Cifra grande. Tabular para que las columnas de números no bailen. */
+/* ── Los seis pasos, como clases ───────────────────────────────────────────
+   Van con .vincere-scope delante a propósito: así ganan por especificidad a
+   .vin-input y .vin-btn-*, que también fijan tamaño. */
+.vincere-scope .vin-t-xs { font-size: var(--t-xs); line-height: 1.45; }
+.vincere-scope .vin-t-sm { font-size: var(--t-sm); line-height: 1.55; }
+.vincere-scope .vin-t-base { font-size: var(--t-base); line-height: 1.62; }
+.vincere-scope .vin-t-lg { font-size: var(--t-lg); line-height: 1.5; }
+.vincere-scope .vin-t-xl { font-size: var(--t-xl); line-height: 1.2; }
+.vincere-scope .vin-t-display {
+  font-size: var(--t-display);
+  line-height: 1.08;
+  letter-spacing: -.022em;
+}
+
+/* ── Tipografía por oficio ─────────────────────────────────────────────────
+   .vin-display es el nombre nuevo. .vin-serif es el viejo y sigue vivo por
+   los 49 sitios que ya lo usan: hoy los dos apuntan a Archivo, porque los
+   títulos de esta app pasaron de serif a grotesca. */
+.vin-display,
+.vin-serif {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -.018em;
+}
+
+.vin-prose { font-family: var(--font-prose); }
+
+/* Toda cifra, en monoespaciada.
+   El código ya marcaba con .tabular-nums dónde hay números que se alinean;
+   esto le da a esa marca la forma que le corresponde, en los 86 sitios donde
+   ya estaba puesta, sin tocar un solo componente. */
+.vincere-scope .tabular-nums {
+  font-family: var(--font-figure);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -.01em;
+}
+
+/* Cifra grande. */
 .vin-stat {
+  font-family: var(--font-figure);
   font-size: var(--t-stat);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -.03em;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
 
-.vincere-scope ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* El radio de app, desactivado en bloque.
+   Hay 75 `rounded-xl` repartidos por las pantallas. Reasignarlos uno a uno
+   sería churn sin criterio; lo que cambió es qué significa "esquina" en este
+   sistema, y eso se declara una vez. Las píldoras de estado (rounded-full) se
+   quedan redondas: ahí la forma sí dice algo. */
+.vincere-scope .rounded-xl { border-radius: var(--r-md); }
+
+.vincere-scope ::-webkit-scrollbar { width: 9px; height: 9px; }
 .vincere-scope ::-webkit-scrollbar-thumb {
   background: var(--vin-border-strong);
-  border-radius: 8px;
+  border-radius: 9px;
 }
 
-.vin-serif {
-  font-family: var(--font-newsreader), Georgia, "Times New Roman", serif;
-}
-
+/* ── Superficies ───────────────────────────────────────────────────────────
+   Plana, con filete. Sin sombra y sin borde superior iluminado: el volumen
+   falso era parte de lo que hacía que todo pareciera una tarjeta. */
 .vin-card {
   border: 1px solid var(--vin-border);
-  border-top-color: var(--vin-edge);
   background: var(--vin-surface);
   border-radius: var(--r-md);
 }
 
-/* Tarjeta destacada: el acento entra como resplandor de borde, no como marco
-   grueso. Un borde de color saturado alrededor de todo compite con el
-   contenido; un halo lo sostiene. */
+/* Lo destacado se marca con un riel a la izquierda, no con un marco de color.
+   Un borde saturado alrededor de todo compite con el contenido; un riel lo
+   señala y se calla. */
 .vin-accent-card {
-  border: 1px solid var(--vin-accent-glow);
+  border: 1px solid var(--vin-border);
+  border-left: 3px solid var(--vin-accent);
   background: var(--vin-surface);
   border-radius: var(--r-md);
-  box-shadow: 0 0 0 1px rgba(224, 72, 58, 0.06), 0 8px 28px -18px var(--vin-accent-glow);
 }
 
+/* ── Rótulos ───────────────────────────────────────────────────────────────
+   El eyebrow pasa a monoespaciada: es una referencia técnica —de dónde sale
+   este bloque—, no un titular pequeño. */
 .vin-eyebrow {
+  font-family: var(--font-figure);
   font-size: var(--t-xs);
-  letter-spacing: 0.13em;
+  font-weight: 500;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--vin-accent);
 }
 
 .vin-label {
+  font-family: var(--font-display);
   font-size: var(--t-xs);
-  letter-spacing: 0.09em;
+  font-weight: 600;
+  letter-spacing: .11em;
   text-transform: uppercase;
   color: var(--vin-faint);
 }
 
-.vin-muted {
+.vin-muted { color: var(--vin-muted); }
+.vin-faint { color: var(--vin-faint); }
+
+/* Título de bloque con filete doble debajo. Es el gesto que convierte una
+   caja en una sección de documento. */
+.vin-block-title {
+  font-family: var(--font-display);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
   color: var(--vin-muted);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--vin-text);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
 }
-.vin-faint {
+
+/* ── Tabla de datos ───────────────────────────────────────────────────────
+   Nombre a la izquierda, cifra a la derecha. Filete simple entre filas,
+   encabezado de columna en versalita. Es todo el formato que hacía falta. */
+.vin-tabla { width: 100%; border-collapse: collapse; color: inherit; }
+.vin-tabla th {
+  font-family: var(--font-display);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
   color: var(--vin-faint);
+  text-align: left;
+  padding: 9px 0 7px;
+  border-bottom: 1px solid var(--vin-border);
+  white-space: nowrap;
+}
+.vin-tabla th.num,
+.vin-tabla td.num { text-align: right; }
+.vin-tabla td {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--vin-border);
+  vertical-align: baseline;
+  font-size: var(--t-sm);
+}
+.vin-tabla tr:last-child td { border-bottom: none; }
+.vin-tabla td.num {
+  font-family: var(--font-figure);
+  font-variant-numeric: tabular-nums;
+  padding-left: 20px;
+  white-space: nowrap;
+}
+.vin-tabla td.meta {
+  font-family: var(--font-figure);
+  font-size: var(--t-xs);
+  color: var(--vin-faint);
+  text-align: right;
+  padding-left: 18px;
+  white-space: nowrap;
+}
+/* Riel de severidad: el estado se lee en el borde antes que en el texto. */
+.vin-tabla td.riel { padding: 0; width: 3px; }
+.vin-tabla td.riel i {
+  display: block;
+  width: 3px;
+  min-height: 34px;
+  height: 100%;
+  background: transparent;
+}
+.vin-tabla td.riel i.ok { background: var(--vin-ok); }
+.vin-tabla td.riel i.warn { background: var(--vin-warn); }
+.vin-tabla td.riel i.risk { background: var(--vin-risk); }
+
+/* ── Controles ────────────────────────────────────────────────────────────
+   Todo el cromo va en Archivo: en un formulario la grotesca se lee de un
+   vistazo, que es justo lo contrario de lo que se le pide a la prosa. */
+.vin-input,
+.vin-select,
+.vin-btn-primary,
+.vin-btn-ghost {
+  font-family: var(--font-display);
 }
 
 .vin-input {
@@ -148,75 +324,65 @@
   border-radius: var(--r-sm);
   color: var(--vin-text);
   font-size: var(--t-base);
-  padding: 11px 13px;
+  padding: 10px 12px;
   outline: none;
   width: 100%;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+  transition: border-color .14s ease, box-shadow .14s ease;
 }
-.vin-input::placeholder {
-  color: var(--vin-faint);
-}
+.vin-input::placeholder { color: var(--vin-faint); }
 .vin-input:focus {
-  border-color: rgba(224, 72, 58, 0.6);
+  border-color: var(--vin-accent);
   box-shadow: 0 0 0 3px var(--vin-accent-soft);
 }
 
 .vin-btn-primary {
   background: var(--vin-accent);
-  color: #fff;
-  border: none;
+  color: var(--vin-accent-ink);
+  border: 1px solid var(--vin-accent);
   border-radius: var(--r-sm);
-  padding: 11px 20px;
+  padding: 10px 18px;
   font-size: var(--t-sm);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: .01em;
   cursor: pointer;
-  transition: filter 0.14s ease, box-shadow 0.14s ease;
-  box-shadow: 0 6px 20px -12px var(--vin-accent-glow);
+  transition: filter .14s ease, opacity .14s ease;
 }
-.vin-btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-.vin-btn-primary:disabled {
-  opacity: 0.45;
-  cursor: default;
-  box-shadow: none;
-}
+.vin-btn-primary:hover:not(:disabled) { filter: brightness(1.14); }
+.vin-btn-primary:disabled { opacity: .4; cursor: default; }
 
 .vin-btn-ghost {
   background: transparent;
   color: var(--vin-muted);
   border: 1px solid var(--vin-border-strong);
   border-radius: var(--r-sm);
-  padding: 10px 17px;
+  padding: 10px 16px;
   font-size: var(--t-sm);
+  font-weight: 500;
   cursor: pointer;
-  transition: color 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
 }
 .vin-btn-ghost:hover:not(:disabled) {
   color: var(--vin-text);
-  border-color: var(--vin-border-strong);
-  background: var(--vin-surface-2);
+  border-color: var(--vin-accent);
+  background: var(--vin-accent-soft);
 }
-.vin-btn-ghost:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
+.vin-btn-ghost:disabled { opacity: .4; cursor: default; }
 
 .vincere-scope :focus-visible {
   outline: 2px solid var(--vin-accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .vin-bar-track {
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 99px;
+  background: var(--vin-surface-3);
+  border-radius: 2px;
   overflow: hidden;
 }
 .vin-bar-fill {
   background: var(--vin-accent);
   height: 100%;
-  border-radius: 99px;
+  border-radius: 2px;
 }
 
 .vin-select {
@@ -225,40 +391,35 @@
   border-radius: var(--r-sm);
   color: var(--vin-text);
   font-size: var(--t-sm);
-  padding: 10px 13px;
+  padding: 9px 12px;
   outline: none;
 }
 .vin-select option {
-  background: var(--vin-surface-2);
+  background: var(--vin-surface);
   color: var(--vin-text);
 }
 
-.vin-range {
-  width: 100%;
-  accent-color: var(--vin-accent);
-}
+.vin-range { width: 100%; accent-color: var(--vin-accent); }
 
-/* Impresión del Informe Final: solo el documento, en claro y sin cromo de la
-   interfaz — "Imprimir / PDF" en el navegador produce un entregable presentable. */
+/* ── Impresión ────────────────────────────────────────────────────────────
+   Con papel como tema por defecto, imprimir dejó de necesitar una traducción
+   entera de la paleta: lo único que sobra es el cromo de la interfaz. */
 @media print {
-  body * {
-    visibility: hidden;
-  }
+  body * { visibility: hidden; }
   .vin-print-area,
-  .vin-print-area * {
-    visibility: visible;
-  }
+  .vin-print-area * { visibility: visible; }
   .vin-print-area {
-    /* Redefinir las variables cubre también los estilos en línea que usan
-       var(--vin-*) — de lo contrario el texto claro del tema oscuro sale
-       invisible sobre papel blanco. */
-    --vin-text: #14161a;
-    --vin-muted: #55606b;
-    --vin-faint: #6b7480;
-    --vin-dim: #8a929b;
-    --vin-border: #d8dde3;
+    /* Se fuerza el tema claro aunque la pantalla esté en consola: el papel
+       no tiene modo oscuro. */
+    --vin-bg: #ffffff;
     --vin-surface: #ffffff;
-    --vin-accent: #b23a2f;
+    --vin-surface-2: #f4f6f8;
+    --vin-text: #111a24;
+    --vin-muted: #4b5665;
+    --vin-faint: #6d7885;
+    --vin-dim: #929ba7;
+    --vin-border: #d3d8de;
+    --vin-accent: #243b53;
 
     position: absolute;
     inset: 0 auto auto 0;
@@ -266,21 +427,10 @@
     border: none !important;
     padding: 0 !important;
     background: #ffffff !important;
-    color: #14161a !important;
+    color: #111a24 !important;
   }
-  .vin-no-print {
-    display: none !important;
-  }
-  /* La caja del veredicto lleva su fondo de acento en línea: se aclara para papel. */
-  .vin-print-area [style*="rgba(224,72,58,0.08)"] {
-    background: #fbf1f0 !important;
-    border-color: #e8c9c5 !important;
-  }
+  .vin-no-print { display: none !important; }
   .vin-print-area section,
-  .vin-print-area li {
-    break-inside: avoid;
-  }
-  @page {
-    margin: 18mm 16mm;
-  }
+  .vin-print-area li { break-inside: avoid; }
+  @page { margin: 18mm 16mm; }
 }

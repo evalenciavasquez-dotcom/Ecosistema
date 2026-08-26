@@ -67,8 +67,8 @@ export default function CuelloPanel({ proyecto }: { proyecto: VincereProyecto })
           style={{
             maxWidth: "70ch",
             color: "var(--vin-warn)",
-            background: "rgba(229,169,60,0.09)",
-            border: "1px solid rgba(229,169,60,0.22)",
+            background: "var(--vin-warn-wash)",
+            border: "1px solid var(--vin-warn-line)",
           }}
         >
           {c.advertencia}
@@ -97,8 +97,8 @@ function Eslabon({
     <div
       className="rounded-xl p-3.5"
       style={{
-        background: esCuello ? "rgba(240,90,72,0.09)" : "var(--vin-surface-2)",
-        border: `1px solid ${esCuello ? "rgba(240,90,72,0.35)" : "var(--vin-border)"}`,
+        background: esCuello ? "var(--vin-risk-wash)" : "var(--vin-surface-2)",
+        border: `1px solid ${esCuello ? "var(--vin-risk-line)" : "var(--vin-border)"}`,
         // Lo que va después del cuello no se atiende todavía. Apagarlo es la
         // manera de decirlo sin un párrafo.
         opacity: despuesDelCuello ? 0.45 : 1,

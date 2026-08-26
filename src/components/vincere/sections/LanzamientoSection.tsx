@@ -102,7 +102,7 @@ function TarjetaRuta({
       className="rounded-[--r-md] p-5"
       style={{
         border: elegida ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
-        background: elegida ? "rgba(224,72,58,0.06)" : "var(--vin-surface-2)",
+        background: elegida ? "var(--vin-accent-soft)" : "var(--vin-surface-2)",
         opacity: r.noEjecutable ? 0.55 : 1,
       }}
     >
@@ -269,7 +269,7 @@ function PanelReparto({
       className="rounded-[--r-lg] p-6"
       style={{
         border: elegido ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
-        background: elegido ? "rgba(224,72,58,0.06)" : "var(--vin-surface-2)",
+        background: elegido ? "var(--vin-accent-soft)" : "var(--vin-surface-2)",
       }}
     >
       <div className="vin-eyebrow mb-2">Cómo repartirlo</div>
@@ -773,7 +773,7 @@ export default function LanzamientoSection({ proyecto }: { proyecto: VincereProy
                     style={{
                       border: objetivo === o ? "1px solid var(--vin-accent)" : "1px solid var(--vin-border)",
                       color: objetivo === o ? "var(--vin-text)" : "var(--vin-muted)",
-                      background: objetivo === o ? "rgba(224,72,58,0.12)" : "transparent",
+                      background: objetivo === o ? "var(--vin-accent-soft)" : "transparent",
                     }}
                   >
                     {OBJETIVO_LABEL[o]}

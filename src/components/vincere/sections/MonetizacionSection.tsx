@@ -19,7 +19,7 @@ import EvidenceTag from "../EvidenceTag";
 
 const FUENTES: VincereFuenteTipo[] = ["streaming", "shows", "merch", "sync", "publishing", "marca", "otro"];
 
-const ESFUERZO_COLOR: Record<string, string> = { bajo: "#5cc98e", medio: "#e0a83a", alto: "#e0483a" };
+const ESFUERZO_COLOR: Record<string, string> = { bajo: "var(--vin-ok)", medio: "var(--vin-warn)", alto: "var(--vin-risk)" };
 
 function money(n: number, moneda: string): string {
   return `${n.toLocaleString("es")} ${moneda}`;
@@ -84,7 +84,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
         <section>
           <PanelLabel>De dónde viene el dinero</PanelLabel>
           {resumen.variasMonedas && (
-            <p className="mb-3 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
+            <p className="mb-3 vin-t-sm leading-relaxed" style={{ color: "var(--vin-warn)" }}>
               Hay ingresos en {resumen.monedas.map((m) => m.moneda).join(", ")} y no se convierten entre sí — sumar
               monedas con un tipo de cambio inventado daría un número falso. Todo lo de abajo es solo sobre {moneda}.
             </p>
@@ -135,7 +135,7 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
           </div>
 
           {resumen.concentracionPct >= 70 && resumen.fuenteDominante && (
-            <p className="mb-3 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
+            <p className="mb-3 vin-t-sm leading-relaxed" style={{ color: "var(--vin-warn)" }}>
               El {resumen.concentracionPct}% entra por {VINCERE_FUENTE_LABEL[resumen.fuenteDominante].toLowerCase()}.
               El negocio depende de una sola pata.
             </p>
@@ -148,24 +148,24 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
         <div
           className="rounded-xl p-5"
           style={{
-            background: loMio.hipotetico ? "rgba(224,168,58,0.07)" : "rgba(92,201,142,0.07)",
-            border: `1px solid ${loMio.hipotetico ? "rgba(224,168,58,0.3)" : "rgba(92,201,142,0.3)"}`,
+            background: loMio.hipotetico ? "rgba(224,168,58,0.07)" : "var(--vin-ok-wash)",
+            border: `1px solid ${loMio.hipotetico ? "rgba(224,168,58,0.3)" : "var(--vin-ok-line)"}`,
           }}
         >
           <PanelLabel>
-            <span style={{ color: loMio.hipotetico ? "#e0a83a" : "#5cc98e" }}>
+            <span style={{ color: loMio.hipotetico ? "var(--vin-warn)" : "var(--vin-ok)" }}>
               {loMio.hipotetico ? "Lo tuyo — si se acuerda" : "Lo tuyo"}
             </span>
           </PanelLabel>
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="vin-serif vin-t-display tabular-nums" style={{ color: loMio.hipotetico ? "#e0a83a" : "#5cc98e" }}>
+            <span className="vin-serif vin-t-display tabular-nums" style={{ color: loMio.hipotetico ? "var(--vin-warn)" : "var(--vin-ok)" }}>
               {money(loMio.mensual, loMio.moneda ?? moneda)}
             </span>
             <span className="vin-faint vin-t-xs">al mes</span>
           </div>
           <p className="vin-muted mt-2 vin-t-sm leading-relaxed">{loMio.explicacion}</p>
           {loMio.hipotetico && (
-            <p className="mt-2 vin-t-sm leading-relaxed" style={{ color: "#e0a83a" }}>
+            <p className="mt-2 vin-t-sm leading-relaxed" style={{ color: "var(--vin-warn)" }}>
               El vínculo está sin confirmar, así que esto es un escenario y no un ingreso. Se marca así a propósito.
             </p>
           )}
@@ -409,7 +409,7 @@ function Diagnostico({
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.07)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Dónde va la atención, dónde entra el dinero</span>
@@ -428,7 +428,7 @@ function Diagnostico({
             <ul className="space-y-2">
               {diag.loQueYaFunciona.map((x, i) => (
                 <li key={i} className="flex gap-2.5 vin-t-base leading-relaxed">
-                  <span style={{ color: "#5cc98e" }}>✓</span>
+                  <span style={{ color: "var(--vin-ok)" }}>✓</span>
                   <span>{x}</span>
                 </li>
               ))}
@@ -506,7 +506,7 @@ function Diagnostico({
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>

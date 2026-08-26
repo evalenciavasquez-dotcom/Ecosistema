@@ -16,20 +16,20 @@ import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 
 const TIPO_COLOR: Record<VincereVariableTipo, string> = {
-  ganadora: "#5cc98e",
-  perdedora: "#e0483a",
-  incierta: "#e0a83a",
+  ganadora: "var(--vin-ok)",
+  perdedora: "var(--vin-risk)",
+  incierta: "var(--vin-warn)",
 };
 
 const IMPACTO_PESO: Record<VincereImpacto, number> = { alto: 0, medio: 1, bajo: 2 };
 
 // El escenario probable es el que se lee primero; los extremos enmarcan.
 const ESCENARIO_ACENTO: Record<string, string> = {
-  Pierde: "#e0483a",
-  "Break-even": "#a39c92",
-  Probable: "#e0483a",
-  Gana: "#5cc98e",
-  Expansión: "#2dd4bf",
+  Pierde: "var(--vin-risk)",
+  "Break-even": "var(--vin-faint)",
+  Probable: "var(--vin-risk)",
+  Gana: "var(--vin-ok)",
+  Expansión: "var(--vin-accent)",
 };
 
 function leerArchivo(file: File): Promise<{ data: string; mediaType: string }> {
@@ -159,7 +159,7 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
           className="cursor-pointer rounded-xl p-6 text-center transition-colors"
           style={{
             border: `1px dashed ${arrastrando ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
-            background: arrastrando ? "rgba(224,72,58,0.06)" : "var(--vin-surface)",
+            background: arrastrando ? "var(--vin-accent-soft)" : "var(--vin-surface)",
           }}
         >
           <input
@@ -229,9 +229,9 @@ export default function StressTestSection({ proyecto }: { proyecto: VincereProye
                 onClick={() => setAbierto(t.id)}
                 className="rounded-xl px-2.5 py-1 vin-t-sm transition-colors"
                 style={{
-                  background: activo?.id === t.id ? "rgba(224,72,58,0.14)" : "transparent",
+                  background: activo?.id === t.id ? "var(--vin-accent-soft)" : "transparent",
                   color: activo?.id === t.id ? "var(--vin-text)" : "var(--vin-muted)",
-                  border: `1px solid ${activo?.id === t.id ? "rgba(224,72,58,0.4)" : "var(--vin-border)"}`,
+                  border: `1px solid ${activo?.id === t.id ? "var(--vin-accent-glow)" : "var(--vin-border)"}`,
                 }}
               >
                 {t.titulo}
@@ -281,7 +281,7 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>
@@ -367,7 +367,7 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
         {test.puntoDeQuiebre && (
           <div
             className="rounded-xl p-5"
-            style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
+            style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
           >
             <PanelLabel>
               <span style={{ color: "var(--vin-accent)" }}>Punto de quiebre</span>

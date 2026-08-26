@@ -15,9 +15,9 @@ import EvidenceTag from "./EvidenceTag";
 // pesaban lo mismo.
 
 const PRIORIDAD: Record<string, { color: string; que: string }> = {
-  Alta: { color: "#e0483a", que: "Entrar ya" },
-  Media: { color: "#e0a83a", que: "Entrar con condiciones" },
-  Baja: { color: "#5cc98e", que: "No es prioridad" },
+  Alta: { color: "var(--vin-risk)", que: "Entrar ya" },
+  Media: { color: "var(--vin-warn)", que: "Entrar con condiciones" },
+  Baja: { color: "var(--vin-ok)", que: "No es prioridad" },
 };
 
 export default function TriageCasoCard({
