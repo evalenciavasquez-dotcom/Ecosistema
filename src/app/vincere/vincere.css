@@ -109,6 +109,34 @@
   --vin-tinte-nota: #f3eee1;
   --vin-tinte-nota-linea: #e0d7c1;
 
+  /* ── Series ──────────────────────────────────────────────────────────────
+     Identidad, no estado. Son para lo único del sistema que de verdad es
+     categórico —las fuentes de ingreso— donde el color contesta «cuál es
+     esta», no «va bien o va mal». Por eso NO salen del semáforo: un ámbar de
+     «atención» usado como quinta serie deja de querer decir atención.
+
+     El orden es el mecanismo de seguridad, no decoración: está elegido para
+     que dos series contiguas sigan distinguiéndose con daltonismo protán y
+     deután. Verificado sobre estas dos superficies —papel #fbfaf7 y consola
+     #141922— en banda de luminosidad, piso de croma, separación CVD (ΔE 9.1
+     en claro / 8.4 en oscuro) y piso de visión normal (19.6 / 19.3).
+
+     En claro, aqua, amarillo y magenta quedan por debajo de 3:1 contra el
+     papel. Eso es legal solo si la identidad no depende del color: la leyenda
+     de Monetización nombra cada fuente con su porcentaje y su monto al lado,
+     así que el color acompaña y nunca carga solo.
+
+     No se cicla. Si algún día hay una séptima fuente, va a «Otro» —que es
+     gris a propósito— o se parte el gráfico. Inventarle un tono sería
+     romper el orden que hace segura a toda la escala. */
+  --vin-serie-1: #2a78d6;
+  --vin-serie-2: #eb6834;
+  --vin-serie-3: #1baf7a;
+  --vin-serie-4: #eda100;
+  --vin-serie-5: #e87ba4;
+  --vin-serie-6: #008300;
+  --vin-serie-otro: #948f85;
+
   /* Escala tipográfica de seis pasos. Cualquier tamaño fuera de esta lista
      es un error de dibujo, no una decisión. */
   --t-xs: 12.5px;
@@ -180,6 +208,18 @@
   --vin-tinte-riesgo-linea: #3a2a2b;
   --vin-tinte-nota: #232019;
   --vin-tinte-nota-linea: #38322a;
+
+  /* Los mismos seis tonos, re-escalonados para el fondo oscuro. No es un
+     volteo automático del tema claro: cada paso está elegido para la banda de
+     luminosidad de consola y verificado contra #141922, donde los seis pasan
+     3:1 sin necesitar la regla de alivio. */
+  --vin-serie-1: #3987e5;
+  --vin-serie-2: #d95926;
+  --vin-serie-3: #199e70;
+  --vin-serie-4: #c98500;
+  --vin-serie-5: #d55181;
+  --vin-serie-6: #008300;
+  --vin-serie-otro: #7d8a9c;
 }
 
 /* ── Los seis pasos, como clases ───────────────────────────────────────────

@@ -17,6 +17,7 @@ import SectionShell from "../SectionShell";
 import VinculoPanel from "../VinculoPanel";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 export default function OportunidadSection({ proyecto }: { proyecto: VincereProyecto }) {
   const setOportunidad = useVincereStore((s) => s.setOportunidad);
@@ -111,7 +112,7 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
             {/* El puntaje es lo primero que se lee: grande y con su color. */}
             <div
               className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-full"
-              style={{ border: `2px solid ${color}`, background: `${color}12` }}
+              style={{ border: `2px solid ${color}`, background: tinte(color, 7) }}
             >
               <span className="vin-serif vin-t-display leading-none tabular-nums" style={{ color }}>
                 {op.puntaje}
@@ -122,7 +123,7 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
               <div className="vin-eyebrow mb-2">Oportunidad de negocio</div>
               <div
                 className="mb-2 inline-block rounded-xl px-2.5 py-1 vin-t-sm font-medium"
-                style={{ color, border: `1px solid ${color}66`, background: `${color}14` }}
+                style={{ color, border: `1px solid ${tinte(color, 40)}`, background: tinte(color, 8) }}
               >
                 {VINCERE_SEMAFORO_LABEL[semaforo]}
               </div>
@@ -307,7 +308,7 @@ function AnalisisOportunidad({ op, onEliminar }: { op: VincereOportunidad; onEli
         )}
       </div>
 
-      <div className="rounded-xl p-5" style={{ background: `${color}12`, border: `1px solid ${color}47` }}>
+      <div className="rounded-xl p-5" style={{ background: tinte(color, 7), border: `1px solid ${tinte(color, 28)}` }}>
         <PanelLabel>
           <span style={{ color }}>Veredicto</span>
         </PanelLabel>

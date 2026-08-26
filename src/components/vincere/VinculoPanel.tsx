@@ -10,6 +10,7 @@ import {
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import { Panel, PanelLabel } from "./primitives";
+import { tinte } from "@/lib/vincere/color";
 
 const TIPOS: VincereVinculoTipo[] = ["propio", "socio", "cliente", "evaluando", "ninguno"];
 
@@ -63,8 +64,8 @@ export default function VinculoPanel({ proyecto }: { proyecto: VincereProyecto }
             className="rounded-full border px-2.5 py-1 vin-t-sm transition-colors"
             style={{
               color: v.tipo === t ? TIPO_COLOR[t] : "var(--vin-dim)",
-              borderColor: v.tipo === t ? `${TIPO_COLOR[t]}66` : "var(--vin-border)",
-              background: v.tipo === t ? `${TIPO_COLOR[t]}14` : "transparent",
+              borderColor: v.tipo === t ? tinte(TIPO_COLOR[t], 40) : "var(--vin-border)",
+              background: v.tipo === t ? tinte(TIPO_COLOR[t], 8) : "transparent",
             }}
           >
             {VINCERE_VINCULO_LABEL[t]}

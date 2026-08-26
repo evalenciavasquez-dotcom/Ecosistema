@@ -7,6 +7,7 @@ import {
   VINCERE_VINCULO_LABEL,
 } from "@/lib/vincere/types";
 import EvidenceTag from "./EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 // El veredicto de un caso.
 //
@@ -113,7 +114,7 @@ export default function TriageCasoCard({
                     style={{
                       color: DECISION_COLOR[decidido],
                       background: "var(--vin-surface-2)",
-                      border: `1px solid ${DECISION_COLOR[decidido]}55`,
+                      border: `1px solid ${tinte(DECISION_COLOR[decidido], 33)}`,
                     }}
                   >
                     {VINCERE_DECISION_LABEL[decidido]}

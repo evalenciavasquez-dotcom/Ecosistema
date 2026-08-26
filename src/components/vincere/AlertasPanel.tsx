@@ -10,6 +10,7 @@ import {
 import { useVincereStore } from "@/lib/vincere/store";
 import EvidenceTag from "./EvidenceTag";
 import { BloqueTintado, type TipoDeBloque } from "./primitives";
+import { tinte } from "@/lib/vincere/color";
 
 const SEVERIDAD_COLOR: Record<VincereAlertaSeveridad, string> = {
   critica: "var(--vin-risk)",
@@ -25,7 +26,7 @@ export function SeveridadTag({ severidad }: { severidad: VincereAlertaSeveridad 
   return (
     <span
       className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 vin-t-xs font-medium tracking-wide"
-      style={{ color, borderColor: `${color}66` }}
+      style={{ color, borderColor: tinte(color, 40) }}
     >
       {VINCERE_SEVERIDAD_LABEL[severidad]}
     </span>

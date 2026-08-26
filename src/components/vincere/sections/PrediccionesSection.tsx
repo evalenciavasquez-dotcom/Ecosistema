@@ -19,6 +19,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const CIERRES: Exclude<VincereEstadoPrediccion, "abierta">[] = [
   "acertada",
@@ -292,7 +293,7 @@ function Fila({
           {p.estado !== "abierta" && (
             <span
               className="rounded-full border px-2 py-0.5 vin-t-xs"
-              style={{ color, borderColor: `${color}66` }}
+              style={{ color, borderColor: tinte(color, 40) }}
             >
               {VINCERE_ESTADO_PREDICCION_LABEL[p.estado]}
             </span>
@@ -361,7 +362,7 @@ function Fila({
                   className="rounded-full border px-2.5 py-0.5 vin-t-sm transition-colors"
                   style={{
                     color: VINCERE_ESTADO_PREDICCION_COLOR[e],
-                    borderColor: `${VINCERE_ESTADO_PREDICCION_COLOR[e]}55`,
+                    borderColor: tinte(VINCERE_ESTADO_PREDICCION_COLOR[e], 33),
                   }}
                 >
                   {VINCERE_ESTADO_PREDICCION_LABEL[e]}

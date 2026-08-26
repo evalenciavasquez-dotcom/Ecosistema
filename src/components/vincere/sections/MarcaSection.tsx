@@ -14,6 +14,7 @@ import { buildMarcaContext } from "@/lib/vincere/context";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const COHERENCIA_COLOR: Record<VincereCoherencia, string> = {
   alineado: "var(--vin-ok)",
@@ -205,8 +206,8 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                       className="rounded-full border px-2 py-0.5 vin-t-xs transition-colors"
                       style={{
                         color: pc.coherencia === c ? COHERENCIA_COLOR[c] : "var(--vin-dim)",
-                        borderColor: pc.coherencia === c ? `${COHERENCIA_COLOR[c]}66` : "var(--vin-border)",
-                        background: pc.coherencia === c ? `${COHERENCIA_COLOR[c]}14` : "transparent",
+                        borderColor: pc.coherencia === c ? tinte(COHERENCIA_COLOR[c], 40) : "var(--vin-border)",
+                        background: pc.coherencia === c ? tinte(COHERENCIA_COLOR[c], 8) : "transparent",
                       }}
                     >
                       {VINCERE_COHERENCIA_LABEL[c]}

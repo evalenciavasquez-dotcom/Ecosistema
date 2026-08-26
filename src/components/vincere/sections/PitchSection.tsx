@@ -19,6 +19,7 @@ import { genId } from "@/lib/id";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const DESTINOS: VincerePitchDestino[] = ["dsp", "disquera", "marca", "promotor"];
 
@@ -142,7 +143,7 @@ export default function PitchSection({ proyecto }: { proyecto: VincereProyecto }
                       style={{
                         border: `1px solid ${sel ? VINCERE_TEMPERATURA_COLOR[t] : "var(--vin-border)"}`,
                         color: sel ? "var(--vin-text)" : "var(--vin-muted)",
-                        background: sel ? `${VINCERE_TEMPERATURA_COLOR[t]}1f` : "transparent",
+                        background: sel ? tinte(VINCERE_TEMPERATURA_COLOR[t], 12) : "transparent",
                       }}
                     >
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: VINCERE_TEMPERATURA_COLOR[t] }} />

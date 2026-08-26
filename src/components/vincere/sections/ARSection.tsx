@@ -18,6 +18,7 @@ import { buildARContext } from "@/lib/vincere/context";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const VEREDICTO_COLOR: Record<VincereVeredictoColab, string> = {
   perseguir: "var(--vin-ok)",
@@ -271,8 +272,8 @@ function FilaCandidato({
               className="rounded-full border px-2 py-0.5 vin-t-xs transition-colors"
               style={{
                 color: candidato.estado === e ? ESTADO_COLOR[e] : "var(--vin-dim)",
-                borderColor: candidato.estado === e ? `${ESTADO_COLOR[e]}66` : "var(--vin-border)",
-                background: candidato.estado === e ? `${ESTADO_COLOR[e]}14` : "transparent",
+                borderColor: candidato.estado === e ? tinte(ESTADO_COLOR[e], 40) : "var(--vin-border)",
+                background: candidato.estado === e ? tinte(ESTADO_COLOR[e], 8) : "transparent",
               }}
             >
               {VINCERE_CANDIDATO_ESTADO_LABEL[e]}
@@ -345,7 +346,7 @@ function DiagnosticoAR({ diag, onEliminar }: { diag: VincereARDiagnostico; onEli
                   <span className="vin-t-base font-medium">{c.nombre}</span>
                   <span
                     className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
-                    style={{ color: VEREDICTO_COLOR[c.veredicto], borderColor: `${VEREDICTO_COLOR[c.veredicto]}66` }}
+                    style={{ color: VEREDICTO_COLOR[c.veredicto], borderColor: tinte(VEREDICTO_COLOR[c.veredicto], 40) }}
                   >
                     {VINCERE_VEREDICTO_COLAB_LABEL[c.veredicto]}
                   </span>

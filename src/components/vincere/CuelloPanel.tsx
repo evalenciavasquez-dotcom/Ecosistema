@@ -7,6 +7,7 @@ import { DONDE_SE_TRABAJA, DONDE_SE_CARGA } from "@/lib/vincere/siguientePaso";
 import { useVincereStore } from "@/lib/vincere/store";
 import { Panel } from "./primitives";
 import EvidenceTag from "./EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 // Si hay un solo peso para gastar, ¿dónde va?
 //
@@ -199,7 +200,7 @@ function Eslabon({
           <span className="vin-t-base font-medium">{e.label}</span>
           <span
             className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
-            style={{ color, borderColor: `${color}55` }}
+            style={{ color, borderColor: tinte(color, 33) }}
           >
             {ESTADO_LABEL[e.estado]}
           </span>

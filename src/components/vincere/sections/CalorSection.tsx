@@ -13,6 +13,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import MapaPlazasPanel from "../MapaPlazasPanel";
+import { tinte } from "@/lib/vincere/color";
 
 const TEMPERATURAS: VincereTemperatura[] = ["caliente", "medio", "frio"];
 
@@ -50,7 +51,7 @@ export default function CalorSection({ proyecto }: { proyecto: VincereProyecto }
               key={t}
               className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 vin-t-sm"
               style={{
-                borderColor: n > 0 ? `${VINCERE_TEMPERATURA_COLOR[t]}66` : "var(--vin-border)",
+                borderColor: n > 0 ? tinte(VINCERE_TEMPERATURA_COLOR[t], 40) : "var(--vin-border)",
                 color: n > 0 ? VINCERE_TEMPERATURA_COLOR[t] : "var(--vin-dim)",
               }}
             >

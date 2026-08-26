@@ -14,6 +14,7 @@ import { investigacionExterna } from "@/lib/vincere/context";
 import { genId } from "@/lib/id";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const TIPO_COLOR: Record<VincereVariableTipo, string> = {
   ganadora: "var(--vin-ok)",
@@ -316,7 +317,7 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
                   <span className="vin-t-base font-medium">{v.variable}</span>
                   <span
                     className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
-                    style={{ color: TIPO_COLOR[v.tipo], borderColor: `${TIPO_COLOR[v.tipo]}66` }}
+                    style={{ color: TIPO_COLOR[v.tipo], borderColor: tinte(TIPO_COLOR[v.tipo], 40) }}
                   >
                     {VINCERE_VARIABLE_LABEL[v.tipo]}
                   </span>
@@ -340,7 +341,7 @@ function ResultadoStressTest({ test, onEliminar }: { test: VincereStressTest; on
                   className="rounded-xl px-2 py-0.5 vin-t-xs font-medium"
                   style={{
                     color: ESCENARIO_ACENTO[e.nombre] ?? "var(--vin-muted)",
-                    border: `1px solid ${ESCENARIO_ACENTO[e.nombre] ?? "var(--vin-border-strong)"}66`,
+                    border: `1px solid ${tinte(ESCENARIO_ACENTO[e.nombre] ?? "var(--vin-border-strong)", 40)}`,
                   }}
                 >
                   {e.nombre}

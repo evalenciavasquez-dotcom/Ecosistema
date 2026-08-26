@@ -17,6 +17,7 @@ import { fetchInforme, registerNotion } from "@/lib/vincere/ai-client";
 import { downloadMarkdown, informeToMarkdown } from "@/lib/vincere/informe-export";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const PRIORIDAD_COLOR: Record<VincerePrioridadPaso, string> = {
   Alta: "var(--vin-risk)",
@@ -620,7 +621,7 @@ function InformeDocumento({
                     <span>{p.plazo}</span>
                     <span
                       className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
-                      style={{ color: PRIORIDAD_COLOR[p.prioridad], borderColor: `${PRIORIDAD_COLOR[p.prioridad]}66` }}
+                      style={{ color: PRIORIDAD_COLOR[p.prioridad], borderColor: tinte(PRIORIDAD_COLOR[p.prioridad], 40) }}
                     >
                       {p.prioridad}
                     </span>

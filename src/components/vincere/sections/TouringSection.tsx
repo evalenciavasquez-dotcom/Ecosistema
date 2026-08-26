@@ -15,6 +15,7 @@ import { monedaDe } from "@/lib/vincere/dinero";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const VEREDICTO_COLOR: Record<VincereVeredictoPlaza, string> = {
   ir: "var(--vin-ok)",
@@ -340,7 +341,7 @@ function DiagnosticoTouring({
                 className="rounded-xl px-2.5 py-1 vin-t-sm font-medium"
                 style={{
                   color: diag.listoParaGira ? "var(--vin-ok)" : "var(--vin-warn)",
-                  border: `1px solid ${diag.listoParaGira ? "var(--vin-ok)" : "var(--vin-warn)"}66`,
+                  border: `1px solid ${tinte(diag.listoParaGira ? "var(--vin-ok)" : "var(--vin-warn)", 40)}`,
                   background: diag.listoParaGira ? "var(--vin-ok-wash)" : "rgba(224,168,58,0.10)",
                 }}
               >
@@ -376,7 +377,7 @@ function DiagnosticoTouring({
                     className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
                     style={{
                       color: VEREDICTO_COLOR[pl.veredicto],
-                      borderColor: `${VEREDICTO_COLOR[pl.veredicto]}66`,
+                      borderColor: tinte(VEREDICTO_COLOR[pl.veredicto], 40),
                     }}
                   >
                     {VINCERE_VEREDICTO_PLAZA_LABEL[pl.veredicto]}

@@ -20,6 +20,7 @@ import {
 import { ACCION_LABEL, ACCION_COLOR } from "@/lib/vincere/plazas";
 import SectionShell from "../SectionShell";
 import { Panel } from "../primitives";
+import { tinte } from "@/lib/vincere/color";
 
 // La pantalla que convierte todo lo demás en una decisión.
 //
@@ -133,7 +134,7 @@ function TarjetaRuta({
           )}
           <span
             className="vin-t-xs rounded-full px-2.5 py-1"
-            style={{ border: `1px solid ${NIVEL_COLOR[r.nivelMasDebil]}55`, color: NIVEL_COLOR[r.nivelMasDebil] }}
+            style={{ border: `1px solid ${tinte(NIVEL_COLOR[r.nivelMasDebil], 33)}`, color: NIVEL_COLOR[r.nivelMasDebil] }}
           >
             nivel {r.nivelMasDebil} · {NIVEL_TEXTO[r.nivelMasDebil]}
           </span>

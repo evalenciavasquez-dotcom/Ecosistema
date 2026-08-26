@@ -18,6 +18,7 @@ import { AudioPanel, MetricaPanel, NotasProduccionPanel } from "../AudioPanel";
 import SongGuia from "../SongGuia";
 import FirmaPanel from "../FirmaPanel";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const POTENCIAL_COLOR: Record<VincerePotencialCancion, string> = {
   single: "var(--vin-ok)",
@@ -31,7 +32,7 @@ function PotencialBadge({ tipo }: { tipo: VincerePotencialCancion }) {
   return (
     <span
       className="inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 vin-t-xs font-medium tracking-wide"
-      style={{ color, borderColor: `${color}66` }}
+      style={{ color, borderColor: tinte(color, 40) }}
     >
       {VINCERE_POTENCIAL_LABEL[tipo]}
     </span>

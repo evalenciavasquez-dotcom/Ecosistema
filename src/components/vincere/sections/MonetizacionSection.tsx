@@ -16,6 +16,7 @@ import MonedaSelector from "../MonedaSelector";
 import SectionShell from "../SectionShell";
 import { Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const FUENTES: VincereFuenteTipo[] = ["streaming", "shows", "merch", "sync", "publishing", "marca", "otro"];
 
@@ -111,7 +112,10 @@ export default function MonetizacionSection({ proyecto }: { proyecto: VincerePro
           </div>
 
           {/* Barra de reparto: la concentración se ve antes de leer nada. */}
-          <div className="mb-2 flex h-3 overflow-hidden rounded-xl">
+          {/* Los tramos van separados por 2px del propio fondo. Pegados, dos
+              fuentes contiguas se leen como una sola franja y el reparto —que
+              es lo único que esta barra tiene que mostrar— se pierde. */}
+          <div className="mb-2 flex h-3 gap-[2px] overflow-hidden rounded-xl">
             {resumen.porFuente.map((f) => (
               <div
                 key={f.tipo}
@@ -323,8 +327,8 @@ function FormularioIngreso({
             className="rounded-full border px-2.5 py-1 vin-t-sm transition-colors"
             style={{
               color: f.tipo === t ? VINCERE_FUENTE_COLOR[t] : "var(--vin-dim)",
-              borderColor: f.tipo === t ? `${VINCERE_FUENTE_COLOR[t]}66` : "var(--vin-border)",
-              background: f.tipo === t ? `${VINCERE_FUENTE_COLOR[t]}14` : "transparent",
+              borderColor: f.tipo === t ? tinte(VINCERE_FUENTE_COLOR[t], 40) : "var(--vin-border)",
+              background: f.tipo === t ? tinte(VINCERE_FUENTE_COLOR[t], 8) : "transparent",
             }}
           >
             {VINCERE_FUENTE_LABEL[t]}
@@ -451,7 +455,7 @@ function Diagnostico({
                   <span className="vin-t-base font-medium">{v.via}</span>
                   <span
                     className="rounded-full border px-2 py-0.5 vin-t-xs"
-                    style={{ color: ESFUERZO_COLOR[v.esfuerzo], borderColor: `${ESFUERZO_COLOR[v.esfuerzo]}66` }}
+                    style={{ color: ESFUERZO_COLOR[v.esfuerzo], borderColor: tinte(ESFUERZO_COLOR[v.esfuerzo], 40) }}
                   >
                     esfuerzo {v.esfuerzo}
                   </span>

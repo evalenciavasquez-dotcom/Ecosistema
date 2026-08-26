@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { VincereProyecto, VINCERE_SECCION_LABEL } from "@/lib/vincere/types";
 import { siguientePaso } from "@/lib/vincere/siguientePaso";
 import { useVincereStore } from "@/lib/vincere/store";
+import { tinte } from "@/lib/vincere/color";
 
 // Qué hacer ahora con este artista.
 //
@@ -64,7 +65,7 @@ export default function SiguientePasoBanner({ proyecto }: { proyecto: VincerePro
           : "Lo siguiente";
 
   return (
-    <div className="rounded-xl px-4 py-3.5" style={{ background: fondo, border: `1px solid ${color}33` }}>
+    <div className="rounded-xl px-4 py-3.5" style={{ background: fondo, border: `1px solid ${tinte(color, 20)}` }}>
       <div className="vin-t-xs uppercase tracking-[0.08em]" style={{ color }}>
         {rotulo}
       </div>
