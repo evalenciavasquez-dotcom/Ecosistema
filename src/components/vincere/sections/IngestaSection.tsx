@@ -11,6 +11,13 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { useIaConfigurada } from "@/lib/vincere/useIaConfigurada";
 import { fetchIngest } from "@/lib/vincere/ai-client";
 import { formatStreams } from "@/lib/vincere/format";
+import {
+  cambiosDeResumen,
+  cambiosDeDiagnostico,
+  resumirLista,
+  tituloDelBloque,
+  type Cambio,
+} from "@/lib/vincere/cambios";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 import AlertasPanel, { SeveridadTag } from "../AlertasPanel";
@@ -26,21 +33,9 @@ const BLOQUE_DESTINO: Record<BloqueKey, string> = {
   kpis: VINCERE_SECCION_LABEL.kpis,
 };
 
-const RESUMEN_ETIQUETA: Record<string, string> = {
-  streamsMes: "Streams/mes",
-  streamsCambioPct: "Cambio streams",
-  seguidores: "Seguidores",
-  seguidoresCambioPct: "Cambio seguidores",
-  momentumIndex: "Momentum Index",
-  serie: "Serie histórica",
-};
-
-const DIAGNOSTICO_ETIQUETA: Record<string, string> = {
-  faseActual: "Fase actual",
-  fortalezaNucleo: "Fortaleza núcleo",
-  riesgoPrincipal: "Riesgo principal",
-  prioridad: "Prioridad #1",
-};
+// Las etiquetas de resumen y diagnóstico se fueron a cambios.ts, junto con la
+// comparación contra lo que ya hay: tenerlas acá dejaba dos listas de nombres
+// que había que acordarse de mantener iguales.
 
 function leerArchivo(file: File): Promise<{ data: string; mediaType: string }> {
   return new Promise((resolve, reject) => {
@@ -331,6 +326,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
         {pendiente && (
           <Revision
             resultado={pendiente}
+            proyecto={proyecto}
             aceptados={aceptados}
             onToggle={(k) => setAceptados((a) => ({ ...a, [k]: !a[k] }))}
             onAplicar={aplicar}
@@ -344,12 +340,14 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
 
 function Revision({
   resultado,
+  proyecto,
   aceptados,
   onToggle,
   onAplicar,
   onDescartar,
 }: {
   resultado: VincereIngestaResultado;
+  proyecto: VincereProyecto;
   aceptados: Record<string, boolean>;
   onToggle: (k: BloqueKey) => void;
   onAplicar: () => void;
@@ -364,12 +362,14 @@ function Revision({
         <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--vin-accent)" }} />
-            <span className="vin-eyebrow">Esto entendí</span>
+            <span className="vin-eyebrow">Lectura del material</span>
           </div>
           <EvidenceTag nivel={resultado.confianza} />
         </div>
-        <p className="mb-1.5 vin-t-base leading-relaxed">{resultado.lectura}</p>
-        <p className="vin-faint vin-t-xs">Fuente reconocida: {resultado.fuente}</p>
+        <p className="vin-t-lg leading-relaxed" style={{ maxWidth: "70ch" }}>
+          {resultado.lectura}
+        </p>
+        <p className="vin-faint vin-t-sm mt-2.5">{resultado.fuente}</p>
       </div>
 
       {bloques.length === 0 ? (
@@ -386,6 +386,7 @@ function Revision({
               key={k}
               clave={k}
               propuesta={resultado.propuesta}
+              proyecto={proyecto}
               aceptado={!!aceptados[k]}
               onToggle={() => onToggle(k)}
             />
@@ -442,14 +443,32 @@ function Revision({
 function BloquePropuesto({
   clave,
   propuesta,
+  proyecto,
   aceptado,
   onToggle,
 }: {
   clave: BloqueKey;
   propuesta: VincereIngestaPropuesta;
+  proyecto: VincereProyecto;
   aceptado: boolean;
   onToggle: () => void;
 }) {
+  // Para las listas, cuántas de esas entradas ya existían. "12 canciones" es
+  // otra cosa muy distinta si cinco de ellas ya están en el catálogo: no está
+  // agregando doce, está reescribiendo cinco y agregando siete.
+  const subtitulo = (() => {
+    if (clave === "canciones" && propuesta.canciones) {
+      return tituloDelBloque("canciones", resumirLista(propuesta.canciones, proyecto.canciones ?? []));
+    }
+    if (clave === "zonasCalor" && propuesta.zonasCalor) {
+      return tituloDelBloque("zonasCalor", resumirLista(propuesta.zonasCalor, proyecto.zonasCalor ?? []));
+    }
+    if (clave === "kpis" && propuesta.kpis) {
+      return tituloDelBloque("kpis", resumirLista(propuesta.kpis, proyecto.kpis ?? []));
+    }
+    return null;
+  })();
+
   return (
     <div
       className="rounded-xl p-4"
@@ -465,49 +484,36 @@ function BloquePropuesto({
           onChange={onToggle}
           style={{ accentColor: "var(--vin-accent)" }}
         />
-        <span className="vin-t-base font-medium">→ {BLOQUE_DESTINO[clave]}</span>
+        <span className="vin-t-base font-medium">{BLOQUE_DESTINO[clave]}</span>
+        {subtitulo && <span className="vin-faint vin-t-sm">· {subtitulo}</span>}
       </label>
-      <div className="mt-2.5 pl-7">
-        <DetalleBloque clave={clave} propuesta={propuesta} />
+      <div className="mt-3 pl-7">
+        <DetalleBloque clave={clave} propuesta={propuesta} proyecto={proyecto} />
       </div>
     </div>
   );
 }
 
-function DetalleBloque({ clave, propuesta }: { clave: BloqueKey; propuesta: VincereIngestaPropuesta }) {
+function DetalleBloque({
+  clave,
+  propuesta,
+  proyecto,
+}: {
+  clave: BloqueKey;
+  propuesta: VincereIngestaPropuesta;
+  proyecto: VincereProyecto;
+}) {
   const fila = "flex flex-wrap gap-x-2 vin-t-sm leading-relaxed";
 
+  // Los dos bloques que PISAN valores existentes muestran contra qué. Antes
+  // solo se veía el valor propuesto, así que se aprobaba a ciegas: un número
+  // mal leído de una tabla no se delataba hasta tres pantallas después.
   if (clave === "resumen" && propuesta.resumen) {
-    return (
-      <dl className="space-y-1">
-        {Object.entries(propuesta.resumen).map(([k, v]) => (
-          <div key={k} className={fila}>
-            <dt className="vin-faint">{RESUMEN_ETIQUETA[k] ?? k}:</dt>
-            <dd>
-              {k === "serie" && Array.isArray(v)
-                ? `${v.length} meses`
-                : k === "streamsMes"
-                  ? formatStreams(Number(v))
-                  : String(v)}
-              {k.endsWith("CambioPct") ? "%" : ""}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    );
+    return <TablaDeCambios cambios={cambiosDeResumen(proyecto, propuesta.resumen)} />;
   }
 
   if (clave === "diagnostico" && propuesta.diagnostico) {
-    return (
-      <dl className="space-y-1">
-        {Object.entries(propuesta.diagnostico).map(([k, v]) => (
-          <div key={k} className={fila}>
-            <dt className="vin-faint">{DIAGNOSTICO_ETIQUETA[k] ?? k}:</dt>
-            <dd>{String(v)}</dd>
-          </div>
-        ))}
-      </dl>
-    );
+    return <TablaDeCambios cambios={cambiosDeDiagnostico(proyecto, propuesta.diagnostico)} />;
   }
 
   if (clave === "canciones" && propuesta.canciones) {
@@ -574,4 +580,60 @@ function DetalleBloque({ clave, propuesta }: { clave: BloqueKey; propuesta: Vinc
   }
 
   return null;
+}
+
+// Antes → después, con la variación.
+//
+// Es lo que separa aprobar de aprobar a ciegas. Un número mal leído de una
+// tabla se delata solo cuando se ve al lado del que reemplaza: "3,10M" no dice
+// nada, pero "2.43M → 3.10M · +27,6%" hace saltar el error sin buscarlo.
+//
+// Los tres casos se ven distintos a propósito. Un dato nuevo no es un
+// reemplazo —no hay nada que perder al aceptarlo—, y un valor idéntico no es
+// un cambio: mostrarlos iguales obliga a leer los tres con la misma atención.
+function TablaDeCambios({ cambios }: { cambios: Cambio[] }) {
+  if (!cambios.length) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      {cambios.map((c) => (
+        <div key={c.campo} className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+          <span className="vin-faint vin-t-sm" style={{ minWidth: "11rem" }}>
+            {c.campo}
+          </span>
+
+          {c.tipo === "nuevo" ? (
+            <>
+              <span className="vin-t-base tabular-nums">{c.despues}</span>
+              <span className="vin-faint vin-t-xs">dato nuevo</span>
+            </>
+          ) : c.tipo === "igual" ? (
+            <>
+              <span className="vin-muted vin-t-base tabular-nums">{c.despues}</span>
+              <span className="vin-faint vin-t-xs">sin cambio</span>
+            </>
+          ) : (
+            <>
+              <span
+                className="vin-faint vin-t-sm tabular-nums"
+                style={{ textDecoration: "line-through" }}
+              >
+                {c.antes}
+              </span>
+              <span className="vin-faint vin-t-xs">→</span>
+              <span className="vin-t-base tabular-nums">{c.despues}</span>
+              {c.variacionPct != null && (
+                <span
+                  className="vin-t-xs tabular-nums"
+                  style={{ color: c.variacionPct >= 0 ? "var(--vin-ok)" : "var(--vin-risk)" }}
+                >
+                  {c.variacionPct >= 0 ? "+" : ""}
+                  {c.variacionPct}%
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
