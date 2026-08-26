@@ -46,6 +46,7 @@ import {
   VincereSeccion,
   VincereTema,
   VincereEnPapelera,
+  VincereTriageDecision,
   VINCERE_DIAS_EN_PAPELERA,
   VincereSnapshot,
   VincereStressTest,
@@ -317,6 +318,7 @@ interface VincereState {
     }
   ) => void;
   deleteTriageCaso: (id: string) => void;
+  decidirTriageCaso: (id: string, decision: VincereTriageDecision | null) => void;
 
   resetToSeed: () => void;
   hidratarDesdeServidor: (estado: {
@@ -1265,6 +1267,8 @@ export const useVincereStore = create<VincereState>()(
           comoCobrarlo: null,
           horasSemanalesEstimadas: null,
           web: null,
+          decision: null,
+          decididoEn: null,
           creadoEn: new Date().toISOString().slice(0, 10),
         };
         set((s) => ({ triageCasos: [nuevo, ...s.triageCasos] }));
@@ -1275,6 +1279,18 @@ export const useVincereStore = create<VincereState>()(
           triageCasos: s.triageCasos.map((c) => (c.id === id ? { ...c, ...veredicto } : c)),
         })),
       deleteTriageCaso: (id) => set((s) => ({ triageCasos: s.triageCasos.filter((c) => c.id !== id) })),
+
+      // Registrar la decisión, que es distinto de borrar el caso. Pasar null
+      // la deshace: cambiar de opinión con data nueva es el movimiento normal
+      // de este trabajo, no una excepción.
+      decidirTriageCaso: (id, decision) =>
+        set((s) => ({
+          triageCasos: s.triageCasos.map((c) =>
+            c.id === id
+              ? { ...c, decision, decididoEn: decision ? new Date().toISOString().slice(0, 10) : null }
+              : c
+          ),
+        })),
 
       // La base manda cuando tiene contenido: es la copia compartida entre
       // dispositivos. Se conserva la sección abierta para no sacar a Eduardo

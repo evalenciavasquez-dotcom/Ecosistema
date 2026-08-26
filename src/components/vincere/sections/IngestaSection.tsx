@@ -105,6 +105,10 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const ia = useIaConfigurada();
   const sinLlave = ia !== null && !ia.configurada;
   const inputRef = useRef<HTMLInputElement>(null);
+  // El paso 3 puede estar bloqueado por un hueco del paso 1, y en una pantalla
+  // de tres bloques eso queda fuera de la vista. La referencia es para poder
+  // llevar el ojo hasta allá en vez de solo nombrarlo.
+  const zonaMaterialRef = useRef<HTMLDivElement>(null);
 
   const casoNuevo = triageCasos.find((c) => c.id === casoNuevoId) ?? null;
   const hayMaterial = !!archivo || texto.trim().length > 0;
@@ -252,7 +256,7 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
         ) : (
           <>
             {/* ── Paso A: el material ───────────────────────────────────── */}
-            <Bloque numero={1} titulo="El material">
+            <Bloque numero={1} titulo="El material" innerRef={zonaMaterialRef}>
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -403,12 +407,32 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                   La IA lo lee y propone qué escribir en {destinoProyecto.nombre}. Vas a ver cada número contra el que
                   reemplaza antes de aprobar nada.
                 </p>
+
+                {/* El botón dice lo que HACE, siempre.
+                    Antes se convertía en «Falta el material», que es un parte
+                    de estado disfrazado de botón: no dice qué falta, ni dónde,
+                    ni qué hacer — y aparece en el paso 3 cuando el hueco está
+                    en el paso 1, dos pantallazos más arriba. */}
+                {!hayMaterial && (
+                  <div
+                    className="mb-4 rounded-xl px-4 py-3.5"
+                    style={{ background: "var(--vin-warn-wash)", border: "1px solid var(--vin-warn-line)" }}
+                  >
+                    <p className="vin-t-base leading-relaxed" style={{ maxWidth: "68ch" }}>
+                      Todavía no has soltado ningún archivo ni pegado texto. Eso va arriba, en el paso 1.
+                    </p>
+                    <button
+                      onClick={() => zonaMaterialRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                      className="mt-2 vin-t-sm hover:underline"
+                      style={{ color: "var(--vin-accent)", textUnderlineOffset: "3px" }}
+                    >
+                      Ir al paso 1 ↑
+                    </button>
+                  </div>
+                )}
+
                 <button onClick={leer} disabled={cargando || !hayMaterial} className="vin-btn-primary">
-                  {cargando
-                    ? "Leyendo el material…"
-                    : !hayMaterial
-                      ? "Falta el material"
-                      : `Leer y extraer para ${destinoProyecto.nombre}`}
+                  {cargando ? "Leyendo el material…" : `Leer y extraer para ${destinoProyecto.nombre}`}
                 </button>
 
                 {/* Un fallo acá es el final del camino para quien viene a
@@ -448,9 +472,19 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
 // El número no es decorativo: esta pantalla hace tres cosas en orden y antes
 // se veían como tres cajas sueltas del mismo peso, así que no había forma de
 // saber que la de abajo dependía de la de arriba.
-function Bloque({ numero, titulo, children }: { numero: number; titulo: string; children: React.ReactNode }) {
+function Bloque({
+  numero,
+  titulo,
+  children,
+  innerRef,
+}: {
+  numero: number;
+  titulo: string;
+  children: React.ReactNode;
+  innerRef?: React.RefObject<HTMLDivElement | null>;
+}) {
   return (
-    <section className="vin-card p-6">
+    <section ref={innerRef} className="vin-card p-6">
       <div className="mb-4 flex items-center gap-3">
         <span
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full vin-t-xs font-medium tabular-nums"
@@ -566,6 +600,7 @@ function CasoAnalizado({
   onOtro: () => void;
 }) {
   const setSeccion = useVincereStore((s) => s.setSeccion);
+  const decidirTriageCaso = useVincereStore((s) => s.decidirTriageCaso);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -573,9 +608,19 @@ function CasoAnalizado({
 
   return (
     <div ref={ref} className="space-y-4">
-      <TriageCasoCard caso={caso} />
+      {/* Las mismas tres salidas que en el expediente: decidir en caliente,
+          recién leído el veredicto, es cuando más barato sale hacerlo. Abrir
+          proyecto se hace desde Triage, que es donde vive el caso. */}
+      <TriageCasoCard
+        caso={caso}
+        onEntrar={() => {
+          decidirTriageCaso(caso.id, "entramos");
+          setSeccion("triage");
+        }}
+        onDecidir={(d) => decidirTriageCaso(caso.id, d)}
+      />
       <div className="flex flex-wrap gap-3">
-        <button onClick={() => setSeccion("triage")} className="vin-btn-primary">
+        <button onClick={() => setSeccion("triage")} className="vin-btn-ghost">
           Ver todos los casos →
         </button>
         <button onClick={onOtro} className="vin-btn-ghost">

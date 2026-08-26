@@ -1345,8 +1345,27 @@ export interface VincereTriageCaso {
   vinculoSugerido: VincereVinculoTipo | null;
   comoCobrarlo: string | null; // Tarifa si es cliente, % si es sociedad, con su razón.
   horasSemanalesEstimadas: number | null;
+  // Qué se DECIDIÓ, que no es lo mismo que qué dijo el veredicto.
+  //
+  // Faltaba, y el hueco se notaba: la única acción sobre un caso era la ✕, que
+  // lo borra. O sea que decir «no entro» y olvidar que el caso existió eran el
+  // mismo botón — en la pantalla que se supone que es el expediente de las
+  // decisiones de entrada. Un «no» razonado vale tanto como un «sí»: es lo que
+  // se relee cuando el mismo artista vuelve a tocar la puerta en seis meses.
+  decision: VincereTriageDecision | null;
+  decididoEn: string | null;
   creadoEn: string;
 }
+
+// Las tres salidas de un caso. La del medio es la que hace falta más seguido:
+// casi nunca faltan ganas de decidir, falta data para decidir bien.
+export type VincereTriageDecision = "entramos" | "pedimos-data" | "no-entramos";
+
+export const VINCERE_DECISION_LABEL: Record<VincereTriageDecision, string> = {
+  entramos: "Entramos",
+  "pedimos-data": "Falta data para decidir",
+  "no-entramos": "No entramos",
+};
 
 export interface VincereComparacion {
   insights: VincereInsight[];

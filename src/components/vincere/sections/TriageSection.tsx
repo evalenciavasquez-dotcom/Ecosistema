@@ -33,6 +33,7 @@ const FASE_DE_PROYECTO: Record<string, VincereFase> = {
 export default function TriageSection() {
   const triageCasos = useVincereStore((s) => s.triageCasos);
   const deleteTriageCaso = useVincereStore((s) => s.deleteTriageCaso);
+  const decidirTriageCaso = useVincereStore((s) => s.decidirTriageCaso);
   const proyectos = useVincereStore((s) => s.proyectos);
   const addProyecto = useVincereStore((s) => s.addProyecto);
   const setSeccion = useVincereStore((s) => s.setSeccion);
@@ -105,19 +106,16 @@ export default function TriageSection() {
 
             <div className="space-y-3">
               {triageCasos.map((c) => (
-                <div key={c.id} className="space-y-2">
-                  <TriageCasoCard caso={c} onEliminar={() => deleteTriageCaso(c.id)} />
-                  {c.veredicto && (
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => abrirProyecto(c.nombre, c.genero, c.fase)}
-                        className="vin-faint vin-t-sm hover:underline"
-                      >
-                        Abrirle proyecto a {c.nombre} →
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <TriageCasoCard
+                  key={c.id}
+                  caso={c}
+                  onEliminar={() => deleteTriageCaso(c.id)}
+                  onEntrar={() => {
+                    decidirTriageCaso(c.id, "entramos");
+                    abrirProyecto(c.nombre, c.genero, c.fase);
+                  }}
+                  onDecidir={(d) => decidirTriageCaso(c.id, d)}
+                />
               ))}
             </div>
           </>

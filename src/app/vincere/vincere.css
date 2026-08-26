@@ -58,26 +58,33 @@
   --vin-faint: #6f6b63;
   --vin-dim: #948f85;
 
-  /* Tinta índigo. Es lo tocable: enlaces, estado activo, botón principal.
+  /* Verde oliva. Es lo tocable: enlaces, estado activo, botón principal.
+     Era índigo, y el índigo sobre papel cálido siempre tira a corporativo
+     frío. El oliva sale de la misma familia que la piedra y el hueso del
+     fondo, así que el acento deja de estar apoyado encima de la página y pasa
+     a ser parte de ella.
      Aparecía solo en astillas de 3px, y un acento que nunca se usa con
-     convicción deja la página entera en blanco y gris — que es la otra mitad
-     de por qué se veía clínica. Ahora encabeza secciones y llena el estado
-     activo de la navegación. */
-  --vin-accent: #1f3d5c;
-  --vin-accent-soft: #e3e0d7;
-  --vin-accent-glow: rgba(31, 61, 92, 0.28);
+     convicción deja la página entera en blanco y gris. Ahora encabeza
+     secciones y llena el estado activo de la navegación. */
+  --vin-accent: #4a5c2f;
+  --vin-accent-soft: #e6e4d3;
+  --vin-accent-glow: rgba(74, 92, 47, 0.3);
   --vin-accent-ink: #fbfaf7;
 
   /* Semáforo apagado a propósito: en un documento serio el rojo se gasta
      rápido, y si grita en cada pantalla deja de querer decir nada. */
-  --vin-ok: #2c6349;
+  /* El verde del semáforo se corre hacia el azul.
+     Con el acento en oliva, un «bien» verde amarillento y la marca serían el
+     mismo gesto de color, y ahí el semáforo deja de significar. Separarlos
+     por tono es lo único que mantiene las dos cosas legibles a la vez. */
+  --vin-ok: #1c6351;
   --vin-warn: #86641b;
   --vin-risk: #99392b;
   /* Tintes sólidos, no alfas.
      Un ocre oscuro al 10% sobre blanco no da un amarillo pálido: da caqui
      sucio, porque el alfa arrastra el gris del fondo. Sobre claro el tinte se
      mezcla a mano y queda limpio. */
-  --vin-ok-wash: #eaf1eb;
+  --vin-ok-wash: #e6efeb;
   --vin-warn-wash: #f8f2e2;
   --vin-risk-wash: #f8ece8;
   /* El filete del semáforo, para cuando un bloque entero está en un estado. */
@@ -256,6 +263,18 @@
 
 .vin-muted { color: var(--vin-muted); }
 .vin-faint { color: var(--vin-faint); }
+
+/* La barra de la izquierda.
+   El estado activo se llena de acento —oliva en papel, acero en consola— y el
+   resto se tiñe al pasar por encima. Sin ese roce, las filas se leían como una
+   lista de texto y no como los controles que son. */
+.vin-nav-item {
+  transition: background .14s ease, color .14s ease;
+}
+.vin-nav-item:hover:not([data-activo="true"]) {
+  background: var(--vin-accent-soft);
+  color: var(--vin-text);
+}
 
 /* Título de bloque con filete doble debajo. Es el gesto que convierte una
    caja en una sección de documento. */

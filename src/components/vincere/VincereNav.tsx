@@ -70,7 +70,8 @@ function Item({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap px-3 py-[7px] text-left vin-t-sm transition-colors ${anidado ? "md:pl-8" : ""} ${oculto ? "md:hidden" : ""}`}
+      data-activo={activo}
+      className={`vin-nav-item shrink-0 whitespace-nowrap px-3 py-[7px] text-left vin-t-sm ${anidado ? "md:pl-8" : ""} ${oculto ? "md:hidden" : ""}`}
       style={{
         // El estado activo se llena de acento en vez de insinuarlo con un
         // lavado del 8%. Un acento que nunca se usa con convicción deja la
@@ -112,7 +113,8 @@ function Fila({
   return (
     <button
       onClick={onClick}
-      className="hidden items-center gap-2 px-3 py-2 text-left transition-colors md:flex"
+      data-activo={activa}
+      className="vin-nav-item hidden items-center gap-2 px-3 py-2 text-left md:flex"
       style={{
         background: activa ? "var(--vin-accent)" : "transparent",
         color: activa ? "var(--vin-accent-ink)" : destacada ? "var(--vin-text)" : "var(--vin-faint)",
