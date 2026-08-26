@@ -12,6 +12,18 @@ export const VINCERE_NIVEL_LABEL: Record<VincereNivel, string> = {
   4: "Alta evidencia",
 };
 
+// Un proyecto borrado que todavía se puede recuperar.
+//
+// Borrar disparaba un DELETE real contra la base, sin red de ningún tipo. En
+// un sistema cuyo valor entero es el rigor, que un clic se lleve un artista
+// para siempre no tiene defensa.
+export interface VincereEnPapelera {
+  proyecto: VincereProyecto;
+  borradoEn: string; // ISO
+}
+
+export const VINCERE_DIAS_EN_PAPELERA = 30;
+
 // Las dos superficies del mismo sistema visual. «Papel» es claro y es el
 // predeterminado: casi todo el trabajo acá es leer prosa analítica y comparar
 // columnas de cifras. «Consola» es el oscuro, para trabajar de noche.

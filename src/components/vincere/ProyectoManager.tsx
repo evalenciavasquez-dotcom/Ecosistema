@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useVincereStore } from "@/lib/vincere/store";
-import { VincereFase, VincereProyectoTipo } from "@/lib/vincere/types";
+import { diasEnPapelera, useVincereStore } from "@/lib/vincere/store";
+import { VincereFase, VincereProyectoTipo, VINCERE_DIAS_EN_PAPELERA } from "@/lib/vincere/types";
+import { descargarRespaldo } from "@/lib/vincere/respaldo";
 import EspacioPanel from "./EspacioPanel";
 
 const FASES: VincereFase[] = ["Emergente", "Emergente → Consolidación", "Consolidación", "Establecido"];
@@ -20,6 +21,9 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
   const empezarDeCero = useVincereStore((s) => s.empezarDeCero);
   const setCompareProyectoId = useVincereStore((s) => s.setCompareProyectoId);
   const showToast = useVincereStore((s) => s.showToast);
+  const papelera = useVincereStore((s) => s.papelera);
+  const restaurarProyecto = useVincereStore((s) => s.restaurarProyecto);
+  const eliminarDefinitivo = useVincereStore((s) => s.eliminarDefinitivo);
 
   const [form, setForm] = useState<{ nombre: string; genero: string; fase: VincereFase; tipo: VincereProyectoTipo }>({
     nombre: "",
@@ -30,6 +34,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
   const [confirmarBorrado, setConfirmarBorrado] = useState<string | null>(null);
   const [confirmarVaciado, setConfirmarVaciado] = useState<string | null>(null);
   const [confirmarTodo, setConfirmarTodo] = useState(false);
+  const [confirmarDefinitivo, setConfirmarDefinitivo] = useState<string | null>(null);
 
   function crear() {
     const nombre = form.nombre.trim();
@@ -42,10 +47,31 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
     if (form.tipo === "propio") onClose();
   }
 
+  // Borrar baja el respaldo primero y manda a la papelera después.
+  //
+  // El respaldo no se ofrece, se entrega: mandar a exportar desde otra
+  // pantalla justo cuando alguien ya decidió borrar es una red que nadie usa.
   function eliminar(id: string, nombre: string) {
+    const p = proyectos.find((x) => x.id === id);
+    const conArchivo = p ? descargarRespaldo(p) : false;
     deleteProyecto(id);
     setConfirmarBorrado(null);
-    showToast(`Proyecto "${nombre}" eliminado`);
+    showToast(
+      conArchivo
+        ? `"${nombre}" fue a la papelera · respaldo descargado`
+        : `"${nombre}" fue a la papelera`
+    );
+  }
+
+  function restaurar(id: string, nombre: string) {
+    restaurarProyecto(id);
+    showToast(`"${nombre}" está de vuelta`);
+  }
+
+  function borrarParaSiempre(id: string, nombre: string) {
+    eliminarDefinitivo(id);
+    setConfirmarDefinitivo(null);
+    showToast(`"${nombre}" se eliminó definitivamente`);
   }
 
   function vaciar(id: string, nombre: string) {
@@ -54,10 +80,18 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
     showToast(`"${nombre}" quedó en cero. El proyecto sigue; la data no.`);
   }
 
+  // «Empezar de cero» no pasa por la papelera —guardar copia de todo dentro
+  // del navegador contradice el gesto de vaciarlo—, pero tampoco se lleva nada
+  // en silencio: baja un archivo por proyecto antes de tocar el store.
   function borrarTodo() {
+    const bajados = proyectos.filter((p) => descargarRespaldo(p)).length;
     empezarDeCero();
     setConfirmarTodo(false);
-    showToast("Todo borrado. Crea tu primer proyecto.");
+    showToast(
+      bajados > 0
+        ? `Todo borrado · ${bajados} ${bajados === 1 ? "respaldo descargado" : "respaldos descargados"}`
+        : "Todo borrado. Crea tu primer proyecto."
+    );
   }
 
   return (
@@ -214,7 +248,7 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                       Borrar este proyecto
                     </button>
                     <span className="vin-faint vin-t-sm">
-                      Vaciar conserva el proyecto; borrar se lo lleva entero.
+                      Vaciar conserva el proyecto y le quita la data; borrar lo manda a la papelera.
                     </span>
                   </div>
                 )}
@@ -225,8 +259,10 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                   </p>
                 )}
                 {confirmarBorrado === p.id && (
-                  <p className="mt-2 vin-t-xs" style={{ color: "var(--vin-accent)" }}>
-                    Se borra toda la data de {p.nombre}: canciones, lecturas de IA e informe. No se puede deshacer.
+                  <p className="mt-2 vin-t-sm leading-relaxed" style={{ color: "var(--vin-accent)", maxWidth: "62ch" }}>
+                    {p.nombre} sale de la lista y de la base, pero se puede recuperar desde la papelera durante{" "}
+                    {VINCERE_DIAS_EN_PAPELERA} días. Además se descarga un archivo con todo su contenido, por si el
+                    navegador se limpia antes.
                   </p>
                 )}
                 {p.id === selectedId && <div className="vin-faint mt-1.5 vin-t-xs">Proyecto abierto ahora</div>}
@@ -239,6 +275,74 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
             )}
           </div>
         </section>
+
+        {/* La papelera. Va justo debajo de la lista, que es donde se borra:
+            una red de seguridad escondida en otra pantalla no tranquiliza a
+            nadie porque nadie sabe que existe. Solo aparece cuando tiene algo,
+            para no anunciar en cada visita una función que no se está usando. */}
+        {papelera.length > 0 && (
+          <section className="mt-6" style={{ borderTop: "1px solid var(--vin-border)", paddingTop: "1.25rem" }}>
+            <div className="vin-label mb-2.5">Papelera</div>
+            <p className="vin-muted mb-3.5 vin-t-sm leading-relaxed" style={{ maxWidth: "64ch" }}>
+              Lo borrado se guarda acá {VINCERE_DIAS_EN_PAPELERA} días por si fue un error. Vive solo en este
+              navegador: si lo limpias, se va con él — para eso está el archivo que se descargó al borrar.
+            </p>
+            <div className="flex flex-col gap-2">
+              {papelera.map((e) => {
+                const dias = diasEnPapelera(e);
+                return (
+                  <div
+                    key={e.proyecto.id}
+                    className="rounded-xl px-4 py-3"
+                    style={{ background: "var(--vin-surface-2)", border: "1px solid var(--vin-border)" }}
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                      <span className="vin-t-base font-medium">{e.proyecto.nombre}</span>
+                      <span className="vin-faint vin-t-sm tabular-nums">
+                        {dias === 0 ? "caduca hoy" : dias === 1 ? "queda 1 día" : `quedan ${dias} días`}
+                      </span>
+                    </div>
+                    {confirmarDefinitivo === e.proyecto.id ? (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                        <button
+                          onClick={() => borrarParaSiempre(e.proyecto.id, e.proyecto.nombre)}
+                          className="vin-btn-ghost !py-1.5 vin-t-sm"
+                          style={{ color: "var(--vin-risk)", borderColor: "var(--vin-risk)" }}
+                        >
+                          Sí, esta vez para siempre
+                        </button>
+                        <button
+                          onClick={() => setConfirmarDefinitivo(null)}
+                          className="vin-faint vin-t-sm hover:underline"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-4">
+                        <button
+                          onClick={() => restaurar(e.proyecto.id, e.proyecto.nombre)}
+                          className="vin-t-sm hover:underline"
+                          style={{ color: "var(--vin-accent)", textUnderlineOffset: "3px" }}
+                        >
+                          Restaurar
+                        </button>
+                        <span className="vin-faint vin-t-sm">·</span>
+                        <button
+                          onClick={() => setConfirmarDefinitivo(e.proyecto.id)}
+                          className="vin-faint vin-t-sm hover:underline"
+                          style={{ textUnderlineOffset: "3px" }}
+                        >
+                          Eliminar definitivamente
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* El espacio se mide aquí porque es donde se decide qué borrar. */}
         <section className="mt-6" style={{ borderTop: "1px solid var(--vin-border)", paddingTop: "1.25rem" }}>
@@ -258,11 +362,12 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
               >
                 <p className="mb-3 vin-t-sm leading-relaxed">
                   Se borran los {proyectos.length} proyectos con toda su data, los casos de triage y las
-                  comparaciones. Si tienes base de datos conectada, también se borra allá. No se puede deshacer.
+                  comparaciones. Si tienes base de datos conectada, también se borra allá. Esto no pasa por la
+                  papelera y no se puede deshacer.
                 </p>
                 <p className="vin-faint mb-3 vin-t-sm leading-relaxed">
-                  Si quieres guardar algo antes, sal de VINCERE y usa C.C.O. → Configuración → «Exportar todos los
-                  datos».
+                  Se descarga un archivo por proyecto antes de borrar nada, así que la copia queda en tu equipo aunque
+                  esto no tenga vuelta atrás.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
                   <button onClick={borrarTodo} className="vin-btn-primary !py-1.5 vin-t-xs">
