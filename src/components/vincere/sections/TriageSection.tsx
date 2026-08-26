@@ -5,7 +5,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { VincereQAEntry, VincereFase, VINCERE_DATA_QUE_SIRVE } from "@/lib/vincere/types";
 import { fetchAsk } from "@/lib/vincere/ai-client";
 import { genId } from "@/lib/id";
-import { SectionHeader, Panel, PanelLabel } from "../primitives";
+import { SectionHeader, Panel, PanelLabel, BloqueTintado, Exigencia } from "../primitives";
 import TriageCasoCard from "../TriageCasoCard";
 import QuestionBox from "../QuestionBox";
 
@@ -121,21 +121,25 @@ export default function TriageSection() {
           </>
         )}
 
-        <details className="rounded-xl" style={{ border: "1px solid var(--vin-border)" }}>
-          <summary className="vin-muted cursor-pointer px-3.5 py-2.5 vin-t-sm">
-            Qué data pedir antes de decir que sí
-          </summary>
-          <ul className="space-y-1.5 px-3.5 pb-3">
+        {/* Esto no es una nota al pie: es la lista de lo que se le exige a un
+            artista antes de comprometerse. Vivía plegada dentro de un
+            desplegable gris idéntico a los otros dos de la pantalla, así que
+            se leía como letra chica — cuando en realidad es la herramienta más
+            usable que hay acá: se copia y se manda tal cual. */}
+        <BloqueTintado tipo="accion" rotulo="Antes de decir que sí" titulo="Qué data pedir">
+          <ul className="flex flex-col gap-2.5">
             {VINCERE_DATA_QUE_SIRVE.map((d, i) => (
-              <li key={i} className="vin-muted vin-t-sm leading-relaxed" style={{ maxWidth: "68ch" }}>
-                · {d}
-              </li>
+              <Exigencia key={i}>{d}</Exigencia>
             ))}
           </ul>
-          <p className="vin-faint px-3.5 pb-3.5 vin-t-xs leading-relaxed" style={{ maxWidth: "68ch" }}>
-            Pídela antes de decir que sí. Después del primer análisis, pedirla se ve como que no sabías.
+          <p
+            className="vin-muted mt-4 vin-t-sm leading-relaxed"
+            style={{ maxWidth: "64ch", borderTop: "1px solid var(--vin-tinte-accion-linea)", paddingTop: "0.9rem" }}
+          >
+            Pídela <strong>antes</strong> de decir que sí. Después del primer análisis, pedirla se ve como que no
+            sabías.
           </p>
-        </details>
+        </BloqueTintado>
 
         <QuestionBox log={qaLog} onAsk={ask} placeholder="¿Este caso encaja con lo que dirige VINCERE?…" />
       </div>

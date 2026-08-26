@@ -26,6 +26,72 @@ export function Panel({ children, className = "" }: { children: ReactNode; class
   return <div className={`vin-card p-6 ${className}`}>{children}</div>;
 }
 
+// Un bloque que dice de qué TIPO es antes de que lo leas.
+//
+// El tinte no es decoración: en una pantalla de ocho bloques blancos idénticos
+// hay que leerlos todos para encontrar el que importa. Con cuatro tipos —data,
+// acción, riesgo, nota— la página se recorre con la vista.
+//
+// El rótulo va arriba, en una píldora, como en una ficha: nombra el bloque sin
+// competir con el título.
+export type TipoDeBloque = "datos" | "accion" | "riesgo" | "nota";
+
+export function BloqueTintado({
+  tipo,
+  rotulo,
+  titulo,
+  children,
+  className = "",
+}: {
+  tipo: TipoDeBloque;
+  rotulo?: string;
+  titulo?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`rounded-xl p-5 ${className}`}
+      style={{
+        background: `var(--vin-tinte-${tipo})`,
+        border: `1px solid var(--vin-tinte-${tipo}-linea)`,
+      }}
+    >
+      {(rotulo || titulo) && (
+        <div className="mb-3.5">
+          {rotulo && (
+            <span
+              className="vin-label inline-block rounded-full px-2.5 py-1"
+              style={{ background: "var(--vin-surface)", color: "var(--vin-muted)" }}
+            >
+              {rotulo}
+            </span>
+          )}
+          {titulo && <h3 className="vin-display vin-t-lg mt-2.5">{titulo}</h3>}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+// Una exigencia con su razón. El punto no es la viñeta: es que cada línea sea
+// algo que se puede PEDIR por escrito, con el motivo pegado para poder
+// defenderlo cuando del otro lado pregunten para qué.
+export function Exigencia({ children }: { children: ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span
+        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: "var(--vin-accent)" }}
+      />
+      <span className="vin-t-base leading-relaxed" style={{ maxWidth: "64ch" }}>
+        {children}
+      </span>
+    </li>
+  );
+}
+
 // El rótulo ya no lleva mayúsculas por defecto. Había trescientos repartidos
 // por la app y ese ruido era la mitad de la sensación de formulario: cuando
 // todo grita en versalitas, nada destaca. Se reserva `alto` para lo que de

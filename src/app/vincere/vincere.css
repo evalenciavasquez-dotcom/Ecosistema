@@ -92,6 +92,23 @@
   --vin-warn-line: rgba(138, 106, 31, 0.34);
   --vin-risk-line: rgba(156, 59, 46, 0.32);
 
+  /* ── Bloques tintados ────────────────────────────────────────────────────
+     Un fondo suave que dice de qué TIPO es el bloque antes de leerlo: data,
+     acción, riesgo, nota. Es lo que hace que una página de ocho bloques se
+     recorra con la vista en vez de leerse entera para encontrar el que
+     importa.
+     Son tintes mezclados a mano sobre el papel, no alfas: un alfa arrastra el
+     gris del fondo y termina en caqui. Cada uno lleva su filete un paso más
+     saturado, para que el bloque tenga borde sin necesitar una caja. */
+  --vin-tinte-datos: #e7eaee;
+  --vin-tinte-datos-linea: #ccd3db;
+  --vin-tinte-accion: #e8ecdd;
+  --vin-tinte-accion-linea: #cfd7bd;
+  --vin-tinte-riesgo: #f5e7e3;
+  --vin-tinte-riesgo-linea: #e6cdc6;
+  --vin-tinte-nota: #f3eee1;
+  --vin-tinte-nota-linea: #e0d7c1;
+
   /* Escala tipográfica de seis pasos. Cualquier tamaño fuera de esta lista
      es un error de dibujo, no una decisión. */
   --t-xs: 12.5px;
@@ -152,6 +169,17 @@
   --vin-ok-line: rgba(123, 216, 143, 0.34);
   --vin-warn-line: rgba(232, 176, 75, 0.34);
   --vin-risk-line: rgba(255, 107, 91, 0.34);
+
+  /* En consola el tinte se hace hacia arriba desde la superficie, no hacia
+     abajo desde el blanco: los mismos cuatro tipos, apenas insinuados. */
+  --vin-tinte-datos: #19212e;
+  --vin-tinte-datos-linea: #2b3648;
+  --vin-tinte-accion: #1a2320;
+  --vin-tinte-accion-linea: #2c3a33;
+  --vin-tinte-riesgo: #241a1b;
+  --vin-tinte-riesgo-linea: #3a2a2b;
+  --vin-tinte-nota: #232019;
+  --vin-tinte-nota-linea: #38322a;
 }
 
 /* ── Los seis pasos, como clases ───────────────────────────────────────────
