@@ -4,14 +4,20 @@ import { ReactNode } from "react";
 
 export { formatStreams, formatFollowers, signed } from "@/lib/vincere/format";
 
+// La cabecera lleva una barra de acento a su izquierda.
+//
+// Sin ella la página abría en blanco y gris, sin un solo punto donde apoyar el
+// ojo — que junto con el blanco puro y los recuadros era lo que la hacía leer
+// como un formulario. La barra no es decoración: marca dónde empieza la
+// sección, que es exactamente la información que faltaba a la vista.
 export function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
-    <div className="mb-9">
-      <div className="vin-eyebrow mb-3">{eyebrow}</div>
-      <h1 className="vin-serif vin-t-display font-medium" style={{ textWrap: "balance" }}>
+    <div className="mb-9 pl-4" style={{ borderLeft: "3px solid var(--vin-accent)" }}>
+      <div className="vin-eyebrow mb-2.5">{eyebrow}</div>
+      <h1 className="vin-display vin-t-display" style={{ textWrap: "balance" }}>
         {title}
       </h1>
-      {subtitle && <p className="vin-muted vin-t-base mt-3.5 max-w-[64ch]">{subtitle}</p>}
+      {subtitle && <p className="vin-muted vin-t-base mt-3 max-w-[62ch]">{subtitle}</p>}
     </div>
   );
 }

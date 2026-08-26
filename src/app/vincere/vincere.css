@@ -35,39 +35,51 @@
 
 .vincere-scope {
   /* ── PAPEL · el tema por defecto ────────────────────────────────────────
-     Blanco de trabajo sobre un gris frío. El neutro tiene sesgo hacia el
-     índigo del acento: un gris puro se ve sin elegir. */
-  --vin-bg: #eceef1;
-  --vin-surface: #ffffff;
-  --vin-surface-2: #f4f6f8;
-  --vin-surface-3: #e8ebef;
-  --vin-border: #dce0e6;
-  --vin-border-strong: #bfc6ce;
+     Primera versión: blanco puro sobre gris frío. Salió historia clínica, y
+     con razón — blanco puro + filete gris + caja es literalmente la fórmula
+     de un formulario médico. Lo que lo delataba no era el brillo sino la
+     TEMPERATURA: un gris azulado detrás de un blanco de imprenta no existe en
+     ningún papel, solo en pantallas de institución.
+
+     Ahora es papel de verdad —hueso, cálido— sobre un escritorio de piedra
+     también cálido. La hoja no es el fondo con un borde: es una hoja más
+     clara que la mesa, que es como se distingue el papel en el mundo. */
+  --vin-bg: #dedad2;
+  --vin-surface: #fbfaf7;
+  --vin-surface-2: #f2efe9;
+  --vin-surface-3: #e7e3da;
+  --vin-border: #d5d0c6;
+  --vin-border-strong: #b6afa2;
   --vin-edge: #ffffff;
 
-  --vin-text: #111a24;
-  --vin-muted: #4b5665;
-  --vin-faint: #6d7885;
-  --vin-dim: #929ba7;
+  /* Negro tinta, no negro azulado. La tinta sobre papel tiende a cálido. */
+  --vin-text: #1a1917;
+  --vin-muted: #4f4c46;
+  --vin-faint: #6f6b63;
+  --vin-dim: #948f85;
 
-  /* Tinta índigo. Es lo tocable: enlaces, estado activo, botón principal. */
-  --vin-accent: #243b53;
-  --vin-accent-soft: rgba(36, 59, 83, 0.08);
-  --vin-accent-glow: rgba(36, 59, 83, 0.2);
-  --vin-accent-ink: #ffffff;
+  /* Tinta índigo. Es lo tocable: enlaces, estado activo, botón principal.
+     Aparecía solo en astillas de 3px, y un acento que nunca se usa con
+     convicción deja la página entera en blanco y gris — que es la otra mitad
+     de por qué se veía clínica. Ahora encabeza secciones y llena el estado
+     activo de la navegación. */
+  --vin-accent: #1f3d5c;
+  --vin-accent-soft: #e3e0d7;
+  --vin-accent-glow: rgba(31, 61, 92, 0.28);
+  --vin-accent-ink: #fbfaf7;
 
   /* Semáforo apagado a propósito: en un documento serio el rojo se gasta
      rápido, y si grita en cada pantalla deja de querer decir nada. */
-  --vin-ok: #2f6b4f;
-  --vin-warn: #8a6a1f;
-  --vin-risk: #9c3b2e;
+  --vin-ok: #2c6349;
+  --vin-warn: #86641b;
+  --vin-risk: #99392b;
   /* Tintes sólidos, no alfas.
      Un ocre oscuro al 10% sobre blanco no da un amarillo pálido: da caqui
      sucio, porque el alfa arrastra el gris del fondo. Sobre claro el tinte se
      mezcla a mano y queda limpio. */
-  --vin-ok-wash: #eef5f1;
-  --vin-warn-wash: #fbf6e9;
-  --vin-risk-wash: #fbf1ef;
+  --vin-ok-wash: #eaf1eb;
+  --vin-warn-wash: #f8f2e2;
+  --vin-risk-wash: #f8ece8;
   /* El filete del semáforo, para cuando un bloque entero está en un estado. */
   --vin-ok-line: rgba(47, 107, 79, 0.32);
   --vin-warn-line: rgba(138, 106, 31, 0.34);
@@ -199,11 +211,17 @@
 /* ── Superficies ───────────────────────────────────────────────────────────
    Plana, con filete. Sin sombra y sin borde superior iluminado: el volumen
    falso era parte de lo que hacía que todo pareciera una tarjeta. */
+/* La hoja se distingue por ser MÁS CLARA que la mesa, no por su borde.
+   El filete gris de 1px alrededor de cada bloque era la otra firma del
+   formulario: cuando cada cosa vive dentro de su recuadro, la página se lee
+   como un impreso a rellenar. El borde se queda solo en el tema oscuro, donde
+   sin él no hay forma de separar dos superficies casi iguales. */
 .vin-card {
-  border: 1px solid var(--vin-border);
+  border: 1px solid transparent;
   background: var(--vin-surface);
   border-radius: var(--r-md);
 }
+.vincere-scope[data-tema="oscuro"] .vin-card { border-color: var(--vin-border); }
 
 /* Lo destacado se marca con un riel a la izquierda, no con un marco de color.
    Un borde saturado alrededor de todo compite con el contenido; un riel lo
