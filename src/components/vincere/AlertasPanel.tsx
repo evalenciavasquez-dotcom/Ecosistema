@@ -9,6 +9,7 @@ import {
 } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import EvidenceTag from "./EvidenceTag";
+import { BloqueTintado, type TipoDeBloque } from "./primitives";
 
 const SEVERIDAD_COLOR: Record<VincereAlertaSeveridad, string> = {
   critica: "var(--vin-risk)",
@@ -73,7 +74,7 @@ export default function AlertasPanel({
   const nivel = loComun(visibles, (a) => a.nivel);
 
   return (
-    <div className="vin-accent-card p-5">
+    <div>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--vin-accent)" }} />
@@ -96,9 +97,14 @@ export default function AlertasPanel({
         </div>
       )}
 
-      <div className="flex flex-col gap-5">
+      {/* Cada grupo lleva su propio tinte: rojizo lo que amenaza, verde lo que
+          se puede capitalizar. Con dos bloques de color distinto no hace falta
+          leer para saber cuál es cuál — que es exactamente lo que no pasaba
+          cuando los cinco hallazgos venían en una lista del mismo gris. */}
+      <div className="flex flex-col gap-3">
         <Grupo
           titulo="Hay que atender"
+          tipo="riesgo"
           alertas={atender}
           proyectoId={proyecto.id}
           onIr={setSeccion}
@@ -108,6 +114,7 @@ export default function AlertasPanel({
         />
         <Grupo
           titulo="Se puede aprovechar"
+          tipo="accion"
           alertas={aprovechar}
           proyectoId={proyecto.id}
           onIr={setSeccion}
@@ -128,6 +135,7 @@ export default function AlertasPanel({
 
 function Grupo({
   titulo,
+  tipo,
   alertas,
   proyectoId,
   onIr,
@@ -136,6 +144,7 @@ function Grupo({
   mostrarOrigen,
 }: {
   titulo: string;
+  tipo: TipoDeBloque;
   alertas: VincereAlerta[];
   proyectoId: string;
   onIr: (s: NonNullable<VincereAlerta["seccion"]>) => void;
@@ -144,9 +153,10 @@ function Grupo({
   mostrarOrigen: boolean;
 }) {
   if (alertas.length === 0) return null;
+  const filete = `1px solid var(--vin-tinte-${tipo}-linea)`;
   return (
-    <div>
-      <div className="vin-block-title mb-3">
+    <BloqueTintado tipo={tipo} className="!p-4">
+      <div className="vin-block-title mb-2" style={{ borderBottomColor: "currentColor", opacity: 0.9 }}>
         <span>{titulo}</span>
         <span className="tabular-nums">{alertas.length}</span>
       </div>
@@ -155,7 +165,7 @@ function Grupo({
           <li
             key={a.id}
             className="flex items-start gap-3 py-3"
-            style={{ borderTop: i === 0 ? "none" : "1px solid var(--vin-border)" }}
+            style={{ borderTop: i === 0 ? "none" : filete }}
           >
             {/* El número hace que un hallazgo se pueda nombrar en voz alta —
                 «el 3»— en vez de tener que releerlo para señalarlo. */}
@@ -195,6 +205,6 @@ function Grupo({
           </li>
         ))}
       </ol>
-    </div>
+    </BloqueTintado>
   );
 }
