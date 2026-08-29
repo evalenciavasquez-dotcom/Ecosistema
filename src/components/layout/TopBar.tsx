@@ -77,8 +77,8 @@ export default function TopBar() {
   return (
     <header className="relative flex items-center justify-between gap-3 border-b border-border-subtle bg-background px-4 py-3 md:px-6 md:py-4">
       <div className="min-w-0">
-        <div className="text-xs text-muted truncate">{dateLabel}</div>
-        <h1 className="text-lg md:text-xl font-semibold tracking-tight truncate">{titleFor(pathname)}</h1>
+        <div className="t-xs text-muted truncate">{dateLabel}</div>
+        <h1 className="t-xl font-semibold truncate">{titleFor(pathname)}</h1>
       </div>
       <TimerChip />
       <div className="relative w-36 sm:w-56 md:w-72 shrink-0">

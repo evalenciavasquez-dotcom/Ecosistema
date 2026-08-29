@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { strategicCaseGeneratedSchema } from "@/lib/strategic-case-schema";
+import { diagnosticarSalida, mensajeSinSalidaEstructurada } from "@/lib/ai/motivo-sin-salida";
 import { SYSTEM_PROMPT, buildUserPrompt } from "@/lib/analysis-prompt";
 import {
   AJENO,
@@ -95,16 +96,14 @@ export async function POST(request: Request) {
       messages: [{ role: "user", content: buildUserPrompt(contextoConDebate) }],
     });
 
-    if (response.stop_reason === "refusal") {
-      return NextResponse.json(
-        { error: "El sistema no pudo generar el análisis para este caso." },
-        { status: 502 }
-      );
+    const diagnostico = diagnosticarSalida(response.stop_reason, "el análisis");
+    if (diagnostico) {
+      return NextResponse.json({ error: diagnostico.mensaje }, { status: 502 });
     }
 
     if (response.parsed_output == null) {
       return NextResponse.json(
-        { error: "El modelo no devolvió un análisis con el formato esperado. Intenta de nuevo." },
+        { error: mensajeSinSalidaEstructurada(response.stop_reason, "el análisis") },
         { status: 502 }
       );
     }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { analisisResponseSchema } from "@/lib/cuartel/schema";
+import { mensajeSinSalidaEstructurada } from "@/lib/ai/motivo-sin-salida";
 import { CUARTEL_ANALISIS_SYSTEM_PROMPT, buildAnalisisPrompt } from "@/lib/cuartel/prompt";
 
 // Análisis completo: las rutas del escenario × los 6 sombreros, más el
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     });
 
     if (response.parsed_output == null) {
-      return NextResponse.json({ error: "No se pudo generar el análisis" }, { status: 502 });
+      return NextResponse.json({ error: mensajeSinSalidaEstructurada(response.stop_reason, "el análisis") }, { status: 502 });
     }
 
     return NextResponse.json({ result: response.parsed_output });

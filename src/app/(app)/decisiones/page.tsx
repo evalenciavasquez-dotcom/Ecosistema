@@ -16,7 +16,7 @@ import {
   TipoPreguntaInterrogatorio,
   TurnoInterrogatorio,
 } from "@/lib/types";
-import { buildAnalysisContext, proyectoNombre } from "@/lib/selectors";
+import { proyectoNombre } from "@/lib/selectors";
 import { useOpenParam } from "@/lib/useOpenParam";
 import { genId } from "@/lib/id";
 
@@ -114,23 +114,21 @@ function DecisionCard({ decision, onClick }: { decision: Decision; onClick: () =
 
 function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: () => void }) {
   const proyectos = useAppStore((s) => s.proyectos);
-  const personas = useAppStore((s) => s.personas);
-  const movimientos = useAppStore((s) => s.movimientos);
-  const evidencias = useAppStore((s) => s.evidencias);
   const historial = useAppStore((s) => s.historial);
   const decisiones = useAppStore((s) => s.decisiones);
   const strategicCases = useAppStore((s) => s.strategicCases);
-  const crearCasoDesdeAnalisis = useAppStore((s) => s.crearCasoDesdeAnalisis);
+  const ejecutarAnalisisDecision = useAppStore((s) => s.ejecutarAnalisisDecision);
+  const analisisEnCurso = useAppStore((s) => s.analisisEnCurso);
   const resolverDecision = useAppStore((s) => s.resolverDecision);
   const updateDecision = useAppStore((s) => s.updateDecision);
   const updateStrategicCase = useAppStore((s) => s.updateStrategicCase);
   const interrogatorios = useAppStore((s) => s.interrogatorios).filter((i) => i.decisionId === decision.id);
   const [respuesta, setRespuesta] = useState(decision.decisionFinal);
-  const [analizando, setAnalizando] = useState(false);
   const [errorAnalisis, setErrorAnalisis] = useState("");
   const [cuestionando, setCuestionando] = useState(false);
 
   const strategicCase = strategicCases.find((c) => c.decisionId === decision.id) ?? null;
+  const analizando = analisisEnCurso.includes(decision.id);
 
   const [resultado, setResultado] = useState(decision.resultadoPosterior);
   const [hipotesisSeCumplio, setHipotesisSeCumplio] = useState<boolean | null>(
@@ -150,30 +148,13 @@ function DecisionDetail({ decision, onClose }: { decision: Decision; onClose: ()
     }
   }
 
+  // El análisis corre en el store, no acá: así sigue vivo si Eduardo se va a
+  // otra pantalla mientras tanto, y el candado impide pagar dos veces por la
+  // misma respuesta.
   async function handleAnalyze() {
-    setAnalizando(true);
     setErrorAnalisis("");
-    try {
-      const ctx = buildAnalysisContext(decision, proyectos, personas, movimientos, evidencias, historial, decisiones);
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ctx),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrorAnalisis(data.error || "No se pudo generar el análisis.");
-        return;
-      }
-      crearCasoDesdeAnalisis(decision.id, data.result, false, {
-        razonamiento: data.razonamiento ?? null,
-        fuentesExternas: data.fuentesExternas ?? null,
-      });
-    } catch {
-      setErrorAnalisis("Error de conexión al generar el análisis.");
-    } finally {
-      setAnalizando(false);
-    }
+    const resultado = await ejecutarAnalisisDecision(decision.id, false);
+    if (!resultado.ok) setErrorAnalisis(resultado.error ?? "No se pudo generar el análisis.");
   }
 
   return (

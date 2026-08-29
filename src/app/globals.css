@@ -1,10 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0c;
-  --surface: #131316;
-  --surface-2: #1a1a1f;
-  --border-subtle: #26262c;
+  /* Superficies con separación real. Antes background y surface se
+     distinguían por nueve puntos de luminancia: todo se veía plano y el
+     borde tenía que hacer solo el trabajo de separar, que es por lo que
+     cada dato terminaba encajonado en su propia caja. */
+  --background: #08080a;
+  --surface: #17171c;
+  --surface-2: #222229;
+  --surface-3: #2d2d35;
+  --border-subtle: #2c2c33;
+  /* Luz desde arriba: el borde superior más claro es lo que le da volumen a
+     una tarjeta oscura sin necesidad de sombra pesada. */
+  --edge: rgba(255, 255, 255, 0.055);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -6px rgba(0, 0, 0, 0.35);
   --foreground: #f4f4f5;
   --muted: #8b8b93;
   --accent-blue: #5b8dee;
@@ -23,10 +32,13 @@
    explícito en Configuración (data-theme ausente). */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --background: #f4f5f7;
+    --background: #eef0f4;
     --surface: #ffffff;
-    --surface-2: #edeff2;
-    --border-subtle: #dde1e6;
+    --surface-2: #e6e9ef;
+    --surface-3: #d9dde5;
+    --border-subtle: #d8dce3;
+    --edge: rgba(255, 255, 255, 0.9);
+    --shadow-card: 0 1px 2px rgba(16, 20, 28, 0.06), 0 6px 16px -6px rgba(16, 20, 28, 0.1);
     --foreground: #14161a;
     --muted: #6b7078;
     --accent-blue: #2f5fd8;
@@ -40,10 +52,13 @@
 
 /* Elección explícita del usuario — gana siempre sobre la preferencia del sistema. */
 :root[data-theme="light"] {
-  --background: #f4f5f7;
+  --background: #eef0f4;
   --surface: #ffffff;
-  --surface-2: #edeff2;
-  --border-subtle: #dde1e6;
+  --surface-2: #e6e9ef;
+  --surface-3: #d9dde5;
+  --border-subtle: #d8dce3;
+  --edge: rgba(255, 255, 255, 0.9);
+  --shadow-card: 0 1px 2px rgba(16, 20, 28, 0.06), 0 6px 16px -6px rgba(16, 20, 28, 0.1);
   --foreground: #14161a;
   --muted: #6b7078;
   --accent-blue: #2f5fd8;
@@ -55,10 +70,13 @@
 }
 
 :root[data-theme="dark"] {
-  --background: #0a0a0c;
-  --surface: #131316;
-  --surface-2: #1a1a1f;
-  --border-subtle: #26262c;
+  --background: #08080a;
+  --surface: #17171c;
+  --surface-2: #222229;
+  --surface-3: #2d2d35;
+  --border-subtle: #2c2c33;
+  --edge: rgba(255, 255, 255, 0.055);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -6px rgba(0, 0, 0, 0.35);
   --foreground: #f4f4f5;
   --muted: #8b8b93;
   --accent-blue: #5b8dee;
@@ -81,9 +99,56 @@
   --color-accent-amber: var(--accent-amber);
   --color-accent-red: var(--accent-red);
   --color-accent-green: var(--accent-green);
+  --color-surface-3: var(--surface-3);
   --color-overlay: var(--overlay);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-mono-jb);
+}
+
+/* Volumen en las tarjetas.
+   Se aplica por la firma de la tarjeta (esquina redondeada grande + fondo de
+   superficie) en vez de por una clase propia, porque esa firma ya se repite
+   en 66 lugares de la app: así todas ganan profundidad de una vez, sin tener
+   que reescribir componente por componente la noche antes de arrancar. Los
+   inputs usan rounded-lg y la barra lateral no redondea, así que quedan
+   fuera a propósito — un campo de texto con sombra de tarjeta se lee como
+   algo que se puede tocar, y no lo es. */
+.rounded-2xl.bg-surface,
+.rounded-xl.bg-surface {
+  box-shadow: inset 0 1px 0 var(--edge), var(--shadow-card);
+}
+
+/* Escala tipográfica de seis pasos.
+   El problema no era que faltaran tamaños, sino que sobraban: entre 10px y
+   26px había una docena de valores sueltos, y con doce pesos visuales
+   ninguno manda. Estos seis son los únicos que deberían usarse de aquí en
+   adelante; cualquier tamaño fuera de la lista es un descuido de dibujo, no
+   una decisión. */
+:root {
+  --t-xs: 11.5px;
+  --t-sm: 13px;
+  --t-base: 15px;
+  --t-lg: 17px;
+  --t-xl: 22px;
+  --t-display: 30px;
+}
+
+.t-xs { font-size: var(--t-xs); line-height: 1.45; }
+.t-sm { font-size: var(--t-sm); line-height: 1.55; }
+.t-base { font-size: var(--t-base); line-height: 1.6; }
+.t-lg { font-size: var(--t-lg); line-height: 1.45; letter-spacing: -0.01em; }
+.t-xl { font-size: var(--t-xl); line-height: 1.25; letter-spacing: -0.02em; }
+.t-display { font-size: var(--t-display); line-height: 1.12; letter-spacing: -0.025em; }
+
+/* Un título largo no debería partirse dejando una palabra sola en la última
+   línea. */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* Cifras que se comparan en columna tienen que alinearse por dígito. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 html {

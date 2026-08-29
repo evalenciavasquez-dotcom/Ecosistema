@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { recomendacionResponseSchema } from "@/lib/cuartel/schema";
+import { mensajeSinSalidaEstructurada } from "@/lib/ai/motivo-sin-salida";
 import { CUARTEL_RECOMENDACION_SYSTEM_PROMPT, buildRecomendacionPrompt } from "@/lib/cuartel/prompt";
 
 interface RutaValida {
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     const parsed = response.parsed_output;
     if (parsed == null) {
-      return NextResponse.json({ error: "No se pudo generar la recomendación" }, { status: 502 });
+      return NextResponse.json({ error: mensajeSinSalidaEstructurada(response.stop_reason, "la recomendación") }, { status: 502 });
     }
 
     if (!validas.some((r) => r.id === parsed.rutaId)) {
