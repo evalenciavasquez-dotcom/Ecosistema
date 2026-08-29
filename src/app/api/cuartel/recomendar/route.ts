@@ -3,6 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { recomendacionResponseSchema } from "@/lib/cuartel/schema";
 import { CUARTEL_RECOMENDACION_SYSTEM_PROMPT, buildRecomendacionPrompt } from "@/lib/cuartel/prompt";
+// Infraestructura de despliegue compartida, no datos: solo responde si hay
+// llave de IA y dónde se configura. Ningún contenido del Cuartel la cruza.
+import { exigirLlaveDeIA } from "@/lib/vincere/llave";
 
 interface RutaValida {
   id: string;
@@ -16,10 +19,8 @@ interface RutaValida {
 // llegan solo como contexto de "esto ya no compite": el modelo no puede
 // devolverlas, y si lo intenta la respuesta se rechaza más abajo.
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   const validas: RutaValida[] = Array.isArray(body?.rutas) ? body.rutas : [];

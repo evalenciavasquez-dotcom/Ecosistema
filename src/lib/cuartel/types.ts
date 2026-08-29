@@ -315,6 +315,10 @@ export interface CuartelCierre {
   // esa diferencia es justamente lo que el Libro Rojo necesita registrar.
   rutaRecomendadaId: string | null;
   razonRecomendacion: string;
+  // El supuesto que, si resulta falso, tumba la recomendación. Se guarda con
+  // ella y no en la pantalla: es parte de sobre qué se recomendó, y perderlo al
+  // navegar obligaba a pagar la llamada otra vez para volver a leerlo.
+  supuestoRecomendacion: string;
   rutaElegidaId: string | null;
   movidaConcreta: string;
   plazoMovida: string;
@@ -330,6 +334,7 @@ export function cierreVacio(): CuartelCierre {
   return {
     rutaRecomendadaId: null,
     razonRecomendacion: "",
+    supuestoRecomendacion: "",
     rutaElegidaId: null,
     movidaConcreta: "",
     plazoMovida: "",
@@ -357,6 +362,10 @@ export interface CuartelEscenario {
   // de los hechos a propósito.
   tensionReal: string;
   fechaLimite: string;
+  // Lo que el sistema vio al poner las rutas una al lado de la otra. Vive en el
+  // escenario porque es el resultado de una llamada que se paga: en el estado
+  // de la pantalla se borraba al navegar y había que volver a pedirla.
+  lecturaGeneral: string;
   rutas: CuartelRuta[];
   cierre: CuartelCierre;
   creadoEn: string;

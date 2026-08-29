@@ -53,6 +53,19 @@ export function nuevaRuta(tipo: CuartelRutaTipo, origen: "eduardo" | "sistema" =
   };
 }
 
+// Un escenario guardado antes de que existiera un campo llega sin él. Se
+// rellena al entrar, y no se confía en que la interfaz recuerde poner "?? ''"
+// en cada lugar donde se lea: ese olvido es la clase de error que aparece
+// meses después, con datos reales adentro.
+function normalizarEscenario(e: CuartelEscenario): CuartelEscenario {
+  return {
+    ...e,
+    lecturaGeneral: e.lecturaGeneral ?? "",
+    cierre: { ...cierreVacio(), ...e.cierre },
+    rutas: (e.rutas ?? []).map((r) => ({ ...r, semaforo: { ...semaforoVacio(), ...r.semaforo } })),
+  };
+}
+
 export interface NuevoEscenarioInput {
   nombre: string;
   categoria: CuartelEscenario["categoria"];
@@ -144,6 +157,7 @@ export const useCuartelStore = create<CuartelState>()(
           certezaPatron: "reportado",
           tensionReal: input.tensionReal,
           fechaLimite: input.fechaLimite,
+          lecturaGeneral: "",
           rutas: CUARTEL_RUTAS_BASE.map((t) => nuevaRuta(t)),
           cierre: cierreVacio(),
           creadoEn: ahora,
@@ -273,7 +287,7 @@ export const useCuartelStore = create<CuartelState>()(
 
       hidratarDesdeServidor: (escenarios) =>
         set((s) => ({
-          escenarios,
+          escenarios: escenarios.map(normalizarEscenario),
           escenarioAbiertoId: escenarios.some((e) => e.id === s.escenarioAbiertoId) ? s.escenarioAbiertoId : null,
         })),
     }),
@@ -281,6 +295,12 @@ export const useCuartelStore = create<CuartelState>()(
       name: "cuartel-storage",
       storage: createJSONStorage(() => getPersistStorage()),
       skipHydration: true,
+      // La copia del navegador también puede venir de una versión anterior:
+      // se normaliza igual que lo que llega del servidor.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<CuartelState>;
+        return { ...current, ...p, escenarios: (p.escenarios ?? []).map(normalizarEscenario) };
+      },
     }
   )
 );

@@ -17,6 +17,7 @@ import {
 } from "@/lib/cuartel/types";
 import { etiquetaRuta } from "@/lib/cuartel/ai-client";
 import { Campo, CertezaTag, ErrorNota, Panel, PanelLabel } from "./primitives";
+import AvisoSinLlave, { useSinLlave } from "./AvisoSinLlave";
 import RutaCard from "./RutaCard";
 import CierrePanel from "./CierrePanel";
 
@@ -37,12 +38,12 @@ export default function EscenarioDetalle({
   const aplicarAnalisis = useCuartelStore((s) => s.aplicarAnalisis);
   const showToast = useCuartelStore((s) => s.showToast);
 
+  const sinLlave = useSinLlave();
   const [modo, setModo] = useState<Modo>("comparativa");
   const [rutaActivaId, setRutaActivaId] = useState<string | null>(null);
   const [editandoContexto, setEditandoContexto] = useState(false);
   const [analizando, setAnalizando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lectura, setLectura] = useState<string | null>(null);
 
   const rutaActiva = escenario.rutas.find((r) => r.id === rutaActivaId) ?? escenario.rutas[0];
   const visibles = modo === "comparativa" ? escenario.rutas : [rutaActiva];
@@ -66,7 +67,9 @@ export default function EscenarioDetalle({
           certezaRiesgos: propuesta.certezaRiesgos,
         });
       });
-      setLectura(res.lecturaGeneral);
+      // La lectura se guarda con el escenario, no en la pantalla: cuesta una
+      // llamada y antes se perdía con solo navegar a otra sección.
+      actualizarEscenario(escenario.id, { lecturaGeneral: res.lecturaGeneral });
       if (escenario.estado === "activo") setEstado(escenario.id, "analisis");
       showToast("Análisis cargado. Lo que ya habías escrito no se tocó.");
     } catch (err) {
@@ -195,18 +198,26 @@ export default function EscenarioDetalle({
       </Panel>
 
       <div className="mb-4">
-        <button className="cua-btn-primary" onClick={analizar} disabled={analizando}>
+        {/* Sin llave el botón no se esconde: se apaga. Esconderlo dejaría la
+            pantalla sin explicación de por qué no está lo que debería estar. */}
+        <button
+          className="cua-btn-primary"
+          onClick={analizar}
+          disabled={analizando || sinLlave}
+          title={sinLlave ? "Falta configurar la llave de la IA" : undefined}
+        >
           {analizando ? "Analizando…" : "Analizar rutas con el sistema"}
         </button>
+        <AvisoSinLlave que="No se pueden redactar los sombreros ni proponer el semáforo." />
         <p className="mt-2 text-[12px] leading-relaxed" style={{ color: "var(--cua-faint)" }}>
           Corre los 6 sombreros y el semáforo sobre cada ruta. Solo llena lo vacío: lo que escribiste vos no se pisa, y
           ni la validez ni El Instructor se generan solos.
         </p>
         {error && <ErrorNota>{error}</ErrorNota>}
-        {lectura && (
+        {escenario.lecturaGeneral && (
           <div className="cua-quote mt-3">
             <div className="cua-label mb-1.5">Lectura general</div>
-            <p className="text-[13.5px] leading-relaxed">{lectura}</p>
+            <p className="text-[13.5px] leading-relaxed">{escenario.lecturaGeneral}</p>
           </div>
         )}
       </div>

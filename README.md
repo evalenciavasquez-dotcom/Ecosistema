@@ -255,6 +255,10 @@ Cuatro pantallas — Inicio · Escenarios · Historial (Libro Rojo) · Método �
 - **Recomendación** (`/api/cuartel/recomendar`): recibe únicamente las rutas válidas, devuelve una sola ruta con su movida concreta (ejecutable, verificable, con plazo) y el supuesto que la sostiene. Si apunta a una ruta que no está en las válidas, la respuesta se descarta. La ruta recomendada y la elegida se guardan por separado: pueden diferir, y esa diferencia es data.
 - **Libro Rojo** (Historial): escenarios decididos con su resultado real y si el patrón identificado se confirmó o se refutó. El escenario no se puede cerrar sin resultado registrado — sin eso, esto sería un archivo de decisiones y no un registro que enseñe algo al siguiente. El contexto del Libro Rojo viaja a todos los prompts, que es lo que permite las preguntas de consistencia.
 - **Honestidad de estado**: el indicador del encabezado dice dónde quedó la data de verdad (Guardado / Solo este dispositivo / Sin guardar). Un guardado que falló nunca se muestra como exitoso.
+- **Lo que cuesta una llamada se guarda con el escenario**, no en el estado de la pantalla: la lectura general del análisis y el supuesto que sostiene la recomendación sobreviven a navegar y a recargar. Es la misma lección que la propuesta de la ingesta en VINCERE.
+- **La falta de llave de IA se avisa antes de apretar**, no después, y diciendo dónde se arregla según dónde corra el despliegue (producción, preview o local) — reusa `exigirLlaveDeIA` y `useIaConfigurada`, que son infraestructura de despliegue y no datos.
+- **Respaldo propio** en Configuración → "Exportar El Cuartel": archivo aparte del respaldo general, porque mezclar escenarios personales con proyectos, pagos y personas en un mismo JSON es la mezcla que el sistema evita en todo lo demás. Antes no había forma de bajarlos.
+- **No aparece en la barra lateral de trabajo** (donde sí está VINCERE), solo en el panel de entrada: el contenido personal no se cruza en el contexto de trabajo.
 - **Reversibilidad**: borrar un escenario o una ruta exige una confirmación explícita que dice qué se pierde.
 
 ```
