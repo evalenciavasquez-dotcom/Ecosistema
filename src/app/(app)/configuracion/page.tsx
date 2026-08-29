@@ -614,8 +614,9 @@ export default function ConfiguracionPage() {
               <div>
                 <div className="text-sm font-medium">Vaciar todo y empezar de cero</div>
                 <div className="text-xs text-muted mt-0.5">
-                  Borra permanentemente todo lo real (proyectos, economía, decisiones, todo) en todos tus
-                  dispositivos, para arrancar limpio antes de meter tu información.
+                  Borra permanentemente todo lo tuyo del C.C.O. — proyectos, economía, decisiones, goals,
+                  evidencias y los escenarios de El Cuartel — en todos tus dispositivos, para arrancar limpio
+                  antes de meter tu información. No toca VINCERE ni tu conexión con Google.
                 </div>
               </div>
               <button
