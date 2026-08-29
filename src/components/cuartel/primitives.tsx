@@ -7,6 +7,7 @@ import {
   CUARTEL_LUZ_COLOR,
   CuartelCerteza,
   CuartelLuz,
+  CuartelOrigen,
   CuartelValidez,
 } from "@/lib/cuartel/types";
 
@@ -81,6 +82,22 @@ export function LuzDot({
         cursor: onClick ? "pointer" : "default",
       }}
     />
+  );
+}
+
+// Trazabilidad (PRD §14). Solo se marca lo que escribió el sistema: lo demás
+// es de Eduardo por defecto, y llenar la pantalla de etiquetas "tuyo" hace que
+// se dejen de leer justo las que importan.
+export function OrigenTag({ origen }: { origen: CuartelOrigen | null }) {
+  if (origen !== "sistema") return null;
+  return (
+    <span
+      className="cua-mono inline-flex shrink-0 items-center rounded-sm border px-1.5 py-0.5 text-[9.5px] uppercase tracking-[0.05em]"
+      style={{ color: "var(--cua-accent)", borderColor: "var(--cua-accent)" }}
+      title="Lo redactó el sistema, no vos. Editarlo lo vuelve tuyo."
+    >
+      Del sistema
+    </span>
   );
 }
 

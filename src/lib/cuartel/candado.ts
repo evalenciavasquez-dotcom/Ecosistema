@@ -94,29 +94,6 @@ export function veredictosDe(escenario: CuartelEscenario): Record<string, Cuarte
   return out;
 }
 
-export interface CuartelResumenEscenario {
-  validas: number;
-  pendientes: number;
-  descartadas: number;
-  // Un escenario está listo para comparar cuando quedan al menos dos rutas
-  // válidas: comparar una sola ruta con nada no es comparar.
-  listoParaComparar: boolean;
-  diasParaLimite: number | null;
-}
-
-export function resumirEscenario(escenario: CuartelEscenario, hoy = new Date()): CuartelResumenEscenario {
-  const veredictos = Object.values(veredictosDe(escenario));
-  const validas = veredictos.filter((v) => v.validez === "valida").length;
-
-  return {
-    validas,
-    pendientes: veredictos.filter((v) => v.validez === "pendiente").length,
-    descartadas: veredictos.filter((v) => v.validez === "descartada").length,
-    listoParaComparar: validas >= 2,
-    diasParaLimite: diasHasta(escenario.fechaLimite, hoy),
-  };
-}
-
 // Días desde hoy hasta la fecha límite. Negativo si ya pasó, null si no hay
 // fecha. Se compara a medianoche local para que "hoy" sea 0 y no -1 por horas.
 export function diasHasta(fecha: string, hoy = new Date()): number | null {

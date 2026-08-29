@@ -4,6 +4,8 @@ import { genId } from "../id";
 import {
   CUARTEL_METRICAS,
   CUARTEL_RUTAS_BASE,
+  CUARTEL_SOMBREROS,
+  CuartelOrigenSombreros,
   CuartelCerteza,
   CuartelCierre,
   CuartelEscenario,
@@ -18,6 +20,7 @@ import {
   CuartelSombrero,
   cierreVacio,
   legalVacio,
+  origenSombrerosVacio,
   semaforoVacio,
   sombrerosVacios,
 } from "./types";
@@ -38,7 +41,7 @@ function hoyISO(): string {
   return new Date().toISOString();
 }
 
-export function nuevaRuta(tipo: CuartelRutaTipo, origen: "eduardo" | "sistema" = "sistema"): CuartelRuta {
+export function nuevaRuta(tipo: CuartelRutaTipo): CuartelRuta {
   return {
     id: genId("cru"),
     tipo,
@@ -48,7 +51,7 @@ export function nuevaRuta(tipo: CuartelRutaTipo, origen: "eduardo" | "sistema" =
     legal: legalVacio(),
     certezaRiesgos: "interpretacion",
     turnos: [],
-    origen,
+    origenSombreros: origenSombrerosVacio(),
     creadoEn: hoyISO(),
   };
 }
@@ -62,7 +65,15 @@ function normalizarEscenario(e: CuartelEscenario): CuartelEscenario {
     ...e,
     lecturaGeneral: e.lecturaGeneral ?? "",
     cierre: { ...cierreVacio(), ...e.cierre },
-    rutas: (e.rutas ?? []).map((r) => ({ ...r, semaforo: { ...semaforoVacio(), ...r.semaforo } })),
+    rutas: (e.rutas ?? []).map((r) => ({
+      ...r,
+      semaforo: { ...semaforoVacio(), ...r.semaforo },
+      // Una ruta guardada antes de que la autoría fuera por sombrero no sabe
+      // quién escribió cada uno. Queda sin autor declarado, que es la verdad:
+      // inventar "sistema" o "eduardo" acá sería justo la confusión que este
+      // campo existe para evitar.
+      origenSombreros: { ...origenSombrerosVacio(), ...r.origenSombreros },
+    })),
   };
 }
 
@@ -177,7 +188,7 @@ export const useCuartelStore = create<CuartelState>()(
         })),
 
       agregarRuta: (escenarioId, tipo, nombre = "") => {
-        const ruta = { ...nuevaRuta(tipo, "eduardo"), nombre };
+        const ruta = { ...nuevaRuta(tipo), nombre };
         set((s) => ({
           escenarios: mapEscenario(s.escenarios, escenarioId, (e) => ({ ...e, rutas: [...e.rutas, ruta] })),
         }));
@@ -200,7 +211,10 @@ export const useCuartelStore = create<CuartelState>()(
             mapRuta(e, rutaId, (r) => ({
               ...r,
               sombreros: { ...r.sombreros, [sombrero]: texto },
-              origen: "eduardo",
+              // La última mano responde por el texto: si Eduardo lo edita, deja
+              // de ser una interpretación del sistema. Vaciarlo lo vuelve a
+              // dejar sin autor, no "de Eduardo".
+              origenSombreros: { ...r.origenSombreros, [sombrero]: texto.trim() ? "eduardo" : null },
             }))
           ),
         })),
@@ -233,13 +247,28 @@ export const useCuartelStore = create<CuartelState>()(
             mapRuta(e, rutaId, (r) => ({
               ...r,
               sombreros: analisis.sombreros
-                ? Object.fromEntries(
+                ? (Object.fromEntries(
                     Object.entries(r.sombreros).map(([k, v]) => [
                       k,
                       v.trim() ? v : (analisis.sombreros![k as CuartelSombrero] ?? ""),
                     ])
-                  ) as CuartelRuta["sombreros"]
+                  ) as CuartelRuta["sombreros"])
                 : r.sombreros,
+              // Se marca "sistema" únicamente en los que estaban vacíos y llenó
+              // el análisis. Lo que ya había escrito Eduardo no cambia de autor
+              // por haber corrido el análisis al lado.
+              origenSombreros: analisis.sombreros
+                ? (Object.fromEntries(
+                    CUARTEL_SOMBREROS.map((k) => [
+                      k,
+                      r.sombreros[k].trim()
+                        ? r.origenSombreros[k]
+                        : analisis.sombreros![k]?.trim()
+                          ? "sistema"
+                          : r.origenSombreros[k],
+                    ])
+                  ) as CuartelOrigenSombreros)
+                : r.origenSombreros,
               // Se recorre la lista de métricas en vez de nombrarlas una a una:
               // así, si cambian las cuatro, esto no se queda pisando claves
               // que ya no existen.
