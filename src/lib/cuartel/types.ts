@@ -38,11 +38,6 @@ export const CUARTEL_CERTEZA_DETALLE: Record<CuartelCerteza, string> = {
   hipotesis: "Supuesto explícito, no confirmado por ninguna de las partes.",
 };
 
-export interface CuartelAfirmacion {
-  texto: string;
-  certeza: CuartelCerteza;
-}
-
 // ───────────────────────────── Escenarios ─────────────────────────────
 
 export type CuartelCategoria = "relacion" | "familia" | "salud" | "vocacion" | "tiempo" | "otro";
@@ -155,17 +150,21 @@ export function sombrerosVacios(): CuartelSombreros {
   return { hechos: "", emocion: "", riesgos: "", beneficio: "", alternativas: "", meta: "" };
 }
 
+// null = todavía vacío. Un sombrero escrito por el sistema y después editado
+// por Eduardo pasa a ser de Eduardo: la última mano es la que responde por el
+// texto que se está leyendo.
+export type CuartelOrigen = "eduardo" | "sistema";
+export type CuartelOrigenSombreros = Record<CuartelSombrero, CuartelOrigen | null>;
+
+export function origenSombrerosVacio(): CuartelOrigenSombreros {
+  return { hechos: null, emocion: null, riesgos: null, beneficio: null, alternativas: null, meta: null };
+}
+
 // ────────────────────────── Semáforo de riesgo ──────────────────────────
 // Cuatro métricas, siempre las mismas, para que dos rutas de dos escenarios
 // distintos sigan siendo comparables. El candado se calcula sobre estas.
 
 export type CuartelLuz = "verde" | "amarillo" | "rojo";
-
-export const CUARTEL_LUZ_LABEL: Record<CuartelLuz, string> = {
-  verde: "Verde",
-  amarillo: "Amarillo",
-  rojo: "Rojo",
-};
 
 export const CUARTEL_LUZ_COLOR: Record<CuartelLuz, string> = {
   verde: "#5cc98e",
@@ -302,9 +301,12 @@ export interface CuartelRuta {
   // confundir una lectura del sistema con algo confirmado.
   certezaRiesgos: CuartelCerteza;
   turnos: CuartelTurno[];
-  // Marca si el contenido de esta ruta lo generó el sistema o lo escribió
-  // Eduardo. Trazabilidad, requisito no funcional del PRD.
-  origen: "eduardo" | "sistema";
+  // Quién escribió cada sombrero. Trazabilidad (PRD §14): "todo campo indica si
+  // lo escribió Eduardo o si es una interpretación de Claude". Antes era una
+  // sola marca por ruta que además no se mostraba en ninguna pantalla — un
+  // requisito declarado en el tipo y no cumplido en el producto, que es peor
+  // que no tenerlo: quien lea el tipo asume que la garantía existe.
+  origenSombreros: CuartelOrigenSombreros;
   creadoEn: string;
 }
 
