@@ -12,7 +12,7 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { fetchMarca } from "@/lib/vincere/ai-client";
 import { buildMarcaContext } from "@/lib/vincere/context";
 import SectionShell from "../SectionShell";
-import { Panel, PanelLabel } from "../primitives";
+import { Panel, PanelLabel, BloqueTintado } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
 import { tinte } from "@/lib/vincere/color";
 
@@ -102,10 +102,15 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
         </button>
       </div>
 
+      {/* Esto es lo que el artista DICE ser, no lo que el sistema midió — y es
+          la mitad del argumento de esta pantalla. Iba en tarjetas blancas
+          idénticas a las de cualquier panel de medición, así que la
+          declaración se leía como si fuera un dato. Con su propio tinte se ve
+          de un vistazo que acá se está declarando criterio, y que lo medido
+          está más abajo. */}
       <div className="grid gap-4 md:grid-cols-3">
         {CAMPOS.map((c) => (
-          <Panel key={c.key}>
-            <div className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">{c.label}</div>
+          <BloqueTintado key={c.key} tipo="nota" rotulo={c.label}>
             {editing ? (
               <>
                 <textarea
@@ -121,13 +126,12 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                 {m?.[c.key]?.trim() || <span className="vin-faint">—</span>}
               </div>
             )}
-          </Panel>
+          </BloqueTintado>
         ))}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel>
-          <PanelLabel>Atributos</PanelLabel>
+        <BloqueTintado tipo="nota" rotulo="Atributos">
           {editing ? (
             <>
               <input
@@ -160,10 +164,9 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
           ) : (
             <span className="vin-faint vin-t-sm">—</span>
           )}
-        </Panel>
+        </BloqueTintado>
 
-        <Panel>
-          <PanelLabel>Lo que NO es</PanelLabel>
+        <BloqueTintado tipo="nota" rotulo="Lo que NO es">
           {editing ? (
             <>
               <textarea
@@ -185,7 +188,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
               )}
             </div>
           )}
-        </Panel>
+        </BloqueTintado>
       </div>
 
       <section>

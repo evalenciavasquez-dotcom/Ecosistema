@@ -47,8 +47,17 @@ export default function PrediccionesSection({ proyecto }: { proyecto: VincerePro
   const preds = useMemo(() => proyecto.predicciones ?? [], [proyecto.predicciones]);
   const marcador = useMemo(() => calcularMarcador(preds), [preds]);
 
-  const abiertas = preds.filter((p) => p.estado === "abierta");
-  const cerradas = preds.filter((p) => p.estado !== "abierta");
+  // Las abiertas van por fecha de vencimiento, así que lo vencido queda
+  // arriba solo. Sin esto el cartel de toda la app decía «cierra 1 predicción
+  // vencida» y al llegar acá la vencida era la segunda de la lista.
+  const abiertas = preds
+    .filter((p) => p.estado === "abierta")
+    .sort((a, b) => a.venceEn.localeCompare(b.venceEn));
+  // Las cerradas, por lo último verificado: el marcador se lee de lo reciente
+  // hacia atrás, no en el orden en que se escribieron las apuestas.
+  const cerradas = preds
+    .filter((p) => p.estado !== "abierta")
+    .sort((a, b) => (b.verificadoEn ?? b.venceEn).localeCompare(a.verificadoEn ?? a.venceEn));
 
   return (
     <SectionShell
@@ -277,10 +286,24 @@ function Fila({
   const vencida = p.estado === "abierta" && p.venceEn <= HOY;
   const color = VINCERE_ESTADO_PREDICCION_COLOR[p.estado];
 
+  // Una vencida se veía igual que una ya cerrada: las cinco eran la misma
+  // tarjeta blanca con un filete de 2px que en la práctica no se distingue.
+  // Y esta es la pantalla donde eso más duele — el cartel de arriba de toda la
+  // app dice «cierra 1 predicción vencida», y al llegar acá no se ve cuál.
+  //
+  // Ahora el peso visual va donde está el pendiente: lo vencido se tiñe de
+  // riesgo, lo abierto en plazo de dato, y lo cerrado se queda en tarjeta lisa
+  // porque ya no pide nada — su color vive en la píldora de estado.
+  const fondo = vencida
+    ? { background: "var(--vin-tinte-riesgo)", border: "1px solid var(--vin-tinte-riesgo-linea)" }
+    : p.estado === "abierta"
+      ? { background: "var(--vin-tinte-datos)", border: "1px solid var(--vin-tinte-datos-linea)" }
+      : undefined;
+
   return (
     <div
-      className="vin-card border-l-2 p-4"
-      style={{ borderLeftColor: vencida ? "var(--vin-warn)" : color }}
+      className={`${fondo ? "rounded-xl" : "vin-card"} border-l-2 p-4`}
+      style={{ ...fondo, borderLeftColor: vencida ? "var(--vin-risk)" : color }}
     >
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <p className="min-w-0 flex-1 vin-t-base leading-relaxed">{p.afirmacion}</p>
@@ -290,6 +313,15 @@ function Fila({
               número parecen igual de firmes cuando una la firmó un modelo y la
               otra una persona. */}
           <span className="vin-faint vin-t-xs">{VINCERE_ORIGEN_LABEL[origenDe(p)].toLocaleLowerCase("es")}</span>
+          {/* El color no carga solo: si está vencida, lo dice con la palabra. */}
+          {vencida && (
+            <span
+              className="rounded-full px-2 py-0.5 vin-t-xs font-medium"
+              style={{ background: "var(--vin-risk)", color: "var(--vin-accent-ink)" }}
+            >
+              Vencida
+            </span>
+          )}
           {p.estado !== "abierta" && (
             <span
               className="rounded-full border px-2 py-0.5 vin-t-xs"
@@ -311,14 +343,16 @@ function Fila({
 
       <div className="vin-faint flex flex-wrap gap-3 vin-t-xs tabular-nums">
         {p.motor && <span>{VINCERE_SECCION_LABEL[p.motor as VincereSeccion]}</span>}
-        <span style={vencida ? { color: "var(--vin-warn)" } : undefined}>
+        <span style={vencida ? { color: "var(--vin-risk)" } : undefined}>
           {p.estado === "abierta" ? (vencida ? `venció el ${p.venceEn}` : `vence el ${p.venceEn}`) : `plazo ${p.venceEn}`}
         </span>
         {p.verificadoEn && <span>verificada el {p.verificadoEn}</span>}
       </div>
 
+      {/* Iba sobre --vin-surface, que es el color de la propia tarjeta: el
+          recuadro existía en el código y no en la pantalla. */}
       {p.queOcurrio && (
-        <div className="mt-2.5 rounded-xl p-3" style={{ background: "var(--vin-surface)" }}>
+        <div className="mt-2.5 rounded-xl p-3" style={{ background: "var(--vin-surface-2)" }}>
           <div className="vin-faint mb-1 vin-t-xs uppercase tracking-[0.08em]">Qué ocurrió</div>
           <p className="vin-t-sm leading-relaxed">{p.queOcurrio}</p>
         </div>
