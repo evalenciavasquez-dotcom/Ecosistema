@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { analisisResponseSchema } from "@/lib/cuartel/schema";
+import { mensajeSinSalidaEstructurada } from "@/lib/ai/motivo-sin-salida";
 import { CUARTEL_ANALISIS_SYSTEM_PROMPT, buildAnalisisPrompt } from "@/lib/cuartel/prompt";
 // Infraestructura de despliegue compartida, no datos: solo responde si hay
 // llave de IA y dónde se configura. Ningún contenido del Cuartel la cruza.
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     });
 
     if (response.parsed_output == null) {
-      return NextResponse.json({ error: "No se pudo generar el análisis" }, { status: 502 });
+      return NextResponse.json({ error: mensajeSinSalidaEstructurada(response.stop_reason, "el análisis") }, { status: 502 });
     }
 
     return NextResponse.json({ result: response.parsed_output });
