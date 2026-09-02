@@ -10,7 +10,7 @@ import {
 import { useVincereStore } from "@/lib/vincere/store";
 import { useIaConfigurada } from "@/lib/vincere/useIaConfigurada";
 import { fetchIngest } from "@/lib/vincere/ai-client";
-import { leerArchivo } from "@/lib/vincere/archivo";
+import { leerArchivo, claseDeArchivo, leerComoTexto, TOPE_TEXTO } from "@/lib/vincere/archivo";
 import { formatStreams, formatNumero, metaSignificativa, valorConUnidad } from "@/lib/vincere/format";
 import {
   cambiosDeResumen,
@@ -60,6 +60,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
   const [nota, setNota] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [arrastrando, setArrastrando] = useState(false);
+  // Qué pasó con el último archivo que llegó: se volcó a texto, o no se pudo.
+  const [avisoArchivo, setAvisoArchivo] = useState<string | null>(null);
 
   // El destino. Sin proyectos cargados solo existe un camino posible, y
   // ofrecer el otro sería ofrecer un callejón.
@@ -120,7 +122,51 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
     setArchivo(null);
     setTexto("");
     setNota("");
+    setAvisoArchivo(null);
     if (inputRef.current) inputRef.current.value = "";
+  }
+
+  // Un archivo que llega, por clic o arrastrado.
+  //
+  // Arrastrar esquivaba el filtro: `accept` solo se aplica al elegir con el
+  // diálogo, así que soltar un CSV o un .xlsx mostraba su nombre como si
+  // estuviera cargado y el rechazo llegaba después de mandarlo al servidor.
+  //
+  // Ahora se decide acá. Lo que es texto —CSV, TSV, JSON— se lee en el
+  // navegador y se vuelca al cuadro de pegar, que es la vía que ya funcionaba:
+  // el sistema hace lo que ibas a hacer a mano. Lo que de verdad no se puede
+  // leer se dice en el acto y con el motivo.
+  async function recibirArchivo(f: File | null) {
+    setAvisoArchivo(null);
+    if (!f) {
+      setArchivo(null);
+      return;
+    }
+    const clase = claseDeArchivo(f);
+
+    if (clase === "texto") {
+      const { texto: contenido, cortado } = await leerComoTexto(f);
+      setArchivo(null);
+      if (inputRef.current) inputRef.current.value = "";
+      setTexto((previo) => (previo.trim() ? `${previo.trim()}\n\n${contenido}` : contenido));
+      setAvisoArchivo(
+        cortado
+          ? `«${f.name}» se leyó como texto, pero es muy grande: entraron los primeros ${Math.round(TOPE_TEXTO / 1000)} mil caracteres. Si falta algo, pega el resto aparte.`
+          : `«${f.name}» se leyó como texto y quedó abajo. Puedes editarlo antes de leerlo.`
+      );
+      return;
+    }
+
+    if (clase === "noSoportado") {
+      setArchivo(null);
+      if (inputRef.current) inputRef.current.value = "";
+      setAvisoArchivo(
+        `«${f.name}» no se puede leer directo. Van imágenes (JPG, PNG, WebP, GIF), PDF y texto plano (CSV, TSV, TXT, JSON). Si es un Excel, expórtalo a CSV o pega las celdas abajo.`
+      );
+      return;
+    }
+
+    setArchivo(f);
   }
 
   async function leer() {
@@ -266,8 +312,8 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                 onDrop={(e) => {
                   e.preventDefault();
                   setArrastrando(false);
-                  const f = e.dataTransfer.files?.[0];
-                  if (f) setArchivo(f);
+                  const f = e.dataTransfer.files?.[0] ?? null;
+                  void recibirArchivo(f);
                 }}
                 onClick={() => inputRef.current?.click()}
                 className="cursor-pointer rounded-xl p-8 text-center transition-colors"
@@ -279,9 +325,9 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                 <input
                   ref={inputRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
+                  accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/csv,text/tab-separated-values,text/plain,application/json,.csv,.tsv,.txt,.json,.md"
                   className="hidden"
-                  onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
+                  onChange={(e) => void recibirArchivo(e.target.files?.[0] ?? null)}
                 />
                 {archivo ? (
                   <>
@@ -292,14 +338,29 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                   </>
                 ) : (
                   <>
-                    <p className="vin-t-base">Suelta aquí una captura o un PDF, o haz clic para elegirlo</p>
+                    <p className="vin-t-base">Suelta aquí una captura, un PDF o un CSV, o haz clic para elegirlo</p>
                     <p className="vin-faint mt-1.5 vin-t-sm leading-relaxed">
                       Capturas de Spotify for Artists, Instagram, YouTube Studio · PDF de informes, dossiers o
-                      contratos
+                      contratos · CSV y TSV se leen como texto y caen en el cuadro de abajo
                     </p>
                   </>
                 )}
               </div>
+
+              {/* Qué pasó con el archivo, dicho donde se soltó y no después de
+                  mandarlo al servidor. */}
+              {avisoArchivo && (
+                <p
+                  className="vin-t-sm mt-3 rounded-xl px-4 py-3 leading-relaxed"
+                  style={{
+                    maxWidth: "74ch",
+                    background: "var(--vin-tinte-nota)",
+                    border: "1px solid var(--vin-tinte-nota-linea)",
+                  }}
+                >
+                  {avisoArchivo}
+                </p>
+              )}
 
               <div className="mt-4">
                 <PanelLabel>
