@@ -9,8 +9,21 @@ const SESSION_MS = SESSION_SEGUNDOS * 1000;
 // Sin respaldo de fábrica: si APP_PASSWORD no está configurada, todo intento
 // de acceso falla — nunca se cae a una contraseña conocida y pública (el
 // código de este repositorio es público en GitHub).
+// Se recortan los espacios de los extremos a propósito.
+//
+// Pegar el valor en el panel de variables de entorno arrastra con frecuencia
+// un espacio o un salto de línea al final. Sin recortar, el valor guardado es
+// "clave\n", lo que se teclea es "clave", y no coinciden jamás — pero el
+// login solo puede responder "Contraseña incorrecta", así que el dueño se
+// pone a probar otras contraseñas en vez de mirar la variable. Nadie elige a
+// propósito una contraseña que empiece o termine en espacio, de modo que esto
+// no le quita fuerza a ninguna clave real y elimina un modo de fallo que no
+// se puede diagnosticar desde la pantalla.
 function getAppPassword(): string | null {
-  return process.env.APP_PASSWORD || null;
+  const bruta = process.env.APP_PASSWORD;
+  if (!bruta) return null;
+  const limpia = bruta.trim();
+  return limpia === "" ? null : limpia;
 }
 
 // Para que el servidor pueda responder "falta la variable" en vez de
@@ -69,7 +82,9 @@ export async function createSessionToken(): Promise<string | null> {
 export async function checkPassword(candidate: string): Promise<boolean> {
   const password = getAppPassword();
   if (!password) return false;
-  return safeEqual(candidate, password);
+  // El mismo recorte del otro lado: los teclados de móvil añaden un espacio
+  // al final con facilidad, y en un campo de contraseña no se ve.
+  return safeEqual(candidate.trim(), password);
 }
 
 export async function isValidSessionToken(token: string | undefined): Promise<boolean> {
