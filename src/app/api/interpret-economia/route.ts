@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { mensajeSinSalidaEstructurada } from "@/lib/ai/motivo-sin-salida";
 
 const interpretacionSchema = z.object({
   diagnostico: z
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     });
 
     if (response.parsed_output == null) {
-      return NextResponse.json({ error: "No se pudo generar la interpretación" }, { status: 502 });
+      return NextResponse.json({ error: mensajeSinSalidaEstructurada(response.stop_reason, "la interpretación") }, { status: 502 });
     }
 
     return NextResponse.json({ result: response.parsed_output });

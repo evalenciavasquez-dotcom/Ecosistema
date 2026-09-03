@@ -6,6 +6,7 @@ import { calcularVeredicto } from "@/lib/cuartel/candado";
 import { etiquetaRuta, fetchRecomendacion } from "@/lib/cuartel/ai-client";
 import { CuartelEscenario } from "@/lib/cuartel/types";
 import { Campo, ErrorNota, Nota, Panel, PanelLabel } from "./primitives";
+import AvisoSinLlave, { useSinLlave } from "./AvisoSinLlave";
 
 // Cierre y aprendizaje. El campo de resultado es lo que convierte esto en un
 // Libro Rojo y no en un formulario: sin resultado registrado, un escenario
@@ -16,9 +17,9 @@ export default function CierrePanel({ escenario }: { escenario: CuartelEscenario
   const setEstado = useCuartelStore((s) => s.setEstado);
   const showToast = useCuartelStore((s) => s.showToast);
 
+  const sinLlave = useSinLlave();
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [supuesto, setSupuesto] = useState<string | null>(null);
 
   const cierre = escenario.cierre;
   const validas = escenario.rutas.filter((r) => calcularVeredicto(r).validez === "valida");
@@ -37,10 +38,10 @@ export default function CierrePanel({ escenario }: { escenario: CuartelEscenario
       setCierre(escenario.id, {
         rutaRecomendadaId: res.rutaId,
         razonRecomendacion: res.razon,
+        supuestoRecomendacion: res.loQueSeAsume,
         movidaConcreta: cierre.movidaConcreta || res.movidaConcreta,
         plazoMovida: cierre.plazoMovida || res.plazo,
       });
-      setSupuesto(res.loQueSeAsume);
       if (escenario.estado === "activo") setEstado(escenario.id, "analisis");
       showToast("Recomendación lista. La decisión sigue siendo tuya.");
     } catch (err) {
@@ -66,9 +67,9 @@ export default function CierrePanel({ escenario }: { escenario: CuartelEscenario
             <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: "var(--cua-text-2)" }}>
               {cierre.razonRecomendacion}
             </p>
-            {supuesto && (
+            {cierre.supuestoRecomendacion && (
               <p className="mt-2 text-[13px] leading-relaxed" style={{ color: "var(--cua-muted)" }}>
-                <span className="cua-label">Lo que se asume</span> — {supuesto}
+                <span className="cua-label">Lo que se asume</span> — {cierre.supuestoRecomendacion}
               </p>
             )}
           </>
@@ -80,9 +81,15 @@ export default function CierrePanel({ escenario }: { escenario: CuartelEscenario
           </p>
         )}
 
-        <button className="cua-btn-ghost mt-3" onClick={recomendar} disabled={cargando || validas.length < 2}>
+        <button
+          className="cua-btn-ghost mt-3"
+          onClick={recomendar}
+          disabled={cargando || sinLlave || validas.length < 2}
+          title={sinLlave ? "Falta configurar la llave de la IA" : undefined}
+        >
           {cargando ? "Comparando…" : recomendada ? "Recalcular recomendación" : "Pedir recomendación"}
         </button>
+        <AvisoSinLlave que="No se puede pedir la recomendación." />
         {error && <ErrorNota>{error}</ErrorNota>}
       </div>
 

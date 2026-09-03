@@ -9,6 +9,7 @@ import {
   CUARTEL_METRICAS,
   CUARTEL_METRICA_META,
   CUARTEL_RUTA_COLOR,
+  CUARTEL_RUTA_DESCRIPCION,
   CUARTEL_SOMBREROS,
   CUARTEL_SOMBRERO_META,
   CuartelCerteza,
@@ -17,7 +18,7 @@ import {
   CuartelLuz,
   CuartelRuta,
 } from "@/lib/cuartel/types";
-import { CertezaTag, LuzDot, ValidezBadge } from "./primitives";
+import { CertezaTag, LuzDot, OrigenTag, ValidezBadge } from "./primitives";
 
 const CERTEZAS = Object.keys(CUARTEL_CERTEZA_LABEL) as CuartelCerteza[];
 const NIVELES_LEGALES = Object.keys(CUARTEL_LEGAL_LABEL) as CuartelLegalNivel[];
@@ -65,7 +66,14 @@ export default function RutaCard({
       )}
 
       <div className="mb-3.5 flex items-center justify-between gap-3">
-        <div className="cua-serif text-[19px] font-semibold" style={{ color: CUARTEL_RUTA_COLOR[ruta.tipo] }}>
+        {/* La descripción vuelve como tooltip: "Sostener" a secas pierde lo
+            que el método afirma —que no es ausencia de decisión, sino una ruta
+            con costo—, y eso es justo lo que hay que tener presente al leerla. */}
+        <div
+          className="cua-serif text-[19px] font-semibold"
+          style={{ color: CUARTEL_RUTA_COLOR[ruta.tipo] }}
+          title={CUARTEL_RUTA_DESCRIPCION[ruta.tipo]}
+        >
           {etiquetaRuta(ruta)}
         </div>
         <ValidezBadge validez={veredicto.validez} />
@@ -110,6 +118,7 @@ export default function RutaCard({
                 >
                   {meta.label}
                 </span>
+                <OrigenTag origen={ruta.origenSombreros[s]} />
                 {s === "riesgos" && <CertezaTag certeza={ruta.certezaRiesgos} />}
               </div>
 

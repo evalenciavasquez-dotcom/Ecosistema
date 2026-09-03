@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useVincereStore } from "@/lib/vincere/store";
+import { useCuartelStore } from "@/lib/cuartel/store";
 import { fetchServerState, initDbSchema, migrateAllToServer } from "@/lib/db/sync";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -349,6 +350,47 @@ export default function ConfiguracionPage() {
     URL.revokeObjectURL(url);
   }
 
+  // El Cuartel se respalda aparte, en su propio archivo. El respaldo de arriba
+  // deja fuera los escenarios personales a propósito: mezclarlos con proyectos,
+  // pagos y personas en un mismo JSON es exactamente la mezcla que el sistema
+  // evita en todo lo demás. Aparte no significa desprotegido — antes de esto
+  // simplemente no había forma de bajarlos.
+  async function handleExportCuartel() {
+    // El store del Cuartel no se hidrata solo fuera de /cuartel: leerlo tal
+    // cual desde acá bajaba un archivo vacío que parecía un respaldo válido.
+    // Primero se rehidrata el navegador y, si la base está activa, manda ella.
+    await useCuartelStore.persist.rehydrate();
+    let escenarios = useCuartelStore.getState().escenarios;
+    try {
+      const res = await fetch("/api/cuartel/state");
+      const body = await res.json();
+      if (body?.configured && Array.isArray(body.escenarios) && body.escenarios.length) {
+        escenarios = body.escenarios;
+      }
+    } catch {
+      // Sin red se respalda lo que haya en este navegador, que es mejor que nada.
+    }
+
+    if (escenarios.length === 0) {
+      alert("No hay escenarios en El Cuartel: no se bajó ningún archivo.");
+      return;
+    }
+
+    const data = {
+      version: 1,
+      sistema: "cuartel",
+      exportadoEn: new Date().toISOString(),
+      escenarios,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cuartel-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleLogout() {
     await fetch("/api/auth", { method: "DELETE" });
     router.push("/login");
@@ -537,6 +579,21 @@ export default function ConfiguracionPage() {
           </div>
           <div className="flex items-center justify-between border-t border-border-subtle pt-3">
             <div>
+              <div className="text-sm font-medium">Exportar El Cuartel</div>
+              <div className="text-xs text-muted mt-0.5">
+                Los escenarios personales, sus rutas y su Libro Rojo, en un archivo propio. Va aparte del respaldo de
+                arriba a propósito: es el dato más sensible del sistema y no se mezcla con proyectos ni con personas.
+              </div>
+            </div>
+            <button
+              onClick={handleExportCuartel}
+              className="rounded-full bg-surface-2 border border-border-subtle px-4 py-2 text-sm shrink-0"
+            >
+              Exportar
+            </button>
+          </div>
+          <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+            <div>
               <div className="text-sm font-medium">Restaurar datos de ejemplo</div>
               <div className="text-xs text-muted mt-0.5">
                 {dbStatus === "activa"
@@ -557,8 +614,9 @@ export default function ConfiguracionPage() {
               <div>
                 <div className="text-sm font-medium">Vaciar todo y empezar de cero</div>
                 <div className="text-xs text-muted mt-0.5">
-                  Borra permanentemente todo lo real (proyectos, economía, decisiones, todo) en todos tus
-                  dispositivos, para arrancar limpio antes de meter tu información.
+                  Borra permanentemente todo lo tuyo del C.C.O. — proyectos, economía, decisiones, goals,
+                  evidencias y los escenarios de El Cuartel — en todos tus dispositivos, para arrancar limpio
+                  antes de meter tu información. No toca VINCERE ni tu conexión con Google.
                 </div>
               </div>
               <button

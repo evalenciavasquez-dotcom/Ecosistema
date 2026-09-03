@@ -6,6 +6,7 @@ import { etiquetaRuta, fetchPreguntaInstructor } from "@/lib/cuartel/ai-client";
 import { instructorCumplido } from "@/lib/cuartel/candado";
 import { CUARTEL_PREGUNTA_LABEL, CuartelEscenario, CuartelRuta } from "@/lib/cuartel/types";
 import { ErrorNota } from "./primitives";
+import AvisoSinLlave, { useSinLlave } from "./AvisoSinLlave";
 
 // El Instructor como panel lateral: la conversación sobre UNA ruta, sin sacar
 // a Eduardo de la comparación que está mirando.
@@ -22,6 +23,7 @@ export default function InstructorDrawer({
   const agregarPregunta = useCuartelStore((s) => s.agregarPregunta);
   const responderPregunta = useCuartelStore((s) => s.responderPregunta);
 
+  const sinLlave = useSinLlave();
   const [borrador, setBorrador] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export default function InstructorDrawer({
   // La primera pregunta se pide sola al abrir: el panel existe para poner la
   // ruta a prueba, no para quedarse esperando que alguien lo decida.
   useEffect(() => {
-    if (ruta.turnos.length > 0 || cargando) return;
+    if (ruta.turnos.length > 0 || cargando || sinLlave) return;
     void pedir();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ruta.id]);
@@ -116,6 +118,8 @@ export default function InstructorDrawer({
           </div>
         ))}
 
+        <AvisoSinLlave que="El Instructor no puede preguntar." />
+
         {cargando && (
           <div className="cua-mono text-[11.5px]" style={{ color: "var(--cua-faint)" }}>
             Pensando…
@@ -145,7 +149,7 @@ export default function InstructorDrawer({
             </button>
           </>
         ) : (
-          <button className="cua-btn-ghost w-full" onClick={pedir} disabled={cargando}>
+          <button className="cua-btn-ghost w-full" onClick={pedir} disabled={cargando || sinLlave}>
             {cargando ? "Pensando…" : "Otra pregunta"}
           </button>
         )}

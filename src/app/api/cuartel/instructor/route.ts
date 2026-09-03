@@ -3,6 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { instructorResponseSchema } from "@/lib/cuartel/schema";
 import { CUARTEL_INSTRUCTOR_SYSTEM_PROMPT, buildInstructorPrompt } from "@/lib/cuartel/prompt";
+// Infraestructura de despliegue compartida, no datos: solo responde si hay
+// llave de IA y dónde se configura. Ningún contenido del Cuartel la cruza.
+import { exigirLlaveDeIA } from "@/lib/vincere/llave";
 
 interface Turno {
   tipo: string;
@@ -11,10 +14,8 @@ interface Turno {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY no está configurada" }, { status: 500 });
-  }
+  const apiKey = exigirLlaveDeIA();
+  if (typeof apiKey !== "string") return apiKey;
 
   const body = await request.json().catch(() => null);
   if (!body?.escenario || !body?.ruta) {
@@ -26,29 +27,54 @@ export async function POST(request: Request) {
 
   const client = new Anthropic({ apiKey });
 
-  try {
-    const response = await client.messages.parse({
-      model: "claude-sonnet-5",
-      max_tokens: 700,
-      output_config: { format: zodOutputFormat(instructorResponseSchema) },
-      system: CUARTEL_INSTRUCTOR_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildInstructorPrompt(body.escenario, body.ruta, turnos) }],
+  async function preguntar(correccion?: string) {
+    const contenido = buildInstructorPrompt(body.escenario, body.ruta, turnos);
+    return client.messages.parse({
+      // El Instructor decide si una ruta llega a tener validez: es la llamada
+      // donde más pesa el criterio y menos sirve una pregunta de manual. Va en
+      // Opus como el interrogatorio socrático del C.C.O., no en el modelo
+      // liviano con el que nació.
+      model: "claude-opus-5",
+      max_tokens: 1200,
+      output_config: { effort: "high", format: zodOutputFormat(instructorResponseSchema) },
+      thinking: { type: "adaptive" },
+      // El sistema no cambia entre corridas: se cachea.
+      system: [
+        { type: "text" as const, text: CUARTEL_INSTRUCTOR_SYSTEM_PROMPT, cache_control: { type: "ephemeral" as const } },
+      ],
+      messages: [{ role: "user" as const, content: correccion ? `${contenido}\n\n${correccion}` : contenido }],
     });
+  }
 
-    const parsed = response.parsed_output;
+  // La regla de secuencia se verifica acá y no solo en el prompt: la primera
+  // vez, la pregunta tiene que poner la ruta a prueba de verdad — si una de
+  // consuelo pasara, desbloquearía la validez sin haber confrontado nada.
+  const habilita = (tipo: string) => tipo === "contraste" || tipo === "confrontativa";
+
+  try {
+    let parsed = (await preguntar()).parsed_output;
+
+    // Antes, una respuesta del tipo equivocado terminaba en un error que le
+    // pedía a Eduardo volver a intentar. El que se equivocó fue el modelo: se
+    // le dice y se le pide de nuevo, una sola vez.
+    if (parsed && respondidas === 0 && !habilita(parsed.tipo)) {
+      parsed =
+        (
+          await preguntar(
+            "La pregunta anterior no ponía la ruta a prueba. Es la primera vuelta sobre esta ruta: devolvé una de tipo contraste o confrontativa, y ninguna otra."
+          )
+        ).parsed_output ?? parsed;
+    }
+
     if (parsed == null) {
       return NextResponse.json({ error: "El Instructor no devolvió una pregunta" }, { status: 502 });
     }
 
-    // La regla de secuencia se verifica acá y no solo en el prompt: la primera
-    // vez, la pregunta tiene que poner la ruta a prueba de verdad. Si el modelo
-    // devuelve una de consuelo o de cierre anticipado, se rechaza en vez de
-    // dejar que desbloquee la validez sin haber confrontado nada.
-    if (respondidas === 0 && parsed.tipo !== "contraste" && parsed.tipo !== "confrontativa") {
+    if (respondidas === 0 && !habilita(parsed.tipo)) {
       return NextResponse.json(
         {
           error:
-            "El Instructor devolvió una pregunta que no pone la ruta a prueba. Volvé a pedirla: la primera tiene que ser de contraste o confrontación.",
+            "El Instructor insistió con una pregunta que no pone la ruta a prueba. No se acepta: la primera tiene que ser de contraste o confrontación. Volvé a pedirla.",
         },
         { status: 502 }
       );

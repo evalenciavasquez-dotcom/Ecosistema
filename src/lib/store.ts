@@ -124,7 +124,15 @@ interface AppState {
   escalarBandejaADecision: (id: string, automatico: boolean) => Promise<void>;
   aceptarAnalisisBandeja: (id: string) => Promise<void>;
   rechazarAnalisisBandeja: (id: string) => void;
-  ejecutarAnalisisDecision: (decisionId: string, detectoDisparador?: boolean) => Promise<void>;
+  // Decisiones cuyo análisis está corriendo ahora mismo. Vive en el store y
+  // no en la pantalla a propósito: así el estado sobrevive a navegar a otra
+  // sección y volver, y el botón no vuelve a ofrecerse como si nada
+  // estuviera pasando.
+  analisisEnCurso: string[];
+  ejecutarAnalisisDecision: (
+    decisionId: string,
+    detectoDisparador?: boolean
+  ) => Promise<{ ok: boolean; error?: string }>;
   crearCasoDesdeAnalisis: (
     decisionId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -185,6 +193,7 @@ function seedState() {
     metasFinancieras: [] as MetaFinanciera[],
     cierresMensuales: [] as CierreMensual[],
     generandoCierreMensual: false,
+    analisisEnCurso: [] as string[],
     goals: [] as Goal[],
     buscandoRetos: false,
     interrogatorios: [] as Interrogatorio[],
@@ -676,7 +685,16 @@ export const useAppStore = create<AppState>()(
       // false hasta que el motor de análisis los produzca de verdad.
       ejecutarAnalisisDecision: async (decisionId, detectoDisparador = false) => {
         const decision = get().decisiones.find((d) => d.id === decisionId);
-        if (!decision) return;
+        if (!decision) return { ok: false, error: "No se encontró la decisión." };
+        // Un análisis completo en Opus 5 tarda y cuesta. Si ya hay uno
+        // corriendo para esta decisión —porque se disparó solo desde la
+        // Bandeja, o porque el botón se volvió a tocar al regresar a la
+        // pantalla— no se lanza un segundo: se pagaría dos veces por la
+        // misma respuesta.
+        if (get().analisisEnCurso.includes(decisionId)) {
+          return { ok: false, error: "Esta decisión ya se está analizando. Espera a que termine." };
+        }
+        set((state) => ({ analisisEnCurso: [...state.analisisEnCurso, decisionId] }));
         try {
           const ctx = buildAnalysisContext(
             decision,
@@ -693,13 +711,21 @@ export const useAppStore = create<AppState>()(
             body: JSON.stringify(ctx),
           });
           const data = await res.json().catch(() => null);
-          if (!res.ok || !data?.result) return;
+          if (!res.ok || !data?.result) {
+            return { ok: false, error: data?.error ?? "No se pudo generar el análisis." };
+          }
           get().crearCasoDesdeAnalisis(decisionId, data.result, detectoDisparador, {
             razonamiento: data.razonamiento ?? null,
             fuentesExternas: data.fuentesExternas ?? null,
           });
+          return { ok: true };
         } catch (err) {
-          console.warn("No se pudo ejecutar el análisis automático de la decisión", err);
+          console.warn("No se pudo ejecutar el análisis de la decisión", err);
+          return { ok: false, error: "Error de conexión al generar el análisis." };
+        } finally {
+          // Se libera pase lo que pase: si el candado quedara puesto tras un
+          // fallo, la decisión no se podría volver a analizar nunca.
+          set((state) => ({ analisisEnCurso: state.analisisEnCurso.filter((id) => id !== decisionId) }));
         }
       },
 
