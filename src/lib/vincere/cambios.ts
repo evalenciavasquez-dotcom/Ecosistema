@@ -150,9 +150,17 @@ export function resumirLista(
 
 // El resumen de una línea que va arriba del bloque, para decidir sin abrir.
 export function tituloDelBloque(clave: keyof VincereIngestaPropuesta, r: ResumenDelBloque): string {
-  const cosa =
-    clave === "canciones" ? "canciones" : clave === "zonasCalor" ? "ciudades" : clave === "kpis" ? "indicadores" : "entradas";
-  if (r.reemplazos === 0) return `${r.total} ${cosa}, todas nuevas`;
-  if (r.nuevos === 0) return `${r.total} ${cosa}, todas ya existían — se reescriben`;
-  return `${r.total} ${cosa}: ${r.nuevos} nuevas y ${r.reemplazos} que se reescriben`;
+  // "4 indicadores, todas nuevas" es el tipo de detalle que hace que un
+  // sistema se lea como plantilla y no como algo escrito por alguien.
+  const COSA: Partial<Record<keyof VincereIngestaPropuesta, { nombre: string; masculino: boolean }>> = {
+    canciones: { nombre: "canciones", masculino: false },
+    zonasCalor: { nombre: "ciudades", masculino: false },
+    kpis: { nombre: "indicadores", masculino: true },
+  };
+  const { nombre: cosa, masculino } = COSA[clave] ?? { nombre: "entradas", masculino: false };
+  const todas = masculino ? "todos" : "todas";
+  const nuevas = masculino ? "nuevos" : "nuevas";
+  if (r.reemplazos === 0) return `${r.total} ${cosa}, ${todas} ${nuevas}`;
+  if (r.nuevos === 0) return `${r.total} ${cosa}, ${todas} ya existían — se reescriben`;
+  return `${r.total} ${cosa}: ${r.nuevos} ${nuevas} y ${r.reemplazos} que se reescriben`;
 }

@@ -165,14 +165,42 @@ export function cuelloDeBotella(p: VincereProyecto): CuelloDeBotella {
         }, el cuello sería ${ciegasAntesDelCuello.length === 1 ? "esa" : "otra"} y no ${ETAPA_LABEL[cuello.etapa].toLowerCase()}.`
       : null;
 
-  // El nivel de la conclusión es el de la etapa que la sostiene, y una etapa
-  // ciega antes del cuello lo baja: la conclusión está apoyada en un hueco.
-  const nivelBase = cuello?.nivel ?? 3;
-  const nivel: VincereNivel = ciegasAntesDelCuello.length
-    ? (Math.max(1, nivelBase - 1) as VincereNivel)
-    : (nivelBase as VincereNivel);
+  const nivel = nivelDeLaConclusion(etapas, cuello, ciegas, ciegasAntesDelCuello);
 
   return { etapas, cuello, ciegas, ciegasAntesDelCuello, titular, queHacer, advertencia, nivel };
+}
+
+// El nivel de la conclusión, que NO es el del dato más bonito que la sostiene.
+//
+// Antes esto era `cuello?.nivel ?? 3`, y ese `?? 3` decía una mentira grande: un
+// proyecto sin una sola cifra cargada no tiene cuello, así que caía al 3 y el
+// panel anunciaba «no hay con qué diagnosticar» rotulado como EVIDENCIA SÓLIDA.
+// Un «no sé» presentado como certeza es el peor error que puede cometer un
+// sistema que se vende por decir con cuánto respaldo habla.
+function nivelDeLaConclusion(
+  etapas: EtapaEvaluada[],
+  cuello: EtapaEvaluada | null,
+  ciegas: Etapa[],
+  ciegasAntesDelCuello: Etapa[]
+): VincereNivel {
+  // Con cuello, la conclusión se apoya en la etapa rota. Una etapa ciega que va
+  // antes la baja: el diagnóstico está parado sobre un hueco.
+  if (cuello) return bajar(cuello.nivel, ciegasAntesDelCuello.length ? 1 : 0);
+
+  // Ninguna etapa visible: la conclusión es literalmente «no se sabe».
+  if (ciegas.length === etapas.length) return 1;
+
+  // «Nada de lo que se ve está roto» se apoya en TODAS las etapas visibles a la
+  // vez, así que vale lo que la más floja de ellas — la cadena de razonamiento
+  // se rompe por su eslabón débil igual que la carrera. Y si además queda algún
+  // tramo ciego, la afirmación cubre algo que nadie miró: baja otro punto.
+  const visibles = etapas.filter((e) => e.estado !== "noSeSabe");
+  const masFloja = Math.min(...visibles.map((e) => e.nivel)) as VincereNivel;
+  return bajar(masFloja, ciegas.length ? 1 : 0);
+}
+
+function bajar(n: VincereNivel, cuanto: number): VincereNivel {
+  return Math.max(1, n - cuanto) as VincereNivel;
 }
 
 const QUE_HACER: Record<Etapa, string> = {

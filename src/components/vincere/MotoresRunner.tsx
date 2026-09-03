@@ -21,9 +21,9 @@ const MARCA: Record<Estado, string> = {
 
 const COLOR: Record<Estado, string> = {
   espera: "var(--vin-dim)",
-  corriendo: "#e0a83a",
-  hecho: "#5cc98e",
-  falla: "#e0483a",
+  corriendo: "var(--vin-warn)",
+  hecho: "var(--vin-ok)",
+  falla: "var(--vin-risk)",
   saltado: "var(--vin-dim)",
 };
 

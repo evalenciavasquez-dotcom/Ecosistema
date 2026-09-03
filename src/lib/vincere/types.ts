@@ -12,6 +12,23 @@ export const VINCERE_NIVEL_LABEL: Record<VincereNivel, string> = {
   4: "Alta evidencia",
 };
 
+// Un proyecto borrado que todavía se puede recuperar.
+//
+// Borrar disparaba un DELETE real contra la base, sin red de ningún tipo. En
+// un sistema cuyo valor entero es el rigor, que un clic se lleve un artista
+// para siempre no tiene defensa.
+export interface VincereEnPapelera {
+  proyecto: VincereProyecto;
+  borradoEn: string; // ISO
+}
+
+export const VINCERE_DIAS_EN_PAPELERA = 30;
+
+// Las dos superficies del mismo sistema visual. «Papel» es claro y es el
+// predeterminado: casi todo el trabajo acá es leer prosa analítica y comparar
+// columnas de cifras. «Consola» es el oscuro, para trabajar de noche.
+export type VincereTema = "papel" | "consola";
+
 export type VincereSeccion =
   | "global"
   | "resumen"
@@ -241,10 +258,19 @@ export const VINCERE_TEMPERATURA_LABEL: Record<VincereTemperatura, string> = {
   caliente: "Caliente",
 };
 
+// El calor NO es un semáforo invertido, y la versión anterior lo pintaba como
+// si lo fuera: «caliente» era #e0483a, o sea el rojo de peligro. Una plaza
+// caliente es la mejor noticia que puede dar este motor —demanda real, el
+// argumento más fuerte para venderle un show a un empresario— y estaba
+// dibujada con el color de una alerta crítica.
+//
+// Son tres estados con nombre, no una rampa continua: siempre salen con su
+// etiqueta al lado, así que van con los tokens del semáforo, en el sentido
+// correcto. Frío no es «malo»: es ausencia, y por eso es gris.
 export const VINCERE_TEMPERATURA_COLOR: Record<VincereTemperatura, string> = {
-  frio: "#4a9eff",
-  medio: "#f59e42",
-  caliente: "#e0483a",
+  frio: "var(--vin-dim)",
+  medio: "var(--vin-warn)",
+  caliente: "var(--vin-ok)",
 };
 
 export const VINCERE_TEMPERATURA_LECTURA: Record<VincereTemperatura, string> = {
@@ -540,11 +566,11 @@ export const VINCERE_ESTADO_PREDICCION_LABEL: Record<VincereEstadoPrediccion, st
 };
 
 export const VINCERE_ESTADO_PREDICCION_COLOR: Record<VincereEstadoPrediccion, string> = {
-  abierta: "#a39c92",
-  acertada: "#5cc98e",
-  fallada: "#e0483a",
-  parcial: "#e0a83a",
-  "no-verificable": "#6b645c",
+  abierta: "var(--vin-muted)",
+  acertada: "var(--vin-ok)",
+  fallada: "var(--vin-risk)",
+  parcial: "var(--vin-warn)",
+  "no-verificable": "var(--vin-dim)",
 };
 
 // Quién emitió la predicción, y por lo tanto QUIÉN puso el nivel de evidencia.
@@ -760,14 +786,23 @@ export const VINCERE_FUENTE_LABEL: Record<VincereFuenteTipo, string> = {
   otro: "Otro",
 };
 
+// Lo único verdaderamente categórico del sistema: acá el color contesta «cuál
+// de las siete es esta», no «va bien o va mal». Por eso salen de la escala de
+// series y no del semáforo — un ámbar de «atención» usado como quinta fuente
+// deja de querer decir atención en el resto de la app.
+//
+// El orden no es estético: es el que mantiene distinguibles dos fuentes
+// contiguas en la barra de reparto bajo daltonismo protán y deután. Cambiarlo
+// exige volver a verificar la escala entera. «Otro» va en gris a propósito:
+// no es una identidad, es el cajón de lo que no encaja.
 export const VINCERE_FUENTE_COLOR: Record<VincereFuenteTipo, string> = {
-  streaming: "#2dd4bf",
-  shows: "#5cc98e",
-  merch: "#e0a83a",
-  sync: "#a78bfa",
-  publishing: "#60a5fa",
-  marca: "#f472b6",
-  otro: "#a39c92",
+  streaming: "var(--vin-serie-1)",
+  shows: "var(--vin-serie-2)",
+  merch: "var(--vin-serie-3)",
+  sync: "var(--vin-serie-4)",
+  publishing: "var(--vin-serie-5)",
+  marca: "var(--vin-serie-6)",
+  otro: "var(--vin-serie-otro)",
 };
 
 export interface VincereIngreso {
@@ -886,9 +921,9 @@ export const VINCERE_SEMAFORO_LABEL: Record<VincereSemaforo, string> = {
 };
 
 export const VINCERE_SEMAFORO_COLOR: Record<VincereSemaforo, string> = {
-  rojo: "#e0483a",
-  amarillo: "#e0a83a",
-  verde: "#5cc98e",
+  rojo: "var(--vin-risk)",
+  amarillo: "var(--vin-warn)",
+  verde: "var(--vin-ok)",
 };
 
 // Umbrales fijos y no interpretados por la IA: el mismo puntaje tiene que dar
@@ -1328,8 +1363,27 @@ export interface VincereTriageCaso {
   vinculoSugerido: VincereVinculoTipo | null;
   comoCobrarlo: string | null; // Tarifa si es cliente, % si es sociedad, con su razón.
   horasSemanalesEstimadas: number | null;
+  // Qué se DECIDIÓ, que no es lo mismo que qué dijo el veredicto.
+  //
+  // Faltaba, y el hueco se notaba: la única acción sobre un caso era la ✕, que
+  // lo borra. O sea que decir «no entro» y olvidar que el caso existió eran el
+  // mismo botón — en la pantalla que se supone que es el expediente de las
+  // decisiones de entrada. Un «no» razonado vale tanto como un «sí»: es lo que
+  // se relee cuando el mismo artista vuelve a tocar la puerta en seis meses.
+  decision: VincereTriageDecision | null;
+  decididoEn: string | null;
   creadoEn: string;
 }
+
+// Las tres salidas de un caso. La del medio es la que hace falta más seguido:
+// casi nunca faltan ganas de decidir, falta data para decidir bien.
+export type VincereTriageDecision = "entramos" | "pedimos-data" | "no-entramos";
+
+export const VINCERE_DECISION_LABEL: Record<VincereTriageDecision, string> = {
+  entramos: "Entramos",
+  "pedimos-data": "Falta data para decidir",
+  "no-entramos": "No entramos",
+};
 
 export interface VincereComparacion {
   insights: VincereInsight[];

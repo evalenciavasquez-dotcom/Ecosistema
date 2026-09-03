@@ -49,8 +49,8 @@ export default function GlobalSection() {
           style={{
             maxWidth: "74ch",
             color: "var(--vin-warn)",
-            background: "rgba(229,169,60,0.09)",
-            border: "1px solid rgba(229,169,60,0.22)",
+            background: "var(--vin-warn-wash)",
+            border: "1px solid var(--vin-warn-line)",
           }}
         >
           {g.patronDeCuello}

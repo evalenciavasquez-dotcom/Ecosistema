@@ -36,7 +36,7 @@ function CurvaEnergia({ audio }: { audio: VincereAudioAnalisis }) {
   return (
     <div>
       <svg viewBox={`0 0 ${ancho} ${alto}`} preserveAspectRatio="none" className="h-24 w-full" aria-hidden>
-        <polygon points={area} fill="rgba(224,72,58,0.16)" />
+        <polygon points={area} fill="var(--vin-accent-soft)" />
         <polyline points={linea} fill="none" stroke="var(--vin-accent)" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
         {audio.secciones.slice(1).map((s) => (
           <line
@@ -57,7 +57,7 @@ function CurvaEnergia({ audio }: { audio: VincereAudioAnalisis }) {
             x2={pct(audio.ganchoSeg)}
             y1="0"
             y2={alto}
-            stroke="#5cc98e"
+            stroke="var(--vin-ok)"
             strokeWidth="1.4"
             vectorEffect="non-scaling-stroke"
           />
@@ -66,7 +66,7 @@ function CurvaEnergia({ audio }: { audio: VincereAudioAnalisis }) {
       <div className="vin-faint mt-1 flex justify-between vin-t-xs tabular-nums">
         <span>0:00</span>
         {audio.ganchoSeg !== null && (
-          <span style={{ color: "#5cc98e" }}>gancho en {mmss(audio.ganchoSeg)}</span>
+          <span style={{ color: "var(--vin-ok)" }}>gancho en {mmss(audio.ganchoSeg)}</span>
         )}
         <span>{mmss(audio.duracionSeg)}</span>
       </div>
@@ -131,7 +131,7 @@ export function AudioPanel({
           className="cursor-pointer rounded-xl p-5 text-center transition-colors"
           style={{
             border: `1px dashed ${arrastrando ? "var(--vin-accent)" : "var(--vin-border-strong)"}`,
-            background: arrastrando ? "rgba(224,72,58,0.06)" : "transparent",
+            background: arrastrando ? "var(--vin-accent-soft)" : "transparent",
           }}
         >
           <input
@@ -202,7 +202,7 @@ export function AudioPanel({
             className="rounded-xl p-4"
             style={{ background: "rgba(224,168,58,0.07)", border: "1px solid rgba(224,168,58,0.28)" }}
           >
-            <div className="vin-label mb-1.5" style={{ color: "#e0a83a" }}>
+            <div className="vin-label mb-1.5" style={{ color: "var(--vin-warn)" }}>
               Lo que esto no mide
             </div>
             <p className="vin-t-sm leading-relaxed">
