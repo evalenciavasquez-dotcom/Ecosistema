@@ -116,6 +116,51 @@ export function startVincereSync(onEstado: (e: VincereSyncEstado) => void): () =
   };
 }
 
+// Borrar todo, esperando a que la base lo confirme.
+//
+// «Empezar de cero» vaciaba el store y dejaba que la suscripción de arriba
+// propagara los borrados 900 ms después, en segundo plano. Con base conectada
+// eso tiene un agujero que se ve enseguida: si la petición falla, o si la
+// pestaña se recarga dentro de esa ventana, el navegador queda vacío pero la
+// base sigue teniendo todo — y a la siguiente carga la hidratación lo devuelve
+// entero. Desde fuera se lee como «le di borrar y no pasó nada», que es
+// exactamente lo que pasó.
+//
+// El `beforeunload` que había como red de seguridad no alcanza: los
+// navegadores matan las peticiones en vuelo al descargar la página, así que
+// justo en el caso que importa es cuando menos sirve.
+//
+// Un gesto irreversible no puede depender de un temporizador. Acá se manda el
+// borrado y se espera la respuesta; quien llama decide qué hacer con el
+// resultado en vez de suponer que salió bien.
+export async function borrarTodoEnServidor(
+  ids: string[]
+): Promise<{ ok: boolean; configurada: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/vincere/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eliminados: ids,
+        // El estado va vacío en la misma llamada: los casos de triage y las
+        // comparaciones también se borran, y mandarlos aparte dejaría media
+        // limpieza hecha si la segunda petición fallara.
+        estado: { triageCasos: [], comparaciones: {} },
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    // Sin base configurada no hay nada que borrar allá: el borrado local es
+    // todo el borrado que existe, y eso no es un fallo.
+    if (body?.configured === false) return { ok: true, configurada: false };
+    if (!res.ok || body?.ok === false) {
+      return { ok: false, configurada: true, error: body?.error ?? `Error ${res.status}` };
+    }
+    return { ok: true, configurada: true };
+  } catch (err) {
+    return { ok: false, configurada: true, error: err instanceof Error ? err.message : "Error de red" };
+  }
+}
+
 // Sube todo el estado local a la base de una sola vez. Se usa la primera vez
 // que se configura la base: lo que ya estaba en el navegador no se pierde.
 export async function migrarTodoVincere(): Promise<{ ok: boolean; error?: string }> {

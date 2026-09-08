@@ -4,6 +4,7 @@ import { useState } from "react";
 import { diasEnPapelera, useVincereStore } from "@/lib/vincere/store";
 import { VincereFase, VincereProyectoTipo, VINCERE_DIAS_EN_PAPELERA } from "@/lib/vincere/types";
 import { descargarRespaldo } from "@/lib/vincere/respaldo";
+import { borrarTodoEnServidor } from "@/lib/vincere/db";
 import EspacioPanel from "./EspacioPanel";
 
 const FASES: VincereFase[] = ["Emergente", "Emergente → Consolidación", "Consolidación", "Establecido"];
@@ -34,6 +35,8 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
   const [confirmarBorrado, setConfirmarBorrado] = useState<string | null>(null);
   const [confirmarVaciado, setConfirmarVaciado] = useState<string | null>(null);
   const [confirmarTodo, setConfirmarTodo] = useState(false);
+  const [borrandoTodo, setBorrandoTodo] = useState(false);
+  const [falloBorrado, setFalloBorrado] = useState<string | null>(null);
   const [confirmarDefinitivo, setConfirmarDefinitivo] = useState<string | null>(null);
 
   function crear() {
@@ -83,14 +86,37 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
   // «Empezar de cero» no pasa por la papelera —guardar copia de todo dentro
   // del navegador contradice el gesto de vaciarlo—, pero tampoco se lleva nada
   // en silencio: baja un archivo por proyecto antes de tocar el store.
-  function borrarTodo() {
+  //
+  // Y espera a que la base confirme antes de vaciar el navegador. Vaciar
+  // primero y confiar en la sincronización de fondo tenía un agujero que se
+  // ve enseguida: el borrado sale 900 ms después, así que si la petición
+  // falla —o si se recarga la pestaña en esa ventana— el navegador queda
+  // vacío y la base sigue con todo, y a la siguiente carga la hidratación lo
+  // devuelve entero. Desde fuera eso se lee como «le di borrar y no pasó
+  // nada».
+  //
+  // Si la base rechaza el borrado NO se vacía nada acá: es preferible que el
+  // estado siga siendo consistente y el fallo se vea, a dejar las dos copias
+  // diciendo cosas distintas.
+  async function borrarTodo() {
+    if (borrandoTodo) return;
+    setFalloBorrado(null);
+    setBorrandoTodo(true);
     const bajados = proyectos.filter((p) => descargarRespaldo(p)).length;
+    const r = await borrarTodoEnServidor(proyectos.map((p) => p.id));
+    setBorrandoTodo(false);
+
+    if (!r.ok) {
+      setFalloBorrado(r.error ?? "No se pudo borrar en la base de datos");
+      return;
+    }
+
     empezarDeCero();
     setConfirmarTodo(false);
+    const copias =
+      bajados > 0 ? ` · ${bajados} ${bajados === 1 ? "respaldo descargado" : "respaldos descargados"}` : "";
     showToast(
-      bajados > 0
-        ? `Todo borrado · ${bajados} ${bajados === 1 ? "respaldo descargado" : "respaldos descargados"}`
-        : "Todo borrado. Crea tu primer proyecto."
+      r.configurada ? `Todo borrado, aquí y en la base${copias}` : `Todo borrado${copias}`
     );
   }
 
@@ -370,13 +396,33 @@ export default function ProyectoManager({ onClose }: { onClose: () => void }) {
                   esto no tenga vuelta atrás.
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <button onClick={borrarTodo} className="vin-btn-primary !py-1.5 vin-t-xs">
-                    Sí, borrar todo
+                  <button
+                    onClick={borrarTodo}
+                    disabled={borrandoTodo}
+                    className="vin-btn-primary !py-1.5 vin-t-xs"
+                  >
+                    {borrandoTodo ? "Borrando…" : "Sí, borrar todo"}
                   </button>
                   <button onClick={() => setConfirmarTodo(false)} className="vin-faint vin-t-xs hover:underline">
                     Cancelar
                   </button>
                 </div>
+                {/* El fallo se dice acá y no en un toast que se va: si la base
+                    no borró, nada se borró, y eso hay que poder leerlo con
+                    calma. */}
+                {falloBorrado && (
+                  <p
+                    className="vin-t-sm mt-3 rounded-xl px-3.5 py-2.5 leading-relaxed"
+                    style={{
+                      color: "var(--vin-risk)",
+                      background: "var(--vin-risk-wash)",
+                      border: "1px solid var(--vin-risk-line)",
+                    }}
+                  >
+                    No se borró nada: la base de datos rechazó la operación ({falloBorrado}). Los proyectos siguen
+                    intactos aquí y allá. Los respaldos que se descargaron son válidos. Vuelve a intentarlo.
+                  </p>
+                )}
               </div>
             ) : (
               <>

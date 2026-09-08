@@ -161,7 +161,11 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
       setArchivo(null);
       if (inputRef.current) inputRef.current.value = "";
       setAvisoArchivo(
-        `«${f.name}» no se puede leer directo. Van imágenes (JPG, PNG, WebP, GIF), PDF y texto plano (CSV, TSV, TXT, JSON). Si es un Excel, expórtalo a CSV o pega las celdas abajo.`
+        // Word y Excel por nombre, no en un «lo demás» genérico: son los dos
+        // formatos con los que de verdad llega un resumen, y un .docx es un
+        // ZIP de XML que el navegador no puede leer como texto. Decirle «no
+        // soportado» y callar la salida deja el trabajo a medias.
+        `«${f.name}» no se puede leer directo. Van imágenes (JPG, PNG, WebP, GIF), PDF y texto plano (CSV, TSV, TXT, JSON). Si es un Word o un Excel: ábrelo, copia el contenido y pégalo abajo — además sale más barato que cualquier archivo, porque el texto entra tal cual y no hay que interpretarlo.`
       );
       return;
     }
@@ -366,6 +370,17 @@ export default function IngestaSection({ proyecto }: { proyecto: VincereProyecto
                 <PanelLabel>
                   {destino === "triage" ? "O cuéntalo con tus palabras" : "O pega el texto"}
                 </PanelLabel>
+                {/* Dónde se toma la decisión de formato es acá, no en la
+                    documentación. Un PDF viaja como documento y se procesa
+                    página por página; el mismo contenido pegado entra tal cual
+                    y cuesta una fracción. Quien ya tiene el texto a mano no
+                    tiene ninguna razón para envolverlo en un archivo. */}
+                {destino !== "triage" && (
+                  <p className="vin-faint mb-2 vin-t-sm leading-relaxed" style={{ maxWidth: "72ch" }}>
+                    Si tienes el texto a mano, pegarlo es la vía más barata: un PDF se procesa página por página y el
+                    mismo contenido pegado cuesta una fracción.
+                  </p>
+                )}
                 <textarea
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
