@@ -4,20 +4,92 @@ import { ReactNode } from "react";
 
 export { formatStreams, formatFollowers, signed } from "@/lib/vincere/format";
 
+// La cabecera lleva una barra de acento a su izquierda.
+//
+// Sin ella la página abría en blanco y gris, sin un solo punto donde apoyar el
+// ojo — que junto con el blanco puro y los recuadros era lo que la hacía leer
+// como un formulario. La barra no es decoración: marca dónde empieza la
+// sección, que es exactamente la información que faltaba a la vista.
 export function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
-    <div className="mb-9">
-      <div className="vin-eyebrow mb-3">{eyebrow}</div>
-      <h1 className="vin-serif vin-t-display font-medium" style={{ textWrap: "balance" }}>
+    <div className="mb-9 pl-4" style={{ borderLeft: "3px solid var(--vin-accent)" }}>
+      <div className="vin-eyebrow mb-2.5">{eyebrow}</div>
+      <h1 className="vin-display vin-t-display" style={{ textWrap: "balance" }}>
         {title}
       </h1>
-      {subtitle && <p className="vin-muted vin-t-base mt-3.5 max-w-[64ch]">{subtitle}</p>}
+      {subtitle && <p className="vin-muted vin-t-base mt-3 max-w-[62ch]">{subtitle}</p>}
     </div>
   );
 }
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`vin-card p-6 ${className}`}>{children}</div>;
+}
+
+// Un bloque que dice de qué TIPO es antes de que lo leas.
+//
+// El tinte no es decoración: en una pantalla de ocho bloques blancos idénticos
+// hay que leerlos todos para encontrar el que importa. Con cuatro tipos —data,
+// acción, riesgo, nota— la página se recorre con la vista.
+//
+// El rótulo va arriba, en una píldora, como en una ficha: nombra el bloque sin
+// competir con el título.
+export type TipoDeBloque = "datos" | "accion" | "riesgo" | "nota";
+
+export function BloqueTintado({
+  tipo,
+  rotulo,
+  titulo,
+  children,
+  className = "",
+}: {
+  tipo: TipoDeBloque;
+  rotulo?: string;
+  titulo?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`rounded-xl p-5 ${className}`}
+      style={{
+        background: `var(--vin-tinte-${tipo})`,
+        border: `1px solid var(--vin-tinte-${tipo}-linea)`,
+      }}
+    >
+      {(rotulo || titulo) && (
+        <div className="mb-3.5">
+          {rotulo && (
+            <span
+              className="vin-label inline-block rounded-full px-2.5 py-1"
+              style={{ background: "var(--vin-surface)", color: "var(--vin-muted)" }}
+            >
+              {rotulo}
+            </span>
+          )}
+          {titulo && <h3 className="vin-display vin-t-lg mt-2.5">{titulo}</h3>}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+// Una exigencia con su razón. El punto no es la viñeta: es que cada línea sea
+// algo que se puede PEDIR por escrito, con el motivo pegado para poder
+// defenderlo cuando del otro lado pregunten para qué.
+export function Exigencia({ children }: { children: ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span
+        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ background: "var(--vin-accent)" }}
+      />
+      <span className="vin-t-base leading-relaxed" style={{ maxWidth: "64ch" }}>
+        {children}
+      </span>
+    </li>
+  );
 }
 
 // El rótulo ya no lleva mayúsculas por defecto. Había trescientos repartidos

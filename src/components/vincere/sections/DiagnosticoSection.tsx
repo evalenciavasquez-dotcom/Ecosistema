@@ -4,13 +4,20 @@ import { useState } from "react";
 import { VincereDiagnostico, VincereProyecto } from "@/lib/vincere/types";
 import { useVincereStore } from "@/lib/vincere/store";
 import SectionShell from "../SectionShell";
-import { Panel } from "../primitives";
+import { BloqueTintado, type TipoDeBloque } from "../primitives";
 
-const FIELDS: { key: keyof VincereDiagnostico; label: string }[] = [
-  { key: "faseActual", label: "Fase actual" },
-  { key: "fortalezaNucleo", label: "Fortaleza núcleo" },
-  { key: "riesgoPrincipal", label: "Riesgo principal" },
-  { key: "prioridad", label: "Prioridad #1" },
+// Los cuatro campos eran cuatro cajas blancas idénticas. Y no son cuatro cosas
+// del mismo tipo: dos son lectura y dos son las que mandan. «Riesgo principal»
+// y «Prioridad #1» —lo que amenaza y lo que hay que hacer— se veían exactamente
+// igual que «Fase actual», que es un dato de contexto.
+//
+// Con el tipo a la vista la pantalla se recorre con los ojos y no leyéndola
+// entera para encontrar cuál de las cuatro importa hoy.
+const FIELDS: { key: keyof VincereDiagnostico; label: string; tipo: TipoDeBloque }[] = [
+  { key: "faseActual", label: "Fase actual", tipo: "datos" },
+  { key: "fortalezaNucleo", label: "Fortaleza núcleo", tipo: "nota" },
+  { key: "riesgoPrincipal", label: "Riesgo principal", tipo: "riesgo" },
+  { key: "prioridad", label: "Prioridad #1", tipo: "accion" },
 ];
 
 export default function DiagnosticoSection({ proyecto }: { proyecto: VincereProyecto }) {
@@ -34,8 +41,7 @@ export default function DiagnosticoSection({ proyecto }: { proyecto: VincereProy
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {FIELDS.map((f) => (
-          <Panel key={f.key}>
-            <div className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">{f.label}</div>
+          <BloqueTintado key={f.key} tipo={f.tipo} rotulo={f.label}>
             {editing ? (
               <textarea
                 value={d[f.key]}
@@ -46,7 +52,7 @@ export default function DiagnosticoSection({ proyecto }: { proyecto: VincereProy
             ) : (
               <div className="vin-t-base leading-relaxed">{d[f.key] || <span className="vin-faint">—</span>}</div>
             )}
-          </Panel>
+          </BloqueTintado>
         ))}
       </div>
     </SectionShell>

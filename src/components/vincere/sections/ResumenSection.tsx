@@ -71,7 +71,7 @@ export default function ResumenSection({ proyecto }: { proyecto: VincereProyecto
               className="vin-t-base shrink-0 rounded-full px-3 py-1 tabular-nums"
               style={{
                 color: r.streamsCambioPct >= 0 ? "var(--vin-ok)" : "var(--vin-risk)",
-                background: r.streamsCambioPct >= 0 ? "rgba(78,201,138,0.11)" : "rgba(240,90,72,0.11)",
+                background: r.streamsCambioPct >= 0 ? "rgba(78,201,138,0.11)" : "var(--vin-risk-wash)",
               }}
             >
               {signed(r.streamsCambioPct)}

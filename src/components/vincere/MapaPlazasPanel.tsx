@@ -4,6 +4,7 @@ import { useState } from "react";
 import { VincereProyecto } from "@/lib/vincere/types";
 import { ACCION_COLOR, ACCION_LABEL, ACCION_QUE_HACER, mapaDePlazas } from "@/lib/vincere/plazas";
 import { Panel } from "./primitives";
+import { tinte } from "@/lib/vincere/color";
 
 // Dónde poner el peso de pauta y dónde no.
 //
@@ -49,7 +50,7 @@ export default function MapaPlazasPanel({ proyecto }: { proyecto: VincereProyect
             <span
               key={z.ciudad}
               className="flex items-center gap-2 rounded-full px-3 py-1.5 vin-t-sm"
-              style={{ border: `1px solid ${ACCION_COLOR[z.accion]}55`, color: ACCION_COLOR[z.accion] }}
+              style={{ border: `1px solid ${tinte(ACCION_COLOR[z.accion], 33)}`, color: ACCION_COLOR[z.accion] }}
             >
               <span className="tabular-nums opacity-70">#{z.prioridadPauta}</span>
               <span style={{ color: "var(--vin-text)" }}>{z.ciudad}</span>
@@ -78,7 +79,7 @@ export default function MapaPlazasPanel({ proyecto }: { proyecto: VincereProyect
                 <span className="vin-faint vin-t-sm tabular-nums">calor {z.calor}</span>
                 <span
                   className="rounded-full px-2.5 py-0.5 vin-t-xs"
-                  style={{ border: `1px solid ${ACCION_COLOR[z.accion]}55`, color: ACCION_COLOR[z.accion] }}
+                  style={{ border: `1px solid ${tinte(ACCION_COLOR[z.accion], 33)}`, color: ACCION_COLOR[z.accion] }}
                 >
                   {ACCION_LABEL[z.accion]}
                 </span>

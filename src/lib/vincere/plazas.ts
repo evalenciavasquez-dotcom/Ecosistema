@@ -26,13 +26,17 @@ export const ACCION_LABEL: Record<AccionDePlaza, string> = {
   esperar: "Esperar",
 };
 
+// Estados, no identidades: cada acción sale siempre con su etiqueta escrita al
+// lado, así que van con los tokens del semáforo. «Abrir» es la excepción y por
+// eso lleva el acento: no es bueno ni malo, es lo tocable — la plaza donde hay
+// algo que decidir. «Esperar» es ausencia de acción, y va en gris.
 export const ACCION_COLOR: Record<AccionDePlaza, string> = {
-  sostener: "#4ec98a",
-  cobrar: "#4ec98a",
-  revisar: "#f05a48",
-  reforzar: "#e5a93c",
-  abrir: "#5aa9e6",
-  esperar: "#7a746a",
+  sostener: "var(--vin-ok)",
+  cobrar: "var(--vin-ok)",
+  revisar: "var(--vin-risk)",
+  reforzar: "var(--vin-warn)",
+  abrir: "var(--vin-accent)",
+  esperar: "var(--vin-dim)",
 };
 
 // Qué significa cada una en plata y en acción. Es lo que se le dice al cliente.

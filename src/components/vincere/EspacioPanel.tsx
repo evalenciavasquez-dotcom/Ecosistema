@@ -47,7 +47,7 @@ export default function EspacioPanel() {
       {fallo && (
         <div
           className="mb-4 rounded-xl p-4"
-          style={{ background: "rgba(240,90,72,0.1)", border: "1px solid var(--vin-risk)" }}
+          style={{ background: "var(--vin-risk-wash)", border: "1px solid var(--vin-risk)" }}
         >
           <p className="vin-t-base leading-relaxed" style={{ color: "var(--vin-risk)" }}>
             El navegador dejó de guardar por falta de espacio. Lo que hagas desde ahora vive solo en esta pestaña y se

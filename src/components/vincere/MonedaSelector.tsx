@@ -24,7 +24,7 @@ export default function MonedaSelector({ proyecto }: { proyecto: VincereProyecto
             style={{
               color: actual === m ? "var(--vin-text)" : "var(--vin-dim)",
               borderColor: actual === m ? "var(--vin-accent)" : "var(--vin-border)",
-              background: actual === m ? "rgba(224,72,58,0.12)" : "transparent",
+              background: actual === m ? "var(--vin-accent-soft)" : "transparent",
             }}
           >
             {m}

@@ -97,7 +97,7 @@ function Cierre({ label, texto }: { label: string; texto: string }) {
   return (
     <div
       className="rounded-xl p-5"
-      style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+      style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
     >
       <PanelLabel>
         <span style={{ color: "var(--vin-accent)" }}>{label}</span>

@@ -44,6 +44,10 @@ import {
   VincereQAEntry,
   VincereResumen,
   VincereSeccion,
+  VincereTema,
+  VincereEnPapelera,
+  VincereTriageDecision,
+  VINCERE_DIAS_EN_PAPELERA,
   VincereSnapshot,
   VincereStressTest,
   VincereTriageCaso,
@@ -90,6 +94,27 @@ function getPersistStorage(): Storage {
   } as Storage;
 }
 
+// Lo que sigue vivo en la papelera. Se calcula, no se agenda: un temporizador
+// que caduque entradas solo corre mientras la pestaña está abierta, y esta
+// cuenta tiene que ser cierta también después de tres semanas sin entrar.
+function papeleraVigente(papelera: VincereEnPapelera[] = []): VincereEnPapelera[] {
+  const limite = Date.now() - VINCERE_DIAS_EN_PAPELERA * 24 * 60 * 60 * 1000;
+  return papelera.filter((e) => {
+    const t = Date.parse(e.borradoEn);
+    // Una fecha ilegible no es motivo para tirar el respaldo de alguien.
+    return Number.isNaN(t) || t >= limite;
+  });
+}
+
+// Días que le quedan a una entrada antes de caducar, para poder decirlo en
+// pantalla en vez de dejar que desaparezca sin aviso.
+export function diasEnPapelera(e: VincereEnPapelera): number {
+  const t = Date.parse(e.borradoEn);
+  if (Number.isNaN(t)) return VINCERE_DIAS_EN_PAPELERA;
+  const pasados = (Date.now() - t) / (24 * 60 * 60 * 1000);
+  return Math.max(0, Math.ceil(VINCERE_DIAS_EN_PAPELERA - pasados));
+}
+
 function comparacionKey(a: string, b: string): string {
   return [a, b].sort().join("::");
 }
@@ -104,6 +129,13 @@ interface VincereState {
   compareOn: boolean;
   seccion: VincereSeccion;
   toast: string | null;
+
+  // Papel o consola. Es el mismo sistema visual sobre dos fondos, no dos
+  // diseños: cambia la superficie, no la retícula ni el formato de los datos.
+  // Arranca en papel porque la mayor parte del trabajo acá es leer prosa
+  // analítica y comparar columnas de cifras, y eso se hace mejor sobre claro.
+  tema: VincereTema;
+  setTema: (t: VincereTema) => void;
 
   setSeccion: (s: VincereSeccion) => void;
 
@@ -142,6 +174,17 @@ interface VincereState {
   deleteProyecto: (id: string) => void;
   vaciarProyecto: (id: string) => void;
   empezarDeCero: () => void;
+
+  // La papelera. Borrar mueve acá en vez de destruir, y de acá se vuelve.
+  //
+  // Vive solo en este navegador a propósito: la fila de la base SÍ se borra al
+  // mandar a la papelera, porque mientras esté acá el proyecto está borrado de
+  // verdad para los demás dispositivos. Restaurarlo lo vuelve a subir.
+  papelera: VincereEnPapelera[];
+  restaurarProyecto: (id: string) => void;
+  eliminarDefinitivo: (id: string) => void;
+  vaciarPapelera: () => void;
+  purgarPapelera: () => void;
 
   updateResumen: (proyectoId: string, patch: Partial<VincereResumen>) => void;
   updateDiagnostico: (proyectoId: string, patch: Partial<VincereDiagnostico>) => void;
@@ -275,6 +318,7 @@ interface VincereState {
     }
   ) => void;
   deleteTriageCaso: (id: string) => void;
+  decidirTriageCaso: (id: string, decision: VincereTriageDecision | null) => void;
 
   resetToSeed: () => void;
   hidratarDesdeServidor: (estado: {
@@ -348,6 +392,9 @@ export const useVincereStore = create<VincereState>()(
       compareOn: false,
       seccion: "resumen",
       toast: null,
+
+      tema: "papel",
+      setTema: (tema) => set({ tema }),
 
       setSeccion: (seccion) => set({ seccion, compareOn: false }),
       investigacionConsulta: "",
@@ -424,8 +471,15 @@ export const useVincereStore = create<VincereState>()(
       updateProyectoMeta: (id, patch) =>
         set((s) => ({ proyectos: mapProyecto(s.proyectos, id, (p) => ({ ...p, ...patch })) })),
 
+      // Borrar ya no destruye: manda a la papelera.
+      //
+      // Antes esto era un filter y ya. El proyecto salía de la lista, el sync
+      // veía el id ausente y la base ejecutaba un DELETE de la fila. Un clic,
+      // y un artista trabajado durante semanas dejaba de existir en todos los
+      // dispositivos, sin deshacer y sin copia.
       deleteProyecto: (id) =>
         set((s) => {
+          const victima = s.proyectos.find((p) => p.id === id);
           const proyectos = s.proyectos.filter((p) => p.id !== id);
           // Al borrar el proyecto abierto se cae en otro propio: el selector
           // del encabezado solo lista propios, así que quedarse en una
@@ -434,8 +488,42 @@ export const useVincereStore = create<VincereState>()(
           const selectedProyectoId = s.selectedProyectoId === id ? (siguiente?.id ?? "") : s.selectedProyectoId;
           const compareProyectoId = s.compareProyectoId === id ? null : s.compareProyectoId;
           const compareOn = s.compareProyectoId === id ? false : s.compareOn;
-          return { proyectos, selectedProyectoId, compareProyectoId, compareOn };
+          return {
+            proyectos,
+            selectedProyectoId,
+            compareProyectoId,
+            compareOn,
+            papelera: victima
+              ? [{ proyecto: victima, borradoEn: new Date().toISOString() }, ...papeleraVigente(s.papelera)]
+              : papeleraVigente(s.papelera),
+          };
         }),
+
+      papelera: [],
+
+      restaurarProyecto: (id) =>
+        set((s) => {
+          const entrada = s.papelera.find((e) => e.proyecto.id === id);
+          if (!entrada) return {};
+          // Vuelve a la lista y el sync lo sube de nuevo: la fila de la base
+          // se recrea sola, sin que haya que tocar nada allá.
+          return {
+            proyectos: [...s.proyectos, entrada.proyecto],
+            papelera: s.papelera.filter((e) => e.proyecto.id !== id),
+            selectedProyectoId: entrada.proyecto.id,
+            compareOn: false,
+          };
+        }),
+
+      eliminarDefinitivo: (id) =>
+        set((s) => ({ papelera: s.papelera.filter((e) => e.proyecto.id !== id) })),
+
+      vaciarPapelera: () => set({ papelera: [] }),
+
+      // Se llama al hidratar. La papelera no puede crecer para siempre: es una
+      // red de seguridad, no un archivo histórico, y su peso sale del mismo
+      // presupuesto de espacio del navegador que todo lo demás.
+      purgarPapelera: () => set((s) => ({ papelera: papeleraVigente(s.papelera) })),
 
       updateResumen: (proyectoId, patch) =>
         set((s) => ({
@@ -1179,6 +1267,8 @@ export const useVincereStore = create<VincereState>()(
           comoCobrarlo: null,
           horasSemanalesEstimadas: null,
           web: null,
+          decision: null,
+          decididoEn: null,
           creadoEn: new Date().toISOString().slice(0, 10),
         };
         set((s) => ({ triageCasos: [nuevo, ...s.triageCasos] }));
@@ -1190,19 +1280,43 @@ export const useVincereStore = create<VincereState>()(
         })),
       deleteTriageCaso: (id) => set((s) => ({ triageCasos: s.triageCasos.filter((c) => c.id !== id) })),
 
+      // Registrar la decisión, que es distinto de borrar el caso. Pasar null
+      // la deshace: cambiar de opinión con data nueva es el movimiento normal
+      // de este trabajo, no una excepción.
+      decidirTriageCaso: (id, decision) =>
+        set((s) => ({
+          triageCasos: s.triageCasos.map((c) =>
+            c.id === id
+              ? { ...c, decision, decididoEn: decision ? new Date().toISOString().slice(0, 10) : null }
+              : c
+          ),
+        })),
+
       // La base manda cuando tiene contenido: es la copia compartida entre
       // dispositivos. Se conserva la sección abierta para no sacar a Eduardo
       // de donde estaba trabajando cuando termina de cargar.
       hidratarDesdeServidor: (estado) =>
         set((s) => {
-          const propio = estado.proyectos.find((p) => p.id === s.selectedProyectoId)
+          // Lo que está en la papelera no vuelve por la puerta de atrás.
+          //
+          // Si se borró un proyecto sin conexión, el DELETE nunca llegó a la
+          // base y el servidor sigue teniéndolo. Sin este filtro reaparecería
+          // en la lista mientras además figura como borrado en la papelera:
+          // el mismo artista, en dos estados contradictorios. Manda lo local,
+          // que es lo más reciente que alguien decidió.
+          const papelera = papeleraVigente(s.papelera);
+          const enPapelera = new Set(papelera.map((e) => e.proyecto.id));
+          const proyectos = estado.proyectos.filter((p) => !enPapelera.has(p.id));
+
+          const propio = proyectos.find((p) => p.id === s.selectedProyectoId)
             ? s.selectedProyectoId
-            : (estado.proyectos.find((p) => p.tipo === "propio")?.id ?? estado.proyectos[0]?.id ?? "");
-          const referencia = estado.proyectos.find((p) => p.id === s.compareProyectoId)
+            : (proyectos.find((p) => p.tipo === "propio")?.id ?? proyectos[0]?.id ?? "");
+          const referencia = proyectos.find((p) => p.id === s.compareProyectoId)
             ? s.compareProyectoId
-            : (estado.proyectos.find((p) => p.tipo === "competencia")?.id ?? null);
+            : (proyectos.find((p) => p.tipo === "competencia")?.id ?? null);
           return {
-            proyectos: estado.proyectos,
+            papelera,
+            proyectos,
             triageCasos: estado.triageCasos,
             comparaciones: estado.comparaciones,
             selectedProyectoId: propio,

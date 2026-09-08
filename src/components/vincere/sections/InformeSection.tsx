@@ -17,11 +17,12 @@ import { fetchInforme, registerNotion } from "@/lib/vincere/ai-client";
 import { downloadMarkdown, informeToMarkdown } from "@/lib/vincere/informe-export";
 import { SectionHeader, Panel, PanelLabel } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const PRIORIDAD_COLOR: Record<VincerePrioridadPaso, string> = {
-  Alta: "#e0483a",
-  Media: "#e0a83a",
-  Baja: "#a39c92",
+  Alta: "var(--vin-risk)",
+  Media: "var(--vin-warn)",
+  Baja: "var(--vin-faint)",
 };
 const PRIORIDADES: VincerePrioridadPaso[] = ["Alta", "Media", "Baja"];
 const NIVELES: VincereNivel[] = [4, 3, 2, 1];
@@ -336,7 +337,7 @@ function InformeDocumento({
 
       <section
         className="mb-8 rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <div className="vin-label mb-2" style={{ color: "var(--vin-accent)" }}>
           Veredicto
@@ -479,7 +480,7 @@ function InformeDocumento({
             <h3 className="vin-serif mb-3 vin-t-lg">Oportunidades</h3>
             <ul className="space-y-3.5">
               {informe.oportunidades.map((o, i) => (
-                <li key={i} className="border-l-2 pl-3.5" style={{ borderColor: "#5cc98e" }}>
+                <li key={i} className="border-l-2 pl-3.5" style={{ borderColor: "var(--vin-ok)" }}>
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <Editable
                       value={o.oportunidad}
@@ -620,7 +621,7 @@ function InformeDocumento({
                     <span>{p.plazo}</span>
                     <span
                       className="rounded-full border px-2 py-0.5 vin-t-xs font-medium"
-                      style={{ color: PRIORIDAD_COLOR[p.prioridad], borderColor: `${PRIORIDAD_COLOR[p.prioridad]}66` }}
+                      style={{ color: PRIORIDAD_COLOR[p.prioridad], borderColor: tinte(PRIORIDAD_COLOR[p.prioridad], 40) }}
                     >
                       {p.prioridad}
                     </span>

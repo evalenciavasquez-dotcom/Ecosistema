@@ -12,13 +12,14 @@ import { useVincereStore } from "@/lib/vincere/store";
 import { fetchMarca } from "@/lib/vincere/ai-client";
 import { buildMarcaContext } from "@/lib/vincere/context";
 import SectionShell from "../SectionShell";
-import { Panel, PanelLabel } from "../primitives";
+import { Panel, PanelLabel, BloqueTintado } from "../primitives";
 import EvidenceTag from "../EvidenceTag";
+import { tinte } from "@/lib/vincere/color";
 
 const COHERENCIA_COLOR: Record<VincereCoherencia, string> = {
-  alineado: "#5cc98e",
-  tibio: "#e0a83a",
-  desalineado: "#e0483a",
+  alineado: "var(--vin-ok)",
+  tibio: "var(--vin-warn)",
+  desalineado: "var(--vin-risk)",
 };
 
 const COHERENCIAS: VincereCoherencia[] = ["alineado", "tibio", "desalineado"];
@@ -45,9 +46,9 @@ const CAMPOS: { key: keyof Pick<VincereMarca, "posicionamiento" | "promesa" | "t
 ];
 
 function puntuacionColor(n: number): string {
-  if (n >= 70) return "#5cc98e";
-  if (n >= 40) return "#e0a83a";
-  return "#e0483a";
+  if (n >= 70) return "var(--vin-ok)";
+  if (n >= 40) return "var(--vin-warn)";
+  return "var(--vin-risk)";
 }
 
 export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }) {
@@ -101,10 +102,15 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
         </button>
       </div>
 
+      {/* Esto es lo que el artista DICE ser, no lo que el sistema midió — y es
+          la mitad del argumento de esta pantalla. Iba en tarjetas blancas
+          idénticas a las de cualquier panel de medición, así que la
+          declaración se leía como si fuera un dato. Con su propio tinte se ve
+          de un vistazo que acá se está declarando criterio, y que lo medido
+          está más abajo. */}
       <div className="grid gap-4 md:grid-cols-3">
         {CAMPOS.map((c) => (
-          <Panel key={c.key}>
-            <div className="vin-faint mb-2 vin-t-xs uppercase tracking-[0.08em]">{c.label}</div>
+          <BloqueTintado key={c.key} tipo="nota" rotulo={c.label}>
             {editing ? (
               <>
                 <textarea
@@ -120,13 +126,12 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                 {m?.[c.key]?.trim() || <span className="vin-faint">—</span>}
               </div>
             )}
-          </Panel>
+          </BloqueTintado>
         ))}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel>
-          <PanelLabel>Atributos</PanelLabel>
+        <BloqueTintado tipo="nota" rotulo="Atributos">
           {editing ? (
             <>
               <input
@@ -159,10 +164,9 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
           ) : (
             <span className="vin-faint vin-t-sm">—</span>
           )}
-        </Panel>
+        </BloqueTintado>
 
-        <Panel>
-          <PanelLabel>Lo que NO es</PanelLabel>
+        <BloqueTintado tipo="nota" rotulo="Lo que NO es">
           {editing ? (
             <>
               <textarea
@@ -184,7 +188,7 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
               )}
             </div>
           )}
-        </Panel>
+        </BloqueTintado>
       </div>
 
       <section>
@@ -205,8 +209,8 @@ export default function MarcaSection({ proyecto }: { proyecto: VincereProyecto }
                       className="rounded-full border px-2 py-0.5 vin-t-xs transition-colors"
                       style={{
                         color: pc.coherencia === c ? COHERENCIA_COLOR[c] : "var(--vin-dim)",
-                        borderColor: pc.coherencia === c ? `${COHERENCIA_COLOR[c]}66` : "var(--vin-border)",
-                        background: pc.coherencia === c ? `${COHERENCIA_COLOR[c]}14` : "transparent",
+                        borderColor: pc.coherencia === c ? tinte(COHERENCIA_COLOR[c], 40) : "var(--vin-border)",
+                        background: pc.coherencia === c ? tinte(COHERENCIA_COLOR[c], 8) : "transparent",
                       }}
                     >
                       {VINCERE_COHERENCIA_LABEL[c]}
@@ -335,7 +339,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
                   </div>
                   <div
                     className="rounded-xl p-3"
-                    style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.22)" }}
+                    style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
                   >
                     <div className="mb-1 vin-t-xs uppercase tracking-[0.08em]" style={{ color: "var(--vin-accent)" }}>
                       Recibe
@@ -379,7 +383,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
         {diag.riesgos.length > 0 && (
           <div
             className="rounded-xl p-5"
-            style={{ background: "rgba(224,72,58,0.06)", border: "1px solid rgba(224,72,58,0.25)" }}
+            style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
           >
             <PanelLabel>
               <span style={{ color: "var(--vin-accent)" }}>Riesgos de marca</span>
@@ -412,7 +416,7 @@ function DiagnosticoMarca({ diag, onEliminar }: { diag: VincereMarcaDiagnostico;
 
       <div
         className="rounded-xl p-5"
-        style={{ background: "rgba(224,72,58,0.08)", border: "1px solid rgba(224,72,58,0.28)" }}
+        style={{ background: "var(--vin-accent-soft)", border: "1px solid var(--vin-accent-glow)" }}
       >
         <PanelLabel>
           <span style={{ color: "var(--vin-accent)" }}>Veredicto</span>

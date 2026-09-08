@@ -14,7 +14,14 @@ export default function VincereHydration({ children }: { children: React.ReactNo
 
   // 1) Rehidrata la copia del navegador para pintar de inmediato.
   useEffect(() => {
-    const unsub = useVincereStore.persist.onFinishHydration(() => setHydrated(true));
+    const unsub = useVincereStore.persist.onFinishHydration(() => {
+      // La papelera caduca por cálculo, no por temporizador, y este es el
+      // único momento garantizado en que se mira: un setInterval solo corre
+      // con la pestaña abierta, y la cuenta tiene que ser cierta también
+      // después de tres semanas sin entrar.
+      useVincereStore.getState().purgarPapelera();
+      setHydrated(true);
+    });
     if (!useVincereStore.persist.hasHydrated()) {
       useVincereStore.persist.rehydrate();
     }

@@ -37,12 +37,19 @@ export default function VincereApp() {
   const compareOn = useVincereStore((s) => s.compareOn);
   const seccion = useVincereStore((s) => s.seccion);
   const toast = useVincereStore((s) => s.toast);
+  const tema = useVincereStore((s) => s.tema);
 
   const proyecto = proyectos.find((p) => p.id === selectedId) ?? proyectos.find((p) => p.tipo === "propio");
   const compareTarget = proyectos.find((p) => p.id === compareId);
 
   return (
-    <div className="vincere-scope flex min-h-screen flex-col">
+    // El tema es un atributo del contenedor, no una clase: toda la paleta se
+    // redefine en un solo selector y ningún componente tiene que saber en qué
+    // superficie está dibujando.
+    <div
+      className="vincere-scope flex min-h-screen flex-col"
+      data-tema={tema === "consola" ? "oscuro" : undefined}
+    >
       <VincereHeader />
 
       <div className="flex flex-1 flex-col md:flex-row" style={{ minHeight: 0 }}>
@@ -59,7 +66,17 @@ export default function VincereApp() {
                 uno solo— ni sin proyecto, donde no hay nada que dirigir. */}
             {proyecto && !compareOn && <SiguientePasoBanner proyecto={proyecto} />}
             {!proyecto ? (
-              <SinProyectos />
+              // Sin proyectos la app no está vacía de trabajo: justo ahí es
+              // cuando hay material nuevo en la mano y un caso que triar. Las
+              // dos pantallas que no necesitan un proyecto para servir —cargar
+              // el material y decidir si se entra— siguen abiertas.
+              seccion === "ingesta" ? (
+                <IngestaSection proyecto={null} />
+              ) : seccion === "triage" ? (
+                <TriageSection />
+              ) : (
+                <SinProyectos />
+              )
             ) : compareOn && compareTarget ? (
               <ComparacionSection a={proyecto} b={compareTarget} />
             ) : (
@@ -72,7 +89,7 @@ export default function VincereApp() {
       {toast && (
         <div
           className="fixed bottom-6 right-6 z-50 rounded-xl px-4 py-3 vin-t-sm"
-          style={{ background: "var(--vin-surface-2)", border: "1px solid rgba(224,72,58,0.4)", color: "var(--vin-text)" }}
+          style={{ background: "var(--vin-surface-2)", border: "1px solid var(--vin-accent-glow)", color: "var(--vin-text)" }}
         >
           {toast}
         </div>
@@ -85,17 +102,24 @@ export default function VincereApp() {
 // hay data nueva en la mano. Tiene que decir qué sigue, no solo que no hay nada.
 function SinProyectos() {
   const [abierto, setAbierto] = useState(false);
+  const setSeccion = useVincereStore((s) => s.setSeccion);
   return (
     <div className="py-6">
       <div className="vin-eyebrow mb-2.5">VINCERE</div>
       <h2 className="vin-serif mb-3 vin-t-xl leading-snug">No hay ningún proyecto</h2>
       <p className="vin-muted mb-5 max-w-xl vin-t-base leading-relaxed">
-        Crea el primero con el nombre del artista, su género y en qué fase está. Después, en «Cargar data», sueltas
-        una captura o un archivo y se reparte solo a los motores que corresponda.
+        Hay dos formas de empezar. Si ya sabes que este artista va: crea el proyecto con su nombre, género y fase, y
+        después cárgale el material. Si todavía lo estás evaluando: suelta lo que tengas en «Cargar data» y mándalo a
+        Triage — el veredicto dirá si vale la pena abrirle proyecto.
       </p>
-      <button onClick={() => setAbierto(true)} className="vin-btn-primary">
-        Crear proyecto
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button onClick={() => setAbierto(true)} className="vin-btn-primary">
+          Crear proyecto
+        </button>
+        <button onClick={() => setSeccion("ingesta")} className="vin-btn-ghost">
+          Cargar material de un caso
+        </button>
+      </div>
       {abierto && <ProyectoManager onClose={() => setAbierto(false)} />}
     </div>
   );
@@ -108,6 +132,8 @@ function SectionRouter({
   seccion: ReturnType<typeof useVincereStore.getState>["seccion"];
   proyecto: NonNullable<ReturnType<typeof useVincereStore.getState>["proyectos"][number]>;
 }) {
+  // Router de secciones. Recibe siempre un proyecto: las dos pantallas que
+  // funcionan sin él se resuelven antes, arriba.
   switch (seccion) {
     case "resumen":
       return <ResumenSection proyecto={proyecto} />;

@@ -672,7 +672,34 @@ ${JSON.stringify(contexto, null, 2)}
 
 Pregunta de Eduardo: ${pregunta}
 
-Responde de forma directa — una sola respuesta, no una lista — siguiendo las reglas del sistema.`;
+Responde de forma directa — una sola respuesta, no una lista.
+
+CÓMO SE CONTESTA ACÁ. Las reglas de evidencia del sistema siguen valiendo,
+pero se aplican así y no de otra forma:
+
+1. EMPIEZA POR LA RESPUESTA. La primera frase contesta lo que se preguntó.
+   El porqué va después. Una respuesta que abre con dos salvedades y esconde
+   la conclusión en la última línea obliga a leerla entera para saber si dijo
+   algo — y a esa altura ya nadie la lee.
+
+2. SI LA PREGUNTA PIDE ELEGIR, ELIGE. «¿De qué porcentaje hablar?» se contesta
+   nombrando uno. Decir que ninguno sirve solo vale si en la misma frase dices
+   cuál mirar en su lugar. Disolver la pregunta no es rigor, es no contestar.
+
+3. UNA SOLA SALVEDAD, Y ACCIONABLE. El nivel de evidencia ya viaja en su
+   propia etiqueta, a la vista, así que repetir la advertencia tres veces en
+   la prosa es cinturón y tirantes: convierte una respuesta en un descargo.
+   Y la salvedad dice qué la levantaría —«con dos meses más en la misma
+   dirección deja de ser ruido»— en vez de solo advertir que no se confíe.
+
+4. NO DEJES DOS SEÑALES ENFRENTADAS SIN RESOLVER. «X dice esto pero Y dice lo
+   contrario» es el planteo, no la respuesta. Di cuál de las dos manda a esta
+   escala y por qué; si de verdad no se puede saber, di qué medición lo
+   resolvería y en cuánto tiempo.
+
+5. La duda honesta se dice una vez, con todas las letras, y no se disfraza de
+   prudencia repetida. Bajar el nivel de evidencia es el mecanismo para eso —
+   no hace falta además escribir cuatro veces que hay poca data.`;
 }
 
 // Aquí vivían los tres textos de "cantidad de data" que Eduardo marcaba a mano
