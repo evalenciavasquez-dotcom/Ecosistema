@@ -315,6 +315,13 @@ interface VincereState {
       // Lo que la web aportó al veredicto, si el análisis la consultó. Va con
       // el veredicto porque es parte de sobre qué se decidió.
       web?: { resumen: string; hallazgos: string[] } | null;
+      // El material acumulado, cuando el caso se vuelve a leer con data nueva.
+      //
+      // Va acá y no en un update aparte porque es lo mismo que el veredicto:
+      // sobre qué se decidió. Guardarlo en dos escrituras dejaría, si la
+      // segunda fallara, un veredicto que habla de material que el caso ya no
+      // recuerda tener.
+      descripcion?: string;
     }
   ) => void;
   deleteTriageCaso: (id: string) => void;

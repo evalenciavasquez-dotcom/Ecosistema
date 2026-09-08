@@ -7,6 +7,7 @@ import {
   VINCERE_VINCULO_LABEL,
 } from "@/lib/vincere/types";
 import EvidenceTag from "./EvidenceTag";
+import SumarDataCaso from "./SumarDataCaso";
 import { tinte } from "@/lib/vincere/color";
 
 // El veredicto de un caso.
@@ -80,11 +81,33 @@ export default function TriageCasoCard({
           </h3>
         )}
 
-        {caso.motorRecomendado && (
-          <p className="vin-muted mt-1.5 vin-t-sm">
-            Por dónde se empieza: <span style={{ color: "var(--vin-text)" }}>{caso.motorRecomendado}</span>
-          </p>
-        )}
+        {/* Por dónde se empieza, qué compromiso supone y cuánto tiempo cuesta.
+            Las dos últimas vivían plegadas dentro de «Cómo entrar y qué
+            cuesta», y son parte de la lectura, no del anexo: nadie decide si
+            entra a un artista sin saber cuántas horas a la semana se lleva.
+            El razonamiento de la tarifa sí se queda plegado — eso sí se
+            consulta, no se lee cada vez. */}
+        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+          {caso.motorRecomendado && (
+            <p className="vin-muted vin-t-sm">
+              Por dónde se empieza: <span style={{ color: "var(--vin-text)" }}>{caso.motorRecomendado}</span>
+            </p>
+          )}
+          {caso.vinculoSugerido && (
+            <p className="vin-muted vin-t-sm">
+              Compromiso:{" "}
+              <span style={{ color: "var(--vin-text)" }}>{VINCERE_VINCULO_LABEL[caso.vinculoSugerido]}</span>
+            </p>
+          )}
+          {caso.horasSemanalesEstimadas != null && (
+            <p className="vin-muted vin-t-sm">
+              Te cuesta:{" "}
+              <span className="tabular-nums" style={{ color: "var(--vin-text)" }}>
+                ~{caso.horasSemanalesEstimadas}h/semana
+              </span>
+            </p>
+          )}
+        </div>
       </div>
 
       {!caso.veredicto ? (
@@ -161,6 +184,11 @@ export default function TriageCasoCard({
             </div>
           )}
 
+          {/* La lectura no se congela. Se puede decidir ya con lo que hay y
+              seguir sumando data después: el veredicto se rehace y el techo
+              sube, sin abrir un caso nuevo del mismo artista. */}
+          <SumarDataCaso caso={caso} />
+
           {/* Sustento: se consulta, no se lee de corrido. Va plegado para que
               el veredicto no quede sepultado bajo su propia bibliografía. */}
           {caso.web && (
@@ -189,9 +217,7 @@ export default function TriageCasoCard({
           {(caso.vinculoSugerido || caso.comoCobrarlo || caso.horasSemanalesEstimadas != null) && (
             <details className="mt-2.5 rounded-xl" style={{ border: "1px solid var(--vin-border)" }}>
               <summary className="vin-muted cursor-pointer px-3.5 py-2.5 vin-t-sm">
-                Cómo entrar y qué cuesta
-                {caso.vinculoSugerido ? ` · ${VINCERE_VINCULO_LABEL[caso.vinculoSugerido]}` : ""}
-                {caso.horasSemanalesEstimadas != null ? ` · ~${caso.horasSemanalesEstimadas}h/semana` : ""}
+                Por qué ese encuadre y cómo cobrarlo
               </summary>
               <div className="px-3.5 pb-3.5">
                 {caso.comoCobrarlo && (
