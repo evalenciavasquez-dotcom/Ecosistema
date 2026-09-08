@@ -11,6 +11,7 @@ import {
   selectProximoCompromiso,
 } from "@/lib/selectors";
 import { formatMinutos, hoyISO, minutosPorProyecto } from "@/lib/tiempo";
+import { construirBrief, momentoDe, type UrgenciaSenal } from "@/lib/brief";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -18,6 +19,12 @@ function greeting(): string {
   if (hour < 19) return "Buenas tardes";
   return "Buenas noches";
 }
+
+const URGENCIA_COLOR: Record<UrgenciaSenal, string> = {
+  critica: "var(--accent-red)",
+  atencion: "var(--accent-amber)",
+  informativa: "var(--accent-blue)",
+};
 
 export default function InicioPage() {
   const router = useRouter();
@@ -52,6 +59,18 @@ export default function InicioPage() {
 
   const prioridadesVisibles = modoEnfoque ? prioridades.slice(0, 1) : prioridades;
 
+  // El resumen se calcula al abrir la pantalla, no a una hora fija: a las 7am
+  // importa lo que viene, a las 9pm lo que quedó sin cerrar. Sale de la misma
+  // función que arma el push de la mañana, así que los dos dicen lo mismo.
+  const decisiones = useAppStore((s) => s.decisiones);
+  const strategicCases = useAppStore((s) => s.strategicCases);
+  const brief = construirBrief(
+    { acciones, decisiones, agenda, personas, movimientos, strategicCases },
+    hoy,
+    momentoDe(new Date())
+  );
+  const senalesVisibles = modoEnfoque ? brief.senales.slice(0, 1) : brief.senales.slice(0, 5);
+
   return (
     <div className="max-w-5xl space-y-8">
       <div>
@@ -61,6 +80,39 @@ export default function InicioPage() {
             ? "Modo enfoque activo — mostrando solo lo esencial."
             : "Aquí está el estado de tu operación hoy."}
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-border-subtle bg-surface p-5">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <h3 className="t-lg font-semibold">{brief.titulo}</h3>
+          {brief.hayCritico && (
+            <span className="t-xs font-medium text-accent-red">Hay algo que no puede esperar</span>
+          )}
+        </div>
+        <p className="t-sm text-muted mt-1">{brief.encuadre}</p>
+
+        {senalesVisibles.length === 0 ? (
+          <p className="t-sm text-muted mt-4">
+            Nada urgente ahora mismo. Buen momento para revisar la Bandeja o adelantar algo que no corre prisa.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {senalesVisibles.map((senal) => (
+              <button
+                key={senal.id}
+                onClick={() => router.push(senal.href)}
+                className="w-full text-left flex items-start gap-3 rounded-xl bg-surface-2 px-4 py-3 hover:bg-overlay/5 transition-colors"
+              >
+                <span
+                  className="mt-1.5 h-2 w-2 rounded-full shrink-0"
+                  style={{ background: URGENCIA_COLOR[senal.urgencia] }}
+                  aria-hidden
+                />
+                <span className="t-sm leading-relaxed">{senal.texto}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

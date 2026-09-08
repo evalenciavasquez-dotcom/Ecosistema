@@ -5,7 +5,7 @@ import { ensureStrategicCaseColumns } from "@/lib/db/migrations";
 import { sendPushToAll } from "@/lib/db/push";
 import { generarCierreMensual } from "@/lib/cierreMensualEngine";
 import { actualizarRetosIA } from "@/lib/goalsEngine";
-import { computeProyeccion, computeRunway } from "@/lib/finanzas";
+import { construirBrief } from "@/lib/brief";
 import { getConnection, isGoogleConfigured } from "@/lib/google";
 import { runGoogleSync } from "@/lib/googleSync";
 import type { MovimientoEconomico } from "@/lib/types";
@@ -27,10 +27,6 @@ function mesAnteriorAHoy(hoy: string): string {
   const [y, m] = hoy.slice(0, 7).split("-").map(Number);
   const d = new Date(Date.UTC(y, m - 2, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
-function diasHasta(fechaISO: string, hoy: string): number {
-  return Math.round((new Date(fechaISO).getTime() - new Date(hoy).getTime()) / 86400000);
 }
 
 export async function GET(request: Request) {
@@ -107,77 +103,25 @@ export async function GET(request: Request) {
         db.select().from(strategicCases),
       ]);
 
-    const abiertas = accionesRows.filter((a) => a.estado === "Pendiente" || a.estado === "En curso");
-    const vencidas = abiertas.filter((a) => a.fecha && a.fecha < hoy);
-    const paraHoy = abiertas.filter((a) => a.fecha === hoy);
-    if (vencidas.length > 0) {
-      urgente = true;
-      lineas.push(`${vencidas.length} acción(es) vencida(s) — la más vieja: "${vencidas[0].titulo}"`);
-    }
-    if (paraHoy.length > 0) {
-      lineas.push(`${paraHoy.length} acción(es) para hoy — "${paraHoy[0].titulo}"`);
-    }
-
-    const eventosHoy = agendaRows.filter((e) => e.fecha === hoy);
-    if (eventosHoy.length > 0) {
-      const primero = eventosHoy.sort((a, b) => a.hora.localeCompare(b.hora))[0];
-      lineas.push(`Hoy: ${primero.titulo} a las ${primero.hora}`);
-    }
-
-    const decisionesUrgentes = decisionesRows.filter((d) => {
-      if (d.estado !== "Abierta" || !d.fechaLimite) return false;
-      const dias = diasHasta(d.fechaLimite, hoy);
-      return dias >= 0 && dias <= 3;
-    });
-    if (decisionesUrgentes.length > 0) {
-      const d = decisionesUrgentes[0];
-      const dias = diasHasta(d.fechaLimite, hoy);
-      urgente = urgente || dias <= 1;
-      lineas.push(`Decisión "${d.pregunta}" vence ${dias === 0 ? "HOY" : `en ${dias} día(s)`}`);
-    }
-
-    // Cerrar el ciclo (Bloque 3): si decidiste algo hace exactamente 30, 60 o
-    // 90 días y nunca registraste qué pasó, una sola pregunta al día — sin
-    // esto los campos de resultado quedan vacíos para siempre.
-    const paraCierre = decisionesRows.filter((d) => {
-      if (!d.fechaDecision || d.resultadoPosterior) return false;
-      const diasDesde = -diasHasta(d.fechaDecision, hoy);
-      return diasDesde === 30 || diasDesde === 60 || diasDesde === 90;
-    });
-    if (paraCierre.length > 0) {
-      const d = paraCierre[0];
-      const diasDesde = -diasHasta(d.fechaDecision as string, hoy);
-      const caso = strategicCasesRows.find((c) => c.decisionId === d.id);
-      lineas.push(
-        `Hace ${diasDesde} días decidiste "${d.pregunta}". ¿Qué pasó?` +
-          (caso?.hipotesisCritica ? ` La hipótesis crítica era: ${caso.hipotesisCritica}. ¿Se cumplió?` : "")
-      );
-    }
-
-    const esperando = personasRows.filter((p) => (p.diasSinResponder ?? 0) >= 5);
-    if (esperando.length > 0) {
-      const p = esperando.sort((a, b) => (b.diasSinResponder ?? 0) - (a.diasSinResponder ?? 0))[0];
-      lineas.push(`${p.nombre} lleva ${p.diasSinResponder} días sin responder`);
-    }
-
-    const runway = computeRunway(movimientosRows as MovimientoEconomico[], hoy);
-    const proyeccion = computeProyeccion(movimientosRows as MovimientoEconomico[], hoy);
-    const runwayCorto = runway.filter((r) => r.mesesRunway !== null && r.mesesRunway < 2);
-    if (runwayCorto.length > 0) {
-      urgente = true;
-      const r = runwayCorto[0];
-      lineas.push(
-        r.mesesRunway! < 0
-          ? `Caja en déficit en ${r.moneda} — revisa Economía`
-          : `Runway de ${r.mesesRunway!.toFixed(1)} meses en ${r.moneda} — caja baja`
-      );
-    }
-    const proyeccionNegativa = proyeccion.filter((p) => p.proyeccion30 < 0);
-    if (proyeccionNegativa.length > 0) {
-      urgente = true;
-      const p = proyeccionNegativa[0];
-      lineas.push(`Caja proyectada a 30 días se vuelve negativa en ${p.moneda}`);
-    }
+    // El resumen sale de la misma función que alimenta la tarjeta de Inicio
+    // (src/lib/brief.ts). Antes esta lógica vivía suelta aquí, así que el
+    // push y la pantalla podían decir cosas distintas sobre el mismo día.
+    // El push va con el encuadre de la mañana porque el cron dispara a esa
+    // hora; la pantalla usa el momento en que Eduardo la abre.
+    const brief = construirBrief(
+      {
+        acciones: accionesRows,
+        decisiones: decisionesRows,
+        agenda: agendaRows,
+        personas: personasRows,
+        movimientos: movimientosRows as MovimientoEconomico[],
+        strategicCases: strategicCasesRows,
+      },
+      hoy,
+      "manana"
+    );
+    urgente = brief.hayCritico;
+    lineas.push(...brief.senales.map((s) => s.texto));
 
     if (lineas.length === 0) {
       lineas.push("Sin pendientes críticos registrados. Buen momento para revisar la Bandeja.");
