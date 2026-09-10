@@ -1330,14 +1330,89 @@ export const VINCERE_CANTIDAD_DATA_DESC: Record<VincereCantidadData, string> = {
 
 // Qué data mueve realmente la aguja, en orden de impacto. Se muestra en el
 // Triage porque es el momento en que se decide qué pedir — después es tarde.
-export const VINCERE_DATA_QUE_SIRVE: string[] = [
-  "Streams y oyentes mensuales de los últimos 6 meses, no solo el número de hoy: una foto no muestra tendencia.",
-  "Métricas por canción: retención, skip rate y playlist adds. Es lo que distingue un catálogo que funciona de uno que solo acumula.",
-  "Audiencia por país y ciudad, para saber dónde hay algo que reforzar.",
-  "Shows anteriores con aforo y, si se sabe, cuánta gente entró. Es la única prueba de que la audiencia paga.",
-  "Liquidaciones de la distribuidora, aunque sean de un trimestre: sin ellas no se puede decir de qué vive.",
-  "La letra de las canciones que importan, para leerlas como obra y no como fila de números.",
+// Qué pedirle a un artista, y para qué sirve cada cosa.
+//
+// Era una lista de seis frases planas, todas del mismo peso, encabezada por
+// «pídela ANTES de decir que sí». Eso la convertía en una puerta — y este
+// sistema no tiene puertas: no bloquea la decisión, dice con cuánto respaldo
+// se está tomando. Se puede entrar a un caso sin nada de esto; el veredicto
+// simplemente sale con el techo de evidencia que corresponda, y eso ya está
+// escrito en la tarjeta.
+//
+// Además las seis no hacen lo mismo, y fundirlas escondía la única distinción
+// que importa cuando hay que elegir qué pedir primero:
+//
+//   - Dos suben el TECHO DEL VEREDICTO de entrada, o sea cambian con cuánta
+//     fuerza se puede decir que sí o que no. Son las que valen antes de
+//     decidir.
+//   - Las otras cuatro no mueven ese techo: encienden motores concretos una
+//     vez el artista está dentro. Pedirlas ahora no hace mejor la decisión de
+//     entrada, y por eso no son urgentes.
+//
+// Cada punto se parte en lo que se PIDE —corto, para escanear— y el porqué,
+// que es lo que se contesta cuando del otro lado preguntan para qué.
+export type GrupoDeData = "decidir" | "trabajar";
+
+export interface DataQueSirve {
+  pide: string;
+  porQue: string;
+  grupo: GrupoDeData;
+  // Qué se enciende con esto. En el grupo «decidir» es el techo que alcanza;
+  // en «trabajar», el motor que pasa a poder correr.
+  desbloquea: string;
+}
+
+export const VINCERE_DATA_QUE_SIRVE: DataQueSirve[] = [
+  {
+    pide: "Streams y oyentes mensuales de los últimos 6 meses",
+    porQue: "No solo el número de hoy: una foto no muestra tendencia, y sin dos puntos no se distingue una carrera que sube de un pico que ya pasó.",
+    grupo: "decidir",
+    desbloquea: "techo 4",
+  },
+  {
+    pide: "Métricas por canción: retención, skip rate y playlist adds",
+    porQue: "Es lo que distingue un catálogo que funciona de uno que solo acumula.",
+    grupo: "decidir",
+    desbloquea: "techo 3",
+  },
+  {
+    pide: "Audiencia por país y ciudad",
+    porQue: "Para saber dónde hay algo que reforzar, y con qué convencer a un empresario de plaza.",
+    grupo: "trabajar",
+    desbloquea: "Zonas de Calor",
+  },
+  {
+    pide: "Shows anteriores con aforo y cuánta gente entró",
+    porQue: "Es la única prueba de que la audiencia paga. Escuchar es gratis; una entrada no.",
+    grupo: "trabajar",
+    desbloquea: "Shows y Touring",
+  },
+  {
+    pide: "Liquidaciones de la distribuidora, aunque sean de un trimestre",
+    porQue: "Sin ellas no se puede decir de qué vive, solo de qué se habla.",
+    grupo: "trabajar",
+    desbloquea: "Monetización",
+  },
+  {
+    pide: "La letra de las canciones que importan",
+    porQue: "Para leerlas como obra y no como fila de números.",
+    grupo: "trabajar",
+    desbloquea: "Song Intelligence",
+  },
 ];
+
+// El mismo pedido, redactado para mandarlo tal cual.
+//
+// La lista existe para pedírsela a alguien, y hasta ahora no había forma de
+// mandarla: tocaba seleccionar seis viñetas a mano y lo que se pegaba en
+// WhatsApp salía roto. Esto arma el mensaje ya escrito.
+export function mensajeDeDataQueSirve(nombre?: string): string {
+  const saludo = nombre?.trim()
+    ? `Hola. Para poder mirar bien el caso de ${nombre.trim()} y darte una lectura seria, necesito esto:`
+    : "Hola. Para poder mirar bien el caso y darte una lectura seria, necesito esto:";
+  const puntos = VINCERE_DATA_QUE_SIRVE.map((d) => `- ${d.pide}. ${d.porQue}`).join("\n");
+  return `${saludo}\n\n${puntos}\n\nCon lo que haya se puede empezar; entre más completo, más firme la lectura.`;
+}
 
 export interface VincereTriageCaso {
   id: string;

@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useVincereStore } from "@/lib/vincere/store";
-import { VincereQAEntry, VincereFase, VINCERE_DATA_QUE_SIRVE } from "@/lib/vincere/types";
+import {
+  VincereQAEntry,
+  VincereFase,
+  VINCERE_DATA_QUE_SIRVE,
+  mensajeDeDataQueSirve,
+} from "@/lib/vincere/types";
 import { fetchAsk } from "@/lib/vincere/ai-client";
 import { genId } from "@/lib/id";
 import { SectionHeader, Panel, PanelLabel, BloqueTintado, Exigencia } from "../primitives";
@@ -39,6 +44,24 @@ export default function TriageSection() {
   const setSeccion = useVincereStore((s) => s.setSeccion);
   const showToast = useVincereStore((s) => s.showToast);
   const [qaLog, setQaLog] = useState<VincereQAEntry[]>([]);
+  const [copiado, setCopiado] = useState(false);
+
+  // El pedido, redactado y al portapapeles. Si el navegador no deja copiar
+  // —permiso denegado, contexto no seguro— se dice, en vez de fingir que sí.
+  async function copiarPedido() {
+    // El nombre solo cuando no hay ambigüedad. Este bloque vive al pie de la
+    // sección, no dentro de un caso, así que con varios abiertos no hay forma
+    // de saber por cuál se está preguntando — y mandarle a alguien un mensaje
+    // que nombra al artista equivocado es peor que uno genérico.
+    const unico = triageCasos.length === 1 ? triageCasos[0].nombre : undefined;
+    try {
+      await navigator.clipboard.writeText(mensajeDeDataQueSirve(unico));
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2200);
+    } catch {
+      showToast("El navegador no dejó copiar. Selecciona el texto a mano.");
+    }
+  }
 
   async function ask(pregunta: string) {
     const contexto = {
@@ -121,23 +144,59 @@ export default function TriageSection() {
           </>
         )}
 
-        {/* Esto no es una nota al pie: es la lista de lo que se le exige a un
-            artista antes de comprometerse. Vivía plegada dentro de un
-            desplegable gris idéntico a los otros dos de la pantalla, así que
-            se leía como letra chica — cuando en realidad es la herramienta más
-            usable que hay acá: se copia y se manda tal cual. */}
-        <BloqueTintado tipo="accion" rotulo="Antes de decir que sí" titulo="Qué data pedir">
-          <ul className="flex flex-col gap-2.5">
-            {VINCERE_DATA_QUE_SIRVE.map((d, i) => (
-              <Exigencia key={i}>{d}</Exigencia>
+        {/* Es la herramienta más usable que hay acá: se copia y se manda tal
+            cual. Dos cosas la tenían atascada.
+
+            UNA, estaba escrita como puerta —«pídela ANTES de decir que sí»—, y
+            este sistema no tiene puertas: no bloquea la decisión, dice con
+            cuánto respaldo se está tomando. Se puede entrar a un caso sin nada
+            de esto. Ahora eso está dicho, y con el botón para hacerlo.
+
+            DOS, las seis iban del mismo peso, cuando solo dos mueven el techo
+            del veredicto de entrada. Las otras cuatro encienden motores para
+            después. Separarlas es lo que deja elegir qué pedir primero. */}
+        <BloqueTintado tipo="accion" rotulo="Si quieres más respaldo" titulo="Qué data pedir">
+          <div className="vin-block-title mb-3" style={{ borderBottomColor: "var(--vin-tinte-accion-linea)" }}>
+            <span>Sube el techo del veredicto</span>
+          </div>
+          <ul className="flex flex-col gap-3">
+            {VINCERE_DATA_QUE_SIRVE.filter((d) => d.grupo === "decidir").map((d, i) => (
+              <Exigencia key={i} porQue={d.porQue} etiqueta={d.desbloquea}>
+                {d.pide}
+              </Exigencia>
             ))}
           </ul>
-          <p
-            className="vin-muted mt-4 vin-t-sm leading-relaxed"
-            style={{ maxWidth: "64ch", borderTop: "1px solid var(--vin-tinte-accion-linea)", paddingTop: "0.9rem" }}
+
+          <div
+            className="vin-block-title mb-3 mt-6"
+            style={{ borderBottomColor: "var(--vin-tinte-accion-linea)" }}
           >
-            Pídela <strong>antes</strong> de decir que sí. Después del primer análisis, pedirla se ve como que no
-            sabías.
+            <span>Enciende motores una vez esté dentro</span>
+          </div>
+          <ul className="flex flex-col gap-3">
+            {VINCERE_DATA_QUE_SIRVE.filter((d) => d.grupo === "trabajar").map((d, i) => (
+              <Exigencia key={i} porQue={d.porQue} etiqueta={d.desbloquea}>
+                {d.pide}
+              </Exigencia>
+            ))}
+          </ul>
+
+          <div
+            className="mt-5 flex flex-wrap items-center gap-3"
+            style={{ borderTop: "1px solid var(--vin-tinte-accion-linea)", paddingTop: "1rem" }}
+          >
+            <button onClick={copiarPedido} className="vin-btn-primary !py-1.5 vin-t-xs">
+              {copiado ? "Copiado" : "Copiar para mandar"}
+            </button>
+            <span className="vin-muted vin-t-sm">Queda redactado y listo para pegar.</span>
+          </div>
+
+          {/* La salida. Sin esto la lista se lee como un requisito, y no lo es:
+              decidir con poco es legítimo mientras el veredicto lo diga. */}
+          <p className="vin-muted mt-3 vin-t-sm leading-relaxed" style={{ maxWidth: "68ch" }}>
+            No hace falta nada de esto para decidir. Puedes entrar, descartar o dejarlo en espera con lo que ya
+            tienes — el veredicto sale igual, solo que con el techo de evidencia que le corresponda, y eso queda
+            escrito en la tarjeta. Pedir data sube el techo; no es un permiso para avanzar.
           </p>
         </BloqueTintado>
 

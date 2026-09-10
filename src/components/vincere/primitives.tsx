@@ -78,16 +78,39 @@ export function BloqueTintado({
 // Una exigencia con su razón. El punto no es la viñeta: es que cada línea sea
 // algo que se puede PEDIR por escrito, con el motivo pegado para poder
 // defenderlo cuando del otro lado pregunten para qué.
-export function Exigencia({ children }: { children: ReactNode }) {
+//
+// Las dos cosas iban fundidas en una frase larga, y seis de esas son ciento
+// veinte palabras que se leen una vez y nunca más. Ahora lo que se pide va
+// solo y en negrita —se escanea en dos segundos— y el motivo queda debajo,
+// disponible para cuando haga falta defenderlo.
+export function Exigencia({
+  children,
+  porQue,
+  etiqueta,
+}: {
+  children: ReactNode;
+  porQue?: ReactNode;
+  // Qué se enciende con esto. Convierte la lista de un deber en una palanca:
+  // se ve qué gana cada pedido, no solo que falta.
+  etiqueta?: string;
+}) {
   return (
     <li className="flex gap-3">
-      <span
-        className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ background: "var(--vin-accent)" }}
-      />
-      <span className="vin-t-base leading-relaxed" style={{ maxWidth: "64ch" }}>
-        {children}
-      </span>
+      <span className="mt-[8px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--vin-accent)" }} />
+      <div className="min-w-0" style={{ maxWidth: "64ch" }}>
+        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <span className="vin-t-base font-medium leading-snug">{children}</span>
+          {etiqueta && (
+            <span
+              className="vin-label shrink-0 rounded-full px-2 py-0.5"
+              style={{ background: "var(--vin-surface)", color: "var(--vin-muted)" }}
+            >
+              {etiqueta}
+            </span>
+          )}
+        </div>
+        {porQue && <div className="vin-muted vin-t-sm mt-1 leading-relaxed">{porQue}</div>}
+      </div>
     </li>
   );
 }
